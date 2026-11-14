@@ -18,7 +18,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| 5 Campaign | **in progress**: 5a–5e done (5c, 5d, 5e waiting for Marcel's look at the screenshots); next 5f balance (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
+| 5 Campaign | **in progress**: 5a–5e done (5c, 5d, 5e waiting for Marcel's look at the screenshots); 5f balance half done (suite + strengths; next: the class spread and the map walk, see "5f as built"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
 | 6–7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -39,8 +39,50 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 3. ~~**5c Map screen**~~ Done (see "5c as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/map-5c/`.
 4. ~~**5d Camp screen**~~ Done (see "5d as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/camp-5d/`.
 5. ~~**5e Ending summary**~~ Done (see "5e as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/ending-5e/`.
-6. **5f Balance**: suite per PLAN section 13 (each encounter at the expected squad level, standard 70–90 %, elite 45–70 %, boss 35–60 %, length 45–150 s, hero share 20–30 %, solo < 5 %), tune strength; update `tests/balance/chain.test.ts` to walk the map.
+6. **5f Balance** (half done, see "5f as built"): suite per PLAN section 13 (each encounter at the expected squad level, standard 70–90 %, elite 45–70 %, boss 35–60 %, length 45–150 s, hero share 20–30 %, solo < 5 %), tune strength; update `tests/balance/chain.test.ts` to walk the map.
 7. **Gate:** campaign playable start to finish, balance targets hold.
+
+## 5f decisions (Marcel, 2026-11-15)
+
+- **Hero damage share target = 35–50 %** (instead of PLAN's 20–30 %): the hero stays the star.
+- **Ranged-hero fragility: hero health bonus** over a same-class companion.
+- **"Keep as is"**: Marcel noticed the hero feels weaker (enemies have ~2× the health after the strength tuning; the hero's own damage was not lowered). Offered: shift strength toward enemy damage instead of health, or raise hero damage; he chose to keep it.
+
+## 5f as built (first half)
+
+- Squad numbers in `src/data/encounters.ts`: `HERO_HP` (Warrior 1.3, others 2), `HERO_POWER` (Warrior 1, Archer 1.8, Healer 2.2, Mage 1.6; made without asking, in line with "the hero should deal more damage": health alone did not lift the ranged heroes, their squads stalled for lack of damage), `COMPANION_POWER` 1.6 (enemies keep `SQUAD_SCALE.armyPower` 1.2). `playerSlotStats` takes a `PlayableClassId`.
+- Encounters: all strengths tuned (1.75 … 5.65); Raiders is 3 vs 4 (second warrior; the hero soloed 3 vs 3); Ambush and Burning Field swap one mage for an archer (the lone hero dodged mage fire too easily). Made without asking.
+- Fixtures pinned so they stop moving with the campaign: `STAGE2_STRENGTH` 1.6 for `squadSetup`; `prepMatters` plays Skirmish at level 1 / strength 1.9, Shield Wall at level 2 / 1.8.
+- Suite: `tests/balance/walk.ts` (`snapshots(hero, walk)` = the game right before each battle when the map is walked in order, every node won once, camps alternate offers, seeded level-up picks, rarest loot equipped; `nextNode`, `settle`, `visitCamp`). `campaign.test.ts` = PLAN 13 report (`REPORT=1 [RUNS] [WALKS] [HEROES] [ONLY] [STRS=id=x,…] [SCALE]`): win per hero class and overall vs band, length, share, solo, timeouts (`!` = off target). `tune.test.ts` = bisects each strength toward the band middle (`ONLY=` to split across processes; ~6 min per third). `chain.test.ts` now walks the map with the bot (5 tries per battle, failed elites skipped).
+- Headless battles stop at 240 s and count as lost; the game has no limit. Shield Wall, Fen Witch, Bone Legion, Bone King stall 30–48 % (mostly Healer heroes and shaman-heavy bands), so they play easier for a human than the table says.
+
+Report at 40 runs per class (`REPORT=1 RUNS=40`), overall win in band everywhere:
+
+| encounter | Warr | Arch | Heal | Mage | all | s | share | solo |
+|---|---|---|---|---|---|---|---|---|
+| raiders | 53 | 93 | 95 | 85 | 81 | 54 | 88 | 8 |
+| farmstead | 48 | 100 | 75 | 90 | 78 | 82 | 76 | 0 |
+| archerLine | 93 | 85 | 90 | 78 | 86 | 39 | 79 | 0 |
+| shieldWall (E) | 50 | 60 | 20 | 68 | 49 | 184 | 64 | – |
+| ironWarlord (B) | 63 | 13 | 57 | 40 | 43 | 104 | 60 | – |
+| skirmish | 88 | 78 | 93 | 90 | 87 | 67 | 61 | 0 |
+| berserkerRush | 98 | 90 | 60 | 63 | 78 | 39 | 55 | 0 |
+| shamansGrove | 70 | 100 | 55 | 100 | 81 | 130 | 45 | 0 |
+| wolfPack (E) | 80 | 28 | 35 | 63 | 51 | 119 | 56 | – |
+| fenWitch (B) | 40 | 75 | 15 | 45 | 44 | 165 | 62 | – |
+| ambush | 100 | 90 | 88 | 55 | 83 | 53 | 57 | 13 |
+| burningField | 100 | 53 | 88 | 68 | 77 | 61 | 54 | 15 |
+| graveWatch | 78 | 73 | 100 | 80 | 83 | 41 | 52 | 0 |
+| ironColumn | 100 | 43 | 100 | 80 | 81 | 56 | 46 | 0 |
+| boneLegion (E) | 93 | 60 | 43 | 63 | 64 | 159 | 51 | – |
+| warband (E) | 83 | 45 | 60 | 50 | 59 | 91 | 56 | – |
+| cryptRoad | 70 | 95 | 53 | 85 | 76 | 102 | 49 | 8 |
+| boneKing (B) | 60 | 45 | 40 | 53 | 49 | 169 | 70 | – |
+
+**Still open (next session):**
+1. **Class spread** (PLAN: no composition > 15 points above average) is far off: the Warrior hero is weakest at the start (Raiders / Farmstead ~50 %) and strongest late; the Archer hero falls behind on armour and bosses (Iron Warlord 13 %, Wolf Pack 28 %); the Healer hero on Shield Wall / Fen Witch. A per-class constant cannot fix both ends; look at how upgrades and items scale per class, and at the Archer vs armour.
+2. **Map walk** (`chain.test.ts`, 6 runs): finishes 1–2 / 6 per hero class; stuck mostly at Iron Warlord (Archer, Mage) and at early battles (Warrior). Comes from 1.
+3. Hero share 76–88 % in the first three battles (squad of three with a healer; drops to 45–60 % later). Solo ≥ 5 % on Raiders 8, Ambush 13, Burning Field 15, Crypt Road 8. Several standard battles under 45 s (Archer Line, Berserker Rush, Grave Watch).
 
 ## 5e decisions (Marcel, 2026-11-14)
 

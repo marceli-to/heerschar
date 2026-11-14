@@ -7,8 +7,11 @@ import { playHeadless } from '../../src/sim/headless';
 /** Stage 3 "done when": composition and formation visibly change how a given battle goes. */
 const RUNS = 20;
 
-/** The battles at the levels they had in Stage 3 (the campaign places them later), for a level 1 squad. */
-const STAGE3_LEVEL: Partial<Record<EncounterId, number>> = { skirmish: 1, shieldWall: 2 };
+/**
+ * The battles at the levels they had in Stage 3 (the campaign places them later), for a level 1
+ * squad, at strengths where the base squad wins most of the time (pinned: the campaign strengths move).
+ */
+const STAGE3: Partial<Record<EncounterId, { level: number; strength: number }>> = { skirmish: { level: 1, strength: 1.9 }, shieldWall: { level: 2, strength: 1.8 } };
 
 function play(encounter: EncounterId, change: (s: SquadState) => void): { winRate: number; seconds: number } {
   let wins = 0;
@@ -16,7 +19,7 @@ function play(encounter: EncounterId, change: (s: SquadState) => void): { winRat
   for (let seed = 1; seed <= RUNS; seed++) {
     const s = newSquad('krieger', 'Hero', SANDBOX_COMPANIONS);
     change(s);
-    const r = playHeadless(battleSetupFor(s, { ...encounterById(encounter), level: STAGE3_LEVEL[encounter] ?? 1 }, seed));
+    const r = playHeadless(battleSetupFor(s, { ...encounterById(encounter), ...STAGE3[encounter] }, seed));
     if (r.outcome === 'won') wins++;
     seconds += r.seconds;
   }

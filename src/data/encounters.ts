@@ -3,7 +3,7 @@ import type { LootTier } from './items';
 import { statsAtLevel } from './progression';
 import { formationSetup, type BattleSetup, type FormationSlot } from '../sim/battle';
 import { SUMMONS } from '../sim/balance';
-import type { ClassId, Stats } from '../sim/types';
+import type { ClassId, PlayableClassId, Stats } from '../sim/types';
 
 /**
  * Squad battles are tougher than the bare class lines (approved by Marcel in 2f): everyone has
@@ -12,8 +12,31 @@ import type { ClassId, Stats } from '../sim/types';
  */
 export const SQUAD_SCALE = { hp: 1.5, armyPower: 1.2 } as const;
 
-function heroStats(s: Stats): Stats {
-  return { ...s, maxHp: s.maxHp * SQUAD_SCALE.hp };
+/**
+ * Stage 5 balance (Marcel, 5f): the hero carries extra health over a companion of the same class,
+ * most for the frail ranged classes (enemy archers focus the weakest foe, and the hero falling
+ * loses the battle), so all four hero classes land in the same win band.
+ */
+export const HERO_HP: Record<PlayableClassId, number> = { krieger: 1.3, bogenschuetze: 2, heiler: 2, magier: 2 };
+
+/**
+ * Companions hit (and heal) harder than enemies of their class, so the hero's damage share sits
+ * at 35–50 % (Marcel, 5f) and the hero cannot carry a late battle alone.
+ */
+export const COMPANION_POWER = 1.6;
+
+/**
+ * The hero's damage (and healing) over a companion of the same class (Marcel, 5f: the hero should
+ * deal more damage). The Warrior's chain already carries; the others need it to win in the same band.
+ */
+export const HERO_POWER: Record<PlayableClassId, number> = { krieger: 1, bogenschuetze: 1.8, heiler: 2.2, magier: 1.6 };
+
+function heroStats(s: Stats, classId: PlayableClassId): Stats {
+  return { ...s, maxHp: s.maxHp * SQUAD_SCALE.hp * HERO_HP[classId], power: s.power * HERO_POWER[classId] };
+}
+
+function companionStats(s: Stats): Stats {
+  return { ...s, maxHp: s.maxHp * SQUAD_SCALE.hp, power: s.power * COMPANION_POWER };
 }
 
 function armyStats(s: Stats): Stats {
@@ -64,7 +87,7 @@ const E = (classId: ClassId, col: 0 | 1 | 2, row: 0 | 1): EncounterUnit => ({ cl
 /**
  * Every battle of the campaign, region by region (where each sits: `NODES` in `campaign.ts`).
  * Each asks something different of the squad:
- * - raiders: three to open with, for a squad of three.
+ * - raiders: four to open with, for a squad of three.
  * - farmstead: a small band with a shaman; the first mark.
  * - archerLine: a thin front and a lot of ranged damage behind; close the gap or out-heal it.
  * - shieldWall (elite): armoured front with shamans behind; physical damage bounces off, bring magic.
@@ -72,8 +95,8 @@ const E = (classId: ClassId, col: 0 | 1 | 2, row: 0 | 1): EncounterUnit => ({ cl
  * - berserkerRush: fast frail divers that go for healers and the back row; guard them.
  * - shamansGrove: three shamans keep two shieldbearers standing; kill the shamans first.
  * - wolfPack (elite): four berserkers with a shaman; protect the healer.
- * - ambush: berserkers and mages; the back row gets jumped while fire falls.
- * - burningField: three mages behind a warrior wall; spread out.
+ * - ambush: berserkers, a mage and an archer; the back row gets jumped while fire falls.
+ * - burningField: two mages and an archer behind a warrior wall; spread out.
  * - graveWatch: shieldbearers and archers holding a hill.
  * - ironColumn: six heavy and steady, a long fight.
  * - boneLegion (elite): a double wall of steel with a shaman in the middle.
@@ -84,29 +107,30 @@ const E = (classId: ClassId, col: 0 | 1 | 2, row: 0 | 1): EncounterUnit => ({ cl
  *   shamans and calls wolves and shamans; the Bone King leads a warrior line and raises the fallen.
  * Level follows the squad level expected there (~6 at the first boss, ~12 at the second, ~18 at
  * the last). Experience pools = per-character targets × the expected fielded count (3 at the
- * start, 6 from the end of the Greenmarch), checked by the campaign walk test; strength is tuned in 5f.
+ * start, 6 from the end of the Greenmarch), checked by the campaign walk test. Strength tuned in 5f
+ * with `tests/balance/tune.test.ts` (bot win rate toward the middle of the PLAN band).
  */
 export const ENCOUNTERS: readonly Encounter[] = [
-  { id: 'raiders', level: 1, strength: 1.2, xp: 540, loot: 'normal', enemies: [E('berserker', 0, 0), E('krieger', 1, 0), E('bogenschuetze', 1, 1)] },
-  { id: 'farmstead', level: 2, strength: 1.2, xp: 880, loot: 'normal', enemies: [E('krieger', 0, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 2, 1)] },
-  { id: 'archerLine', level: 3, strength: 1.3, xp: 1000, loot: 'normal', enemies: [E('krieger', 0, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('magier', 1, 1), E('bogenschuetze', 2, 1)] },
-  { id: 'shieldWall', level: 5, strength: 1.8, xp: 1500, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 1, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
-  { id: 'ironWarlord', level: 6, strength: 1.8, xp: 2700, loot: 'boss', enemies: [E('krieger', 0, 0), E('kriegsherr', 1, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'raiders', level: 1, strength: 1.95, xp: 540, loot: 'normal', enemies: [E('berserker', 0, 0), E('krieger', 1, 0), E('krieger', 2, 0), E('bogenschuetze', 1, 1)] },
+  { id: 'farmstead', level: 2, strength: 2.1, xp: 880, loot: 'normal', enemies: [E('krieger', 0, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 2, 1)] },
+  { id: 'archerLine', level: 3, strength: 1.75, xp: 1000, loot: 'normal', enemies: [E('krieger', 0, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('magier', 1, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'shieldWall', level: 5, strength: 3.1, xp: 1500, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 1, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
+  { id: 'ironWarlord', level: 6, strength: 1.75, xp: 2700, loot: 'boss', enemies: [E('krieger', 0, 0), E('kriegsherr', 1, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 2, 1)] },
 
-  { id: 'skirmish', level: 7, strength: 1.5, xp: 2700, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
-  { id: 'berserkerRush', level: 8, strength: 1.5, xp: 2800, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 2, 1)] },
-  { id: 'shamansGrove', level: 9, strength: 1.8, xp: 2900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 1, 1), E('schamane', 2, 1)] },
-  { id: 'wolfPack', level: 11, strength: 2.1, xp: 3300, loot: 'elite', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('berserker', 0, 1), E('schamane', 2, 1)] },
-  { id: 'fenWitch', level: 12, strength: 2.1, xp: 3300, loot: 'boss', enemies: [E('berserker', 0, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('sumpfhexe', 1, 1), E('schamane', 2, 1)] },
+  { id: 'skirmish', level: 7, strength: 2.45, xp: 2700, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
+  { id: 'berserkerRush', level: 8, strength: 3.35, xp: 2800, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'shamansGrove', level: 9, strength: 3.35, xp: 2900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 1, 1), E('schamane', 2, 1)] },
+  { id: 'wolfPack', level: 11, strength: 4.45, xp: 3300, loot: 'elite', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('berserker', 0, 1), E('schamane', 2, 1)] },
+  { id: 'fenWitch', level: 12, strength: 3.3, xp: 3300, loot: 'boss', enemies: [E('berserker', 0, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('sumpfhexe', 1, 1), E('schamane', 2, 1)] },
 
-  { id: 'ambush', level: 13, strength: 1.7, xp: 2700, loot: 'normal', enemies: [E('berserker', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('magier', 0, 1), E('magier', 2, 1)] },
-  { id: 'burningField', level: 14, strength: 1.9, xp: 2800, loot: 'normal', enemies: [E('krieger', 0, 0), E('schildtraeger', 1, 0), E('krieger', 2, 0), E('magier', 0, 1), E('magier', 1, 1), E('magier', 2, 1)] },
-  { id: 'graveWatch', level: 14, strength: 1.9, xp: 2800, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 1, 1), E('bogenschuetze', 2, 1)] },
-  { id: 'ironColumn', level: 15, strength: 2.0, xp: 2900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('schildtraeger', 2, 0), E('bogenschuetze', 0, 1), E('krieger', 1, 1), E('bogenschuetze', 2, 1)] },
-  { id: 'boneLegion', level: 16, strength: 2.2, xp: 3300, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('schildtraeger', 2, 0), E('krieger', 0, 1), E('schamane', 1, 1), E('krieger', 2, 1)] },
-  { id: 'cryptRoad', level: 17, strength: 2.1, xp: 2900, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
-  { id: 'warband', level: 17, strength: 2.3, xp: 3400, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
-  { id: 'boneKing', level: 18, strength: 2.3, xp: 0, loot: 'boss', enemies: [E('krieger', 0, 0), E('knochenkoenig', 1, 0), E('krieger', 2, 0), E('magier', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
+  { id: 'ambush', level: 13, strength: 3.9, xp: 2700, loot: 'normal', enemies: [E('berserker', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('magier', 0, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'burningField', level: 14, strength: 3.1, xp: 2800, loot: 'normal', enemies: [E('krieger', 0, 0), E('schildtraeger', 1, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('magier', 1, 1), E('magier', 2, 1)] },
+  { id: 'graveWatch', level: 14, strength: 3.1, xp: 2800, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 1, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'ironColumn', level: 15, strength: 3.65, xp: 2900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('schildtraeger', 2, 0), E('bogenschuetze', 0, 1), E('krieger', 1, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'boneLegion', level: 16, strength: 5.65, xp: 3300, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('schildtraeger', 2, 0), E('krieger', 0, 1), E('schamane', 1, 1), E('krieger', 2, 1)] },
+  { id: 'cryptRoad', level: 17, strength: 4.25, xp: 2900, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
+  { id: 'warband', level: 17, strength: 4, xp: 3400, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
+  { id: 'boneKing', level: 18, strength: 3.15, xp: 0, loot: 'boss', enemies: [E('krieger', 0, 0), E('knochenkoenig', 1, 0), E('krieger', 2, 0), E('magier', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
 ];
 
 export function encounterById(id: EncounterId): Encounter {
@@ -145,15 +169,18 @@ export function enemyReserves(encounter: Encounter): Partial<Record<ClassId, Sta
 }
 
 /** Player slot stats: the hero keeps its own damage, companions get the army scaling. */
-export function playerSlotStats(classId: ClassId, isHero: boolean): Stats {
-  return isHero ? heroStats(CLASS_STATS[classId]) : armyStats(CLASS_STATS[classId]);
+export function playerSlotStats(classId: PlayableClassId, isHero: boolean): Stats {
+  return isHero ? heroStats(CLASS_STATS[classId], classId) : companionStats(CLASS_STATS[classId]);
 }
+
+/** The Stage 2 battle's enemy strength, raised in 5f to match the stronger hero and companions. */
+export const STAGE2_STRENGTH = 1.6;
 
 /**
  * Stage 2 squad battle (kept for tests and the bare game): the hero and four companions
- * (Krieger front, Bogenschuetze, Heiler, Magier behind) against the skirmish band at Stage 2 strength.
+ * (Krieger front, Bogenschuetze, Heiler, Magier behind) against the skirmish band at level 1 (`STAGE2_STRENGTH`).
  */
-export function squadSetup(seed: number, heroClass: ClassId = 'krieger'): BattleSetup {
+export function squadSetup(seed: number, heroClass: PlayableClassId = 'krieger'): BattleSetup {
   return formationSetup(
     seed,
     [
@@ -163,6 +190,6 @@ export function squadSetup(seed: number, heroClass: ClassId = 'krieger'): Battle
       { classId: 'heiler', col: 1, row: 1, stats: playerSlotStats('heiler', false) },
       { classId: 'magier', col: 2, row: 1, stats: playerSlotStats('magier', false) },
     ],
-    enemySlots(encounterById('skirmish'), 1, 1),
+    enemySlots(encounterById('skirmish'), STAGE2_STRENGTH, 1),
   );
 }
