@@ -98,6 +98,10 @@ export const STRINGS = {
   /** Stage 3 screens. Draft copy (button labels, headings), not yet approved by Marcel. */
   prep: {
     newGame: 'New Game',
+    /** Title with a save (approved 4). */
+    continue: 'Continue',
+    abandon: 'Abandon your current company?',
+    confirm: 'Confirm',
     chooseHero: 'Choose your hero',
     name: 'Name',
     choose: 'Take the field',

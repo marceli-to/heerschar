@@ -1,10 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { STRINGS } from '../../data/strings';
 import WarTable from './WarTable.vue';
 import WaxSeal from './WaxSeal.vue';
 
-/** Title (approved 3b): the name in gold on a hanging parchment banner, a wax seal, New Game. */
-const emit = defineEmits<{ newGame: [] }>();
+/**
+ * Title (approved 3b): the name in gold on a hanging parchment banner, a wax seal, New Game.
+ * With a save (approved 4): Continue above New Game; New Game asks before abandoning the save.
+ */
+const props = defineProps<{ hasSave: boolean }>();
+const emit = defineEmits<{ continue: []; newGame: [] }>();
+const confirming = ref(false);
+
+function newGame(): void {
+  if (props.hasSave) confirming.value = true;
+  else emit('newGame');
+}
 </script>
 
 <template>
@@ -20,7 +31,17 @@ const emit = defineEmits<{ newGame: [] }>();
         <div class="rule mt-6 w-2/3" />
       </div>
       <WaxSeal class="-mt-16" :size="96" />
-      <button class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="emit('newGame')">{{ STRINGS.prep.newGame }}</button>
+      <button v-if="hasSave" class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="emit('continue')">{{ STRINGS.prep.continue }}</button>
+      <button v-if="hasSave" class="btn-gold mt-4 rounded-sm px-8 py-2.5 text-sm" @click="newGame">{{ STRINGS.prep.newGame }}</button>
+      <button v-else class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="newGame">{{ STRINGS.prep.newGame }}</button>
+    </div>
+    <div v-if="confirming" class="fixed inset-0 z-20 flex items-center justify-center bg-black/55" @click.self="confirming = false">
+      <div class="parchment flex w-[min(420px,86vw)] flex-col items-center rounded-sm px-10 py-8 text-center">
+        <p class="font-display text-lg">{{ STRINGS.prep.abandon }}</p>
+        <div class="rule mt-4 w-2/3" />
+        <button class="btn-gold mt-6 rounded-sm px-8 py-2.5 text-sm" @click="emit('newGame')">{{ STRINGS.prep.confirm }}</button>
+        <button class="mt-4 font-display text-xs tracking-[0.15em] text-ink-soft underline-offset-4 hover:underline" @click="confirming = false">{{ STRINGS.prep.back }}</button>
+      </div>
     </div>
   </WarTable>
 </template>

@@ -8,7 +8,7 @@ import Overlays from './Overlays.vue';
 
 /** One battle: mounts a Game on its own canvas and disposes it when the battle is left. */
 const props = defineProps<{ spec: BattleSpec; seed: number; zoom?: number; debug: boolean; peaceful: boolean; bot: boolean; canLeave: boolean }>();
-const emit = defineEmits<{ won: []; leave: []; changeSquad: [] }>();
+const emit = defineEmits<{ ended: [won: boolean]; leave: []; changeSquad: [] }>();
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const game = shallowRef<Game | null>(null);
@@ -26,7 +26,7 @@ onMounted(() => {
   watch(
     () => g.hud.outcome,
     (o) => {
-      if (o === 'won') emit('won');
+      if (o !== 'running') emit('ended', o === 'won');
     },
   );
 });

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ENCOUNTERS, type EncounterId } from '../data/encounters';
-import { newSquad } from '../data/roster';
 import { STRINGS } from '../data/strings';
 import { encounterSpec, trialSpec } from '../game/specs';
 import { heroOfSquad } from '../meta/squad';
@@ -12,7 +11,7 @@ import FormationScreen from './screens/FormationScreen.vue';
 import OrdersScreen from './screens/OrdersScreen.vue';
 import SquadScreen from './screens/SquadScreen.vue';
 import TitleScreen from './screens/TitleScreen.vue';
-import { goTo, markWon, prepare, session, startBattle } from './session';
+import { battleEnded, continueGame, goTo, prepare, session, startBattle, startDevGame, startNewGame } from './session';
 
 const HERO_CLASSES: readonly PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
 
@@ -31,12 +30,12 @@ const fixedSeed = Number(params.get('seed')) || null;
 // Dev shortcut: any battle parameter skips the screens and goes straight into a battle.
 if (trial || flags.bot || heroParam || battleParam || flags.peaceful) {
   const heroClass = heroParam ?? 'krieger';
-  session.squad = newSquad(heroClass, STRINGS.heroNames[heroClass]);
+  startDevGame(heroClass, STRINGS.heroNames[heroClass]);
   startBattle(battleParam ?? 'skirmish');
 }
 
 const spec = computed(() => {
-  const squad = session.squad;
+  const squad = session.game?.squad;
   if (!squad) return null;
   if (trial) {
     const hero = heroOfSquad(squad);
@@ -48,14 +47,8 @@ const spec = computed(() => {
 /** `?seed=` fixes the first battle's seed; otherwise every battle gets a fresh one. */
 const seed = computed(() => (fixedSeed !== null && session.battleRun <= 1 ? fixedSeed : (Date.now() + session.battleRun * 7919) >>> 0));
 
-function chooseHero(heroClass: PlayableClassId, name: string): void {
-  session.squad = newSquad(heroClass, name);
-  session.won = [];
-  goTo('orders');
-}
-
-function won(): void {
-  if (!trial) markWon(session.encounterId);
+function ended(won: boolean): void {
+  if (!trial) battleEnded(won);
 }
 
 function fight(id: EncounterId): void {
@@ -65,19 +58,19 @@ function fight(id: EncounterId): void {
 
 <template>
   <div class="fixed inset-0 overflow-hidden bg-black select-none">
-    <TitleScreen v-if="session.screen === 'title'" @new-game="goTo('classSelect')" />
-    <ClassSelect v-else-if="session.screen === 'classSelect'" @choose="chooseHero" @back="goTo('title')" />
-    <OrdersScreen v-else-if="session.screen === 'orders'" :won="session.won" @fight="fight" @back="goTo('classSelect')" />
+    <TitleScreen v-if="session.screen === 'title'" :has-save="session.hasSave" @continue="continueGame" @new-game="goTo('classSelect')" />
+    <ClassSelect v-else-if="session.screen === 'classSelect'" @choose="startNewGame" @back="goTo('title')" />
+    <OrdersScreen v-else-if="session.screen === 'orders' && session.game" :won="session.game.won" @fight="fight" @back="goTo('title')" />
     <SquadScreen
-      v-else-if="session.screen === 'squad' && session.squad"
-      :squad="session.squad"
+      v-else-if="session.screen === 'squad' && session.game"
+      :squad="session.game.squad"
       :encounter-id="session.encounterId"
       @next="goTo('formation')"
       @back="goTo('orders')"
     />
     <FormationScreen
-      v-else-if="session.screen === 'formation' && session.squad"
-      :squad="session.squad"
+      v-else-if="session.screen === 'formation' && session.game"
+      :squad="session.game.squad"
       :encounter-id="session.encounterId"
       @next="startBattle(session.encounterId)"
       @back="goTo('squad')"
@@ -89,7 +82,7 @@ function fight(id: EncounterId): void {
       :seed="seed"
       v-bind="flags"
       :can-leave="!trial"
-      @won="won"
+      @ended="ended"
       @leave="goTo('orders')"
       @change-squad="prepare(session.encounterId)"
     />
