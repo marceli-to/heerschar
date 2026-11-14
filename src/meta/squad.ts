@@ -40,6 +40,8 @@ export interface SquadState {
 
 /** The hero plus up to five companions take the field. */
 export const MAX_FIELDED = 6;
+/** The roster holds the fielded six and up to three on the bench (PLAN section 9). */
+export const ROSTER_LIMIT = MAX_FIELDED + 3;
 export const HERO_ID = 1;
 
 /** Melee classes prefer the front row, everyone else the back. */

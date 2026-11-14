@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_STATS } from '../../src/data/classes';
-import { ENCOUNTERS, encounterById, playerSlotStats } from '../../src/data/encounters';
+import { encounterById, playerSlotStats } from '../../src/data/encounters';
+import { SANDBOX_COMPANIONS, newSquad } from '../../src/data/roster';
 import { ITEMS, itemById } from '../../src/data/items';
 import { LEVEL_CAP, PATH_LEVEL, statsAtLevel, xpToNext } from '../../src/data/progression';
 import { PATHS, UPGRADES, pathsOf, upgradeById } from '../../src/data/upgrades';
-import { characterOf, choose, currentChoice, equip, fittingItems, isUnlocked, newGame, recordBattle, rollLoot, takeLoot, unequip, type GameState } from '../../src/meta/game';
+import { characterOf, choose, currentChoice, equip, fittingItems, newGame, recordBattle, rollLoot, takeLoot, unequip, type GameState } from '../../src/meta/game';
 import { addXp, availableUpgrades, characterMods, characterStats, rollUpgradeOptions, statsWithItem, takePath, takeUpgrade } from '../../src/meta/progression';
 import { battleSetupFor, HERO_ID, setFielded } from '../../src/meta/squad';
 import { createBattle } from '../../src/sim/battle';
@@ -12,8 +13,11 @@ import { NEUTRAL_MODS, type PlayableClassId } from '../../src/sim/types';
 
 const CLASSES: PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
 
+/** A game with the full sandbox roster (five fielded, two benched). */
 function game(seed = 7): GameState {
-  return newGame('krieger', 'Hero', seed);
+  const s = newGame('krieger', 'Hero', seed);
+  s.squad = newSquad('krieger', 'Hero', SANDBOX_COMPANIONS);
+  return s;
 }
 
 /** Settles every pending choice with its first option and takes the first item. */
@@ -148,7 +152,7 @@ describe('rewards', () => {
     hero.level = 3;
     hero.xp = xpToNext(3) + xpToNext(4) - 50;
     s.rewards = null;
-    recordBattle(s, 'skirmish', true);
+    recordBattle(s, 'raiders', true);
     const choices = s.rewards!.choices.filter((c) => c.characterId === HERO_ID);
     expect(choices.map((c) => c.level)).toEqual([4, PATH_LEVEL]);
     expect(choices[1]!.kind).toBe('path');
@@ -161,15 +165,6 @@ describe('rewards', () => {
     expect(hero.upgrades).toHaveLength(1);
     expect(s.rewards).toBeNull();
     expect(s.inventory).toHaveLength(1);
-  });
-
-  it('battles unlock in order', () => {
-    const s = game();
-    expect(isUnlocked(s, ENCOUNTERS[0]!.id)).toBe(true);
-    expect(isUnlocked(s, ENCOUNTERS[1]!.id)).toBe(false);
-    recordBattle(s, ENCOUNTERS[0]!.id, true);
-    expect(isUnlocked(s, ENCOUNTERS[1]!.id)).toBe(true);
-    expect(isUnlocked(s, ENCOUNTERS[2]!.id)).toBe(false);
   });
 });
 

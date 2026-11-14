@@ -4,7 +4,7 @@
  */
 import { it } from 'vitest';
 import { ENCOUNTERS } from '../../src/data/encounters';
-import { newSquad } from '../../src/data/roster';
+import { SANDBOX_COMPANIONS, newSquad } from '../../src/data/roster';
 import { battleSetupFor, HERO_ID, placeCharacter, setFielded, type SquadState } from '../../src/meta/squad';
 import { playHeadless } from '../../src/sim/headless';
 
@@ -28,7 +28,7 @@ it.skipIf(!process.env.REPORT)('prep experiment', () => {
   for (const enc of ENCOUNTERS) for (const [name, f] of variants) {
     let wins = 0, secs = 0, deaths = 0;
     for (let seed = 1; seed <= RUNS; seed++) {
-      const s = newSquad('krieger', 'H'); f(s);
+      const s = newSquad('krieger', 'H', SANDBOX_COMPANIONS); f(s);
       const r = playHeadless(battleSetupFor(s, enc, seed));
       if (r.outcome === 'won') wins++;
       secs += r.seconds;

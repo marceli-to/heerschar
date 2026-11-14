@@ -1,5 +1,6 @@
 import { reactive, toRaw, watch } from 'vue';
 import type { EncounterId } from '../data/encounters';
+import { SANDBOX_COMPANIONS, newSquad } from '../data/roster';
 import { newGame, recordBattle, type GameState } from '../meta/game';
 import { clearSave, loadGame, saveGame, type SaveStorage } from '../meta/save';
 import type { PlayableClassId } from '../sim/types';
@@ -81,10 +82,11 @@ export function continueGame(): void {
   if (g.rewards) openSpoils('orders');
 }
 
-/** Dev shortcuts (`?bot`, `?hero=` …): a game that is never saved. */
+/** Dev shortcuts (`?bot`, `?hero=` …): a game that is never saved, with the full sandbox roster. */
 export function startDevGame(heroClass: PlayableClassId, heroName: string): void {
   session.persist = false;
   session.game = newGame(heroClass, heroName, 1);
+  session.game.squad = newSquad(heroClass, heroName, SANDBOX_COMPANIONS);
 }
 
 /** Opens the preparation steps (squad, then formation) for a battle from the orders. */

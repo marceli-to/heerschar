@@ -1,19 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { encounterById, type EncounterId } from '../../src/data/encounters';
-import { newSquad } from '../../src/data/roster';
+import { SANDBOX_COMPANIONS, newSquad } from '../../src/data/roster';
 import { battleSetupFor, HERO_ID, placeCharacter, setFielded, type SquadState } from '../../src/meta/squad';
 import { playHeadless } from '../../src/sim/headless';
 
 /** Stage 3 "done when": composition and formation visibly change how a given battle goes. */
 const RUNS = 20;
 
+/** The battles at the levels they had in Stage 3 (the campaign places them later), for a level 1 squad. */
+const STAGE3_LEVEL: Partial<Record<EncounterId, number>> = { skirmish: 1, shieldWall: 2 };
+
 function play(encounter: EncounterId, change: (s: SquadState) => void): { winRate: number; seconds: number } {
   let wins = 0;
   let seconds = 0;
   for (let seed = 1; seed <= RUNS; seed++) {
-    const s = newSquad('krieger', 'Hero');
+    const s = newSquad('krieger', 'Hero', SANDBOX_COMPANIONS);
     change(s);
-    const r = playHeadless(battleSetupFor(s, encounterById(encounter), seed));
+    const r = playHeadless(battleSetupFor(s, { ...encounterById(encounter), level: STAGE3_LEVEL[encounter] ?? 1 }, seed));
     if (r.outcome === 'won') wins++;
     seconds += r.seconds;
   }

@@ -1,12 +1,13 @@
-import { ENCOUNTERS, encounterById, type EncounterId } from '../data/encounters';
+import { FINAL_BOSS, NODES, REGIONS, nodeById, regionBoss, regionStart, type CampId, type CampaignNode, type RegionId } from '../data/campaign';
+import { encounterById, type EncounterId } from '../data/encounters';
 import { ITEMS, LOOT_ODDS, itemById, type ItemSlot, type LootTier, type Rarity } from '../data/items';
-import { BENCH_SHARE, OFFER_SIZE } from '../data/progression';
-import { newSquad } from '../data/roster';
+import { BENCH_SHARE, OFFER_SIZE, PATH_LEVEL } from '../data/progression';
+import { RECRUIT_NAMES, newCharacter, newSquad } from '../data/roster';
 import type { PathId } from '../data/upgrades';
 import { int, nextFloat, seedState, type RngHolder } from '../sim/rng';
 import type { PlayableClassId } from '../sim/types';
 import { addXp, canEquip, isPathLevel, pathOptions, rollUpgradeOptions, takePath, takeUpgrade } from './progression';
-import { isFielded, type Character, type SquadState } from './squad';
+import { ROSTER_LIMIT, isFielded, setFielded, type Character, type SquadState } from './squad';
 
 /** One character's experience from a battle, for the spoils page. */
 export interface XpGain {
@@ -35,6 +36,13 @@ export interface Rewards {
   loot: string[] | null;
 }
 
+/** A camp once the player has looked in: the two recruits on offer, and whether it is done. */
+export interface CampState {
+  offers: Character[];
+  /** Someone joined (or the player moved on); the camp then opens the roads behind it. */
+  done: boolean;
+}
+
 /** Everything that persists between battles (PLAN section 4). */
 export interface GameState {
   version: number;
@@ -46,15 +54,17 @@ export interface GameState {
   /** Encounters won at least once, in the order first won. */
   won: EncounterId[];
   rewards: Rewards | null;
+  /** Camps visited, with their offers (drawn once, kept so a reload shows the same two). */
+  camps: Partial<Record<CampId, CampState>>;
   /** Battles fought and lost (for the ending summary). */
   battles: number;
   lost: number;
 }
 
-export const GAME_VERSION = 1;
+export const GAME_VERSION = 2;
 
 export function newGame(heroClass: PlayableClassId, heroName: string, seed: number): GameState {
-  return { version: GAME_VERSION, seed, rngState: seedState(seed), squad: newSquad(heroClass, heroName), inventory: [], won: [], rewards: null, battles: 0, lost: 0 };
+  return { version: GAME_VERSION, seed, rngState: seedState(seed), squad: newSquad(heroClass, heroName), inventory: [], won: [], rewards: null, camps: {}, battles: 0, lost: 0 };
 }
 
 export function characterOf(state: GameState, id: number): Character {
@@ -63,11 +73,112 @@ export function characterOf(state: GameState, id: number): Character {
   return c;
 }
 
-/** The battles are a chain: the first is open, each further one opens when the one before is won. */
+// ---------------------------------------------------------------------------------------------
+// The campaign map
+
+/** A battle node is done once won, a camp once someone joined (or the player moved on). */
+export function isNodeDone(state: GameState, node: CampaignNode): boolean {
+  return node.kind === 'camp' ? state.camps[node.id as CampId]?.done === true : state.won.includes(node.id as EncounterId);
+}
+
+/** The first region is open from the start, each further one once the boss before it falls. */
+export function isRegionOpen(state: GameState, region: RegionId): boolean {
+  const i = REGIONS.indexOf(region);
+  return i === 0 || (i > 0 && state.won.includes(regionBoss(REGIONS[i - 1]!).id as EncounterId));
+}
+
+/**
+ * A node can be entered when its region is open and it is the region's first node or a done
+ * node leads to it. Done nodes stay open (won battles can be replayed for nothing), so the player
+ * can go back and take the other roads too.
+ */
+export function isNodeOpen(state: GameState, id: string): boolean {
+  const node = nodeById(id);
+  if (!isRegionOpen(state, node.region)) return false;
+  if (regionStart(node.region).id === id) return true;
+  return NODES.some((p) => p.next.includes(node.id) && isNodeDone(state, p));
+}
+
+/** Kept for the screens that pick a battle: an encounter can be fought when its node is open. */
 export function isUnlocked(state: GameState, id: EncounterId): boolean {
-  const i = ENCOUNTERS.findIndex((e) => e.id === id);
-  if (i <= 0) return i === 0;
-  return state.won.includes(ENCOUNTERS[i - 1]!.id);
+  return isNodeOpen(state, id);
+}
+
+/** The last boss has fallen. */
+export function campaignWon(state: GameState): boolean {
+  return state.won.includes(FINAL_BOSS);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Camps
+
+const RECRUIT_CLASSES: readonly PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
+
+/** Recruits join at the roster's average level (rounded down), so they are useful at once. */
+export function recruitLevel(state: GameState): number {
+  const roster = state.squad.roster;
+  return Math.max(1, Math.floor(roster.reduce((sum, c) => sum + c.level, 0) / roster.length));
+}
+
+/**
+ * A recruit ready to join: a free name of its class and the roster level, with the path and the
+ * upgrades of the levels below drawn for them (so the player compares two finished characters).
+ */
+function drawRecruit(state: GameState, classId: PlayableClassId, taken: readonly string[], level: number): Character {
+  const pool = RECRUIT_NAMES[classId].filter((name) => !taken.includes(name));
+  const name = pool.length > 0 ? pool[int(state, pool.length)]! : `${RECRUIT_NAMES[classId][0]} ${taken.length + 1}`;
+  const c = newCharacter(0, name, classId);
+  for (let l = 2; l <= level; l++) {
+    c.level = l;
+    if (l === PATH_LEVEL) {
+      const paths = pathOptions(c);
+      takePath(c, paths[int(state, paths.length)]!);
+    } else {
+      const options = rollUpgradeOptions(state, c);
+      takeUpgrade(c, options[int(state, options.length)]!);
+    }
+  }
+  return c;
+}
+
+/** The camp's two recruits, of different classes. Drawn on the first look, then kept. */
+export function campOffers(state: GameState, campId: CampId): Character[] {
+  const existing = state.camps[campId];
+  if (existing) return existing.offers;
+  const classes = [...RECRUIT_CLASSES];
+  const level = recruitLevel(state);
+  const taken = state.squad.roster.map((c) => c.name);
+  const offers: Character[] = [];
+  for (let i = 0; i < 2; i++) {
+    const classId = classes.splice(int(state, classes.length), 1)[0]!;
+    const recruit = drawRecruit(state, classId, taken, level);
+    taken.push(recruit.name);
+    offers.push(recruit);
+  }
+  state.camps[campId] = { offers, done: false };
+  return offers;
+}
+
+/**
+ * One of the camp's two joins the roster (fielded when there is room) and the camp is done.
+ * Fails when the camp is done or the roster is full.
+ */
+export function recruit(state: GameState, campId: CampId, index: number): boolean {
+  const offers = campOffers(state, campId);
+  const camp = state.camps[campId]!;
+  const chosen = offers[index];
+  if (camp.done || !chosen || state.squad.roster.length >= ROSTER_LIMIT) return false;
+  const c: Character = { ...structuredClone(chosen), id: Math.max(...state.squad.roster.map((x) => x.id)) + 1 };
+  state.squad.roster.push(c);
+  setFielded(state.squad, c.id, true);
+  camp.done = true;
+  return true;
+}
+
+/** Leaves a camp without a recruit (e.g. with a full roster); its roads open all the same. */
+export function passCamp(state: GameState, campId: CampId): void {
+  campOffers(state, campId);
+  state.camps[campId]!.done = true;
 }
 
 // ---------------------------------------------------------------------------------------------

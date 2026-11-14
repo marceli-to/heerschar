@@ -1,9 +1,10 @@
+import { NODES } from '../data/campaign';
 import { ENCOUNTERS } from '../data/encounters';
 import { ITEMS } from '../data/items';
 import { LEVEL_CAP } from '../data/progression';
 import { PATHS, UPGRADES } from '../data/upgrades';
 import { GAME_VERSION, type GameState } from './game';
-import { MAX_FIELDED } from './squad';
+import { MAX_FIELDED, ROSTER_LIMIT } from './squad';
 
 /**
  * One save slot in `localStorage` (PLAN section 12). The save carries a `version`; older ones
@@ -20,7 +21,11 @@ export interface SaveStorage {
 }
 
 /** `MIGRATIONS[n]` turns a version n save into version n + 1. */
-const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {};
+const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  // 1 → 2 (Stage 5): the battle chain became the campaign map. Won battles keep their ids and
+  // open the map nodes after them; no camps visited yet.
+  1: (raw) => ({ ...raw, camps: {} }),
+};
 
 export function saveGame(storage: SaveStorage, state: GameState): void {
   storage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -70,6 +75,7 @@ const ITEM_IDS = new Set(ITEMS.map((i) => i.id));
 const UPGRADE_IDS = new Set(UPGRADES.map((u) => u.id));
 const PATH_IDS = new Set<string>(PATHS.map((p) => p.id));
 const ENCOUNTER_IDS = new Set<string>(ENCOUNTERS.map((e) => e.id));
+const CAMP_IDS = new Set<string>(NODES.filter((x) => x.kind === 'camp').map((x) => x.id));
 const CLASS_IDS = new Set(['krieger', 'bogenschuetze', 'heiler', 'magier']);
 
 function isValidCharacter(c: unknown): boolean {
@@ -102,7 +108,8 @@ function isValidGame(g: Record<string, unknown>): g is Record<string, unknown> &
   if (!Array.isArray(g.won) || !g.won.every((e) => ENCOUNTER_IDS.has(e as string))) return false;
   const squad = g.squad;
   if (!isRecord(squad) || !Array.isArray(squad.roster) || !Array.isArray(squad.fielded) || !isRecord(squad.formation)) return false;
-  if (!squad.roster.every(isValidCharacter)) return false;
+  if (squad.roster.length > ROSTER_LIMIT || !squad.roster.every(isValidCharacter)) return false;
+  if (!isRecord(g.camps) || !Object.entries(g.camps).every(([id, c]) => CAMP_IDS.has(id) && isValidCamp(c))) return false;
   const roster = squad.roster as { id: number; isHero: boolean }[];
   const ids = new Set(roster.map((c) => c.id));
   if (ids.size !== roster.length || roster.filter((c) => c.isHero).length !== 1) return false;
@@ -120,6 +127,10 @@ function isValidGame(g: Record<string, unknown>): g is Record<string, unknown> &
     taken.add(key);
   }
   return g.rewards === null || isValidRewards(g.rewards, ids);
+}
+
+function isValidCamp(c: unknown): boolean {
+  return isRecord(c) && typeof c.done === 'boolean' && Array.isArray(c.offers) && c.offers.every(isValidCharacter);
 }
 
 function isValidRewards(r: unknown, ids: Set<number>): boolean {

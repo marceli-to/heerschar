@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ENCOUNTERS, encounterById } from '../../src/data/encounters';
-import { newSquad } from '../../src/data/roster';
+import { SANDBOX_COMPANIONS, newSquad } from '../../src/data/roster';
 import { characterStats } from '../../src/meta/progression';
 import { battleSetupFor, canPlace, enemyViewCol, HERO_ID, swapIn, isFielded, MAX_FIELDED, occupantOf, placeCharacter, setFielded, slotKey } from '../../src/meta/squad';
 import { slotPosition } from '../../src/sim/battle';
 
 describe('squad rules', () => {
   it('a new squad fields the hero and five companions in distinct slots', () => {
-    const s = newSquad('krieger', 'Aldric');
+    const s = newSquad('krieger', 'Aldric', SANDBOX_COMPANIONS);
     expect(s.roster).toHaveLength(8);
     expect(s.fielded).toHaveLength(MAX_FIELDED);
     expect(s.fielded).toContain(HERO_ID);
@@ -21,14 +21,14 @@ describe('squad rules', () => {
   });
 
   it('never benches the hero and refuses a seventh fighter', () => {
-    const s = newSquad('magier', 'Aldric');
+    const s = newSquad('magier', 'Aldric', SANDBOX_COMPANIONS);
     expect(setFielded(s, HERO_ID, false)).toBe(false);
     const benched = s.roster.find((c) => !isFielded(s, c.id))!;
     expect(setFielded(s, benched.id, true)).toBe(false);
   });
 
   it('benching frees the slot, fielding takes a free one', () => {
-    const s = newSquad('krieger', 'Aldric');
+    const s = newSquad('krieger', 'Aldric', SANDBOX_COMPANIONS);
     const out = s.fielded.find((id) => id !== HERO_ID)!;
     const slot = s.formation[out]!;
     expect(setFielded(s, out, false)).toBe(true);
@@ -40,7 +40,7 @@ describe('squad rules', () => {
   });
 
   it('placing a fielded character swaps with the occupant', () => {
-    const s = newSquad('krieger', 'Aldric');
+    const s = newSquad('krieger', 'Aldric', SANDBOX_COMPANIONS);
     const [a, b] = s.fielded.filter((id) => id !== HERO_ID);
     const sa = s.formation[a!]!;
     const sb = s.formation[b!]!;
@@ -50,7 +50,7 @@ describe('squad rules', () => {
   });
 
   it('placing a benched character on a companion benches the companion, never the hero', () => {
-    const s = newSquad('krieger', 'Aldric');
+    const s = newSquad('krieger', 'Aldric', SANDBOX_COMPANIONS);
     const benched = s.roster.find((c) => !isFielded(s, c.id))!;
     expect(placeCharacter(s, benched.id, s.formation[HERO_ID]!)).toBe(false);
     const victim = s.fielded.find((id) => id !== HERO_ID)!;
@@ -61,7 +61,7 @@ describe('squad rules', () => {
   });
 
   it('builds a battle with the hero first and units on their slots', () => {
-    const s = newSquad('bogenschuetze', 'Aldric');
+    const s = newSquad('bogenschuetze', 'Aldric', SANDBOX_COMPANIONS);
     for (const enc of ENCOUNTERS) {
       const setup = battleSetupFor(s, enc, 1);
       expect(setup.units[0]!.isHero).toBe(true);
@@ -78,7 +78,7 @@ describe('squad rules', () => {
 describe('squad screen helpers', () => {
   it('swapIn benches the companion and gives its slot to the newcomer, never replacing the hero', () => {
 
-    const s = newSquad('krieger', 'Aldric');
+    const s = newSquad('krieger', 'Aldric', SANDBOX_COMPANIONS);
     const benched = s.roster.find((c) => !isFielded(s, c.id))!;
     const companion = s.fielded.find((id) => id !== HERO_ID)!;
     const slot = { ...s.formation[companion]! };
@@ -96,7 +96,7 @@ describe('squad screen helpers', () => {
 
 describe('formation screen helpers', () => {
   it('canPlace agrees with placeCharacter for every character and slot', () => {
-    const base = newSquad('krieger', 'Aldric');
+    const base = newSquad('krieger', 'Aldric', SANDBOX_COMPANIONS);
     setFielded(base, base.fielded.find((id) => id !== HERO_ID)!, false); // leave one slot empty
     for (const c of base.roster) {
       for (const row of [0, 1] as const) {

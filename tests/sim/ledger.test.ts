@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { encounterById } from '../../src/data/encounters';
-import { newSquad } from '../../src/data/roster';
+import { SANDBOX_COMPANIONS, newSquad } from '../../src/data/roster';
 import { battleSetupFor } from '../../src/meta/squad';
 import { playHeadless } from '../../src/sim/headless';
 import { ledgerEntry, tallyEvents, type Ledger } from '../../src/sim/ledger';
@@ -21,7 +21,7 @@ describe('battle ledger', () => {
   });
 
   it('matches a whole battle: player damage dealt equals enemy damage taken', () => {
-    const setup = battleSetupFor(newSquad('heiler', 'Hero'), encounterById('skirmish'), 3);
+    const setup = battleSetupFor(newSquad('heiler', 'Hero', SANDBOX_COMPANIONS), encounterById('skirmish'), 3);
     const r = playHeadless(setup);
     const ledger: Ledger = new Map();
     tallyEvents(ledger, r.events);

@@ -94,6 +94,21 @@ export const STRINGS = {
     ironColumn: { name: 'The Iron Column', intro: 'Six heavy soldiers march in good order. This will be a long fight.' },
     wolfPack: { name: 'The Wolf Pack', intro: 'Four berserkers and a shaman. They will go for your healer first.' },
     warband: { name: 'The Warband', intro: 'The enemy has gathered all it has. Win this and the road lies open.' },
+    // Stage 5 campaign: draft copy, not yet approved by Marcel (boss names approved).
+    raiders: { name: 'Raiders on the Road', intro: 'Three raiders block the road out of the village. A first test for a small company.' },
+    farmstead: { name: 'The Burning Farmstead', intro: 'A band loots a farm, a shaman keeping them on their feet. Mark him first.' },
+    ironWarlord: { name: 'The Iron Warlord', intro: 'The lord of the raiders waits at the ford in his iron armour. Watch his axe.' },
+    fenWitch: { name: 'The Fen Witch', intro: 'Deep in the wood the witch tends her brood. Her circles poison the ground.' },
+    graveWatch: { name: 'The Grave Watch', intro: 'Shieldbearers hold the barrow hill while archers shoot from the stones.' },
+    boneLegion: { name: 'The Bone Legion', intro: 'Two walls of steel with a shaman between them. They do not tire.' },
+    cryptRoad: { name: 'The Crypt Road', intro: 'Berserkers come out of the dark, two shamans behind them.' },
+    boneKing: { name: 'The Bone King', intro: 'The king beneath the barrows has risen, and the dead rise with him.' },
+  },
+  /** Region names (approved, Stage 5). */
+  regions: {
+    greenmarch: 'The Greenmarch',
+    darkwood: 'The Darkwood',
+    barrowlands: 'The Barrowlands',
   },
   /** Stage 3 screens. Draft copy (button labels, headings), not yet approved by Marcel. */
   prep: {

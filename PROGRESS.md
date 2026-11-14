@@ -18,7 +18,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| 5 Campaign | **in progress** (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
+| 5 Campaign | **in progress**: 5a done; next 5b bosses (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
 | 6–7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -27,6 +27,21 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 - Regions: **The Greenmarch** (meadows, farms) → **The Darkwood** (forest) → **The Barrowlands** (graves, the undead rise).
 - Start: hero + **Bran (Warrior) and Maren (Healer)**. Each camp offers **two companions of different classes**, drawn seeded from a name pool; pick one. Early battles are smaller (3 vs 3–4).
 - Bosses: R1 **the Iron Warlord** (giant armoured brute: axe sweep, charge, slam, calls raiders); R2 **the Fen Witch** (slam = poison circles, summons wolves/shamans, heals her escort); R3 **the Bone King** (skeletal giant, raises fallen enemies).
+
+## Stage 5 breakdown (do in this order, commit after each)
+
+1. ~~**5a Campaign rules and data.**~~ Done. `src/data/campaign.ts`: `REGIONS`, `NODES` (24: per region a first battle that forks, upper road with the elite, lower road with the camps, both meet at the boss; x/y 0..100 for the map sheet), `nodeById`, `regionNodes`, `regionStart`, `regionBoss`, `FINAL_BOSS`, `isCampId`. Fight nodes use their encounter id as node id. `ENCOUNTERS` = the 18 campaign battles (5 new: raiders, farmstead, graveWatch, boneLegion, cryptRoad; 3 bosses with escort only, boss units come in 5b), levels follow the expected squad level. XP pools = per-character target × expected fielded count; the walk test (`tests/meta/campaign.test.ts`, every node in map order) gives hero level 6 / 12 / 18 at the bosses. `src/meta/game.ts`: `GameState.camps` (`CampState` = offers + done), `GAME_VERSION` 2, `isNodeDone`, `isRegionOpen`, `isNodeOpen` (region open and start node or a done node leads here; done nodes stay open for replays), `isUnlocked` = `isNodeOpen`, `campaignWon`, `recruitLevel`, `campOffers` (lazy, seeded, kept), `recruit`, `passCamp`. `ROSTER_LIMIT` 9 in `squad.ts`. Save: migration 1 → 2 adds `camps: {}`; camps and roster size validated. `newSquad(hero, name, companions = START_COMPANIONS)`; dev shortcut games (`startDevGame`) get `SANDBOX_COMPANIONS`. Tests that relied on the 7-companion roster pass `SANDBOX_COMPANIONS`; `prepMatters` plays skirmish / shieldWall at their Stage 3 levels. Interim: the orders screen lists all 18 battles; camps have no screen yet, so a new game stalls after the first battle's roads until 5c/5d.
+2. **5b Bosses in the sim.** Boss units (Iron Warlord, Fen Witch, Bone King): large, telegraphed sweep / charge / slam with circles / summon, far more health, immune to stun and freeze; Witch heals her escort and summons wolves / shamans, Bone King raises fallen enemies. Figures in primitives (Stage 6 swaps models). Bot handles them; determinism. Ask Marcel about boss looks before the figures.
+3. **5c Map screen** (replaces the orders): one parchment sheet per region, region tabs, wax-seal nodes with pictograms, dotted roads. Show Marcel a screenshot; ask about details first.
+4. **5d Camp screen**: two recruit cards, pick one (decline? ask).
+5. **5e Ending summary** (time, battles lost, squad with levels) → title; the save can continue. Needs play time tracking.
+6. **5f Balance**: suite per PLAN section 13 (each encounter at the expected squad level, standard 70–90 %, elite 45–70 %, boss 35–60 %, length 45–150 s, hero share 20–30 %, solo < 5 %), tune strength; update `tests/balance/chain.test.ts` to walk the map.
+7. **Gate:** campaign playable start to finish, balance targets hold.
+
+## Made in 5a without asking (Marcel may veto)
+
+- Map layout and which battle sits where (Greenmarch: raiders → camp / farmstead → archerLine → shieldWall (elite) / camps → Iron Warlord; Darkwood: skirmish … wolfPack (elite) → Fen Witch; Barrowlands: ambush … boneLegion + warband (elites) → Bone King, no camps). Elites are optional side roads.
+- Recruits join at the roster's average level (rounded down) with a path and upgrades already drawn, so the camp compares two finished characters. Recruit name pool (`RECRUIT_NAMES`, draft). Names of the five new battles and the boss intros (`STRINGS.encounters`, draft).
 
 ## Stage 4 decisions (Marcel, 2026-11-14)
 
@@ -230,7 +245,7 @@ PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s,
 
 ## Verify
 
-- `npm test` (176 tests; bot battles in `tests/sim/bot.test.ts`: squad win ≥ 60 %, solo < 5 %, mark order, whole kit + replay per hero class; per-class and per-enemy-type behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
+- `npm test` (186 tests; bot battles in `tests/sim/bot.test.ts`: squad win ≥ 60 %, solo < 5 %, mark order, whole kit + replay per hero class; per-class and per-enemy-type behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
 - URL params: `?seed=`, `?zoom=0..1`, `?debug` (overlay + `window.__game`; shows lock and mark ids), `?bot` (bot plays the hero), `?hero=krieger|bogenschuetze|heiler|magier` (hero class), `?peaceful` (enemies stand still and never act, for trying abilities), `?trial` (Stage 1 hero-alone fight instead of the squad battle). Keys: Q/E abilities, R Sammeln, Tab / Shift+Tab lock, F mark.
 - Posing check: with `?debug&peaceful`, move units into a row and set `u.state = 'windup'`, `u.stateTime`, `u.action` from `__game` during the intro (no ticks run, so poses hold); set each slot's `prev` to the new position. Infinite `energy` for tests: set `hero.energy = 100` inside an injected `heroInput.sample`.
 - Driving the real game headless: with `?debug`, set `__game.hud.phase = 'playing'` and override `__game.heroInput.sample = (yaw) => ({...})` to inject presses.
