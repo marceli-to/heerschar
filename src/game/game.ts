@@ -3,6 +3,7 @@ import { reactive } from 'vue';
 import { createBattle, heroOf, step, type BattleSetup } from '../sim/battle';
 import { BOSS_ACTIONS, COUNTDOWN, DT, ENERGY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
 import { actionTiming, meleeAttackOf } from '../sim/ai';
+import { isBoss } from '../sim/body';
 import { heroKit } from '../sim/heroAbilities';
 import { angleTo, lerp, lerpAngle } from '../sim/math';
 import type { AreaKind, Battle, BattleEvent, ClassId, HeroAbilityId, Unit } from '../sim/types';
@@ -124,6 +125,16 @@ export interface HudState {
   time: number;
   /** The player side's ledger, hero first; filled when the battle ends. */
   ledger: HudLedgerRow[];
+  /** The boss of a boss battle, shown in the big bar at the top (`null` = no boss). */
+  boss: HudBoss | null;
+}
+
+export interface HudBoss {
+  id: number;
+  classId: ClassId;
+  hp: number;
+  maxHp: number;
+  dead: boolean;
 }
 
 interface Pose {
@@ -196,7 +207,7 @@ export class Game {
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
     this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, lock: null, mark: null });
-    this.hud = reactive({ phase: 'intro', mode: this.spec.mode, title: this.spec.title, intro: this.spec.intro, heroClass: hero?.classId ?? 'krieger', heroName: this.spec.names[0] ?? '', countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, energy: 0, maxEnergy: ENERGY.max, abilities: [], squad: [], edgeMarkers: [], foes: 0, outcome: 'running', time: 0, ledger: [] });
+    this.hud = reactive({ phase: 'intro', mode: this.spec.mode, title: this.spec.title, intro: this.spec.intro, heroClass: hero?.classId ?? 'krieger', heroName: this.spec.names[0] ?? '', countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, energy: 0, maxEnergy: ENERGY.max, abilities: [], squad: [], edgeMarkers: [], foes: 0, outcome: 'running', time: 0, ledger: [], boss: null });
     this.buildUnits();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
@@ -270,7 +281,8 @@ export class Game {
   /** A view and health bar for a unit (at the start, or when a boss summons it). */
   private addUnit(u: Unit): void {
     const view = createUnitView(u.classId, u.team, u.isHero);
-    const bar = u.isHero ? null : new HealthBar(u.team === 'player' ? '#d9a33a' : '#b8382a');
+    // Bosses show their health in the big bar at the top instead.
+    const bar = u.isHero || isBoss(u) ? null : new HealthBar(u.team === 'player' ? '#d9a33a' : '#b8382a');
     this.unitLayer.add(view.root);
     if (bar) this.unitLayer.add(bar.group);
     this.units.set(u.id, { view, bar, prev: { x: u.pos.x, z: u.pos.z, facing: u.facing }, speed: 0 });
@@ -287,6 +299,8 @@ export class Game {
       .filter((u) => u.team === 'player' && !u.isHero)
       .map((u) => ({ id: u.id, name: this.spec.names[u.id - 1] ?? STRINGS.classes[u.classId], classId: u.classId, hp: u.hp, maxHp: u.stats.maxHp, dead: false }));
     this.hud.edgeMarkers = [];
+    const boss = this.battle.units.find((u) => isBoss(u));
+    this.hud.boss = boss ? { id: boss.id, classId: boss.classId, hp: boss.hp, maxHp: boss.stats.maxHp, dead: false } : null;
   }
 
   private disposeSlot(slot: UnitSlot): void {
@@ -573,6 +587,13 @@ export class Game {
         a.cooldownFrac = Math.min(1, a.cooldown / (def.cooldown * hero.mods.cooldown));
         a.affordable = hero.energy >= def.cost;
         a.active = hero.action === a.id && (hero.state === 'windup' || hero.state === 'recover');
+      }
+    }
+    if (h.boss) {
+      const u = this.unit(h.boss.id);
+      if (u) {
+        h.boss.hp = Math.max(0, Math.ceil(u.hp));
+        h.boss.dead = u.state === 'dead';
       }
     }
     for (const c of h.squad) {

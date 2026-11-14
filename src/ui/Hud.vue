@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { HudState } from '../game/game';
 import { STRINGS } from '../data/strings';
 import AbilitySlot from './hud/AbilitySlot.vue';
+import ClassMedallion from './hud/ClassMedallion.vue';
 import EdgeMarker from './hud/EdgeMarker.vue';
 import SquadCard from './hud/SquadCard.vue';
 
@@ -11,6 +12,7 @@ const props = defineProps<{ hud: HudState }>();
 const hpFrac = computed(() => Math.max(0, props.hud.heroHp / props.hud.heroMaxHp));
 const lowHp = computed(() => hpFrac.value < 0.3);
 const energyFrac = computed(() => Math.max(0, props.hud.energy / props.hud.maxEnergy));
+const bossFrac = computed(() => (props.hud.boss ? Math.max(0, props.hud.boss.hp / props.hud.boss.maxHp) : 0));
 const time = computed(() => {
   const s = Math.floor(props.hud.time);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -29,6 +31,24 @@ const time = computed(() => {
       <div class="flex items-baseline gap-2">
         <span class="font-display text-[11px] tracking-[0.25em] text-ink-soft uppercase">{{ STRINGS.time }}</span>
         <span class="text-lg tabular-nums">{{ time }}</span>
+      </div>
+    </div>
+
+    <!-- Boss bar: name, medallion and a long health bar under the foes plate -->
+    <div
+      v-if="hud.boss"
+      class="hud-plate absolute top-[68px] left-1/2 flex w-[min(560px,70vw)] -translate-x-1/2 items-center gap-3 rounded-sm px-4 py-2 transition-opacity duration-700"
+      :class="{ 'opacity-0': hud.boss.dead }"
+    >
+      <ClassMedallion :class-id="hud.boss.classId" :size="38" />
+      <div class="min-w-0 flex-1">
+        <div class="flex items-baseline justify-between">
+          <span class="truncate font-display text-base font-bold tracking-[0.2em] text-ink">{{ STRINGS.bossTitle(STRINGS.classes[hud.boss.classId]) }}</span>
+          <span class="text-sm tabular-nums text-ink-soft">{{ hud.boss.hp }} / {{ Math.ceil(hud.boss.maxHp) }}</span>
+        </div>
+        <div class="mt-1 h-4 overflow-hidden rounded-[2px] border border-ink/70 bg-ink/25 shadow-[inset_0_1px_3px_rgb(0_0_0/0.4)]">
+          <div class="h-full bg-gradient-to-b from-blood-light to-blood transition-[width] duration-150" :style="{ width: `${bossFrac * 100}%` }" />
+        </div>
       </div>
     </div>
 

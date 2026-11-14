@@ -221,6 +221,8 @@ export const STRINGS = {
   foes: 'Foes',
   dodge: 'Dodge',
   time: 'Time',
+  /** Heading of the boss bar at the top of the screen. */
+  bossTitle: (name: string) => `The ${name}`,
   // ---------------------------------------------------------------------------------------------
   // Stage 4 progression. Draft copy, not yet approved by Marcel.
   /** Path names (PLAN: Waechter, Berserker, Scharfschuetze, Jaeger, Priester, Kampfmoench, Feuer, Eis). */
