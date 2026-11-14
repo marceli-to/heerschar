@@ -10,6 +10,37 @@ export const STRINGS = {
     berserker: 'Berserker',
     schamane: 'Shaman',
   },
+  /** Hero ability names (approved 2e). */
+  abilities: {
+    schildstoss: 'Shield Bash',
+    wirbel: 'Whirlwind',
+    salve: 'Volley',
+    rueckzug: 'Fall Back',
+    heilkreis: 'Healing Circle',
+    segen: 'Blessing',
+    feuerball: 'Fireball',
+    frostring: 'Frost Ring',
+    sammeln: 'Rally',
+  },
+  /** Class monograms for medallions. */
+  monograms: {
+    krieger: 'W',
+    bogenschuetze: 'A',
+    heiler: 'H',
+    magier: 'M',
+    schildtraeger: 'S',
+    berserker: 'B',
+    schamane: 'Sh',
+  },
+  /** Companion given names by class until the Stage 3 roster (approved 2e). */
+  companionNames: {
+    krieger: 'Bran',
+    bogenschuetze: 'Hilde',
+    heiler: 'Maren',
+    magier: 'Osric',
+  } as Partial<Record<string, string>>,
+  energy: 'Energy',
+  fallen: 'Fallen',
   trial: {
     name: 'The Trial',
     intro: 'Three raiders wait across the field. Show them what a warrior can do.',

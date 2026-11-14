@@ -8,6 +8,13 @@ const props = defineProps<{ hud: HudState }>();
 const emit = defineEmits<{ takeControl: []; restart: [] }>();
 
 const copy = computed(() => (props.hud.mode === 'trial' ? STRINGS.trial : STRINGS.squad));
+/** The squad controls with the hero's own ability names on the Q · E row. */
+const controls = computed(() => {
+  if (props.hud.mode === 'trial' || props.hud.abilities.length < 2) return copy.value.controls;
+  const [q, e] = props.hud.abilities;
+  return copy.value.controls.map(([key, action]) => (key === 'Q · E' && q && e ? [key, `${STRINGS.abilities[q.id]} · ${STRINGS.abilities[e.id]}`] : [key, action]));
+});
+
 const endText = computed(() => {
   if (props.hud.mode === 'trial') return props.hud.outcome === 'won' ? STRINGS.victoryText : STRINGS.defeatText;
   return props.hud.outcome === 'won' ? STRINGS.squad.victoryText : STRINGS.squad.defeatText;
@@ -27,7 +34,7 @@ const time = computed(() => {
     <ParchmentPanel v-if="hud.phase === 'intro'" :title="copy.name" :subtitle="STRINGS.title">
       <p class="text-lg leading-snug italic">{{ copy.intro }}</p>
       <table class="mx-auto mt-5 text-left text-base">
-        <tr v-for="[key, action] in copy.controls" :key="key">
+        <tr v-for="[key, action] in controls" :key="key">
           <td class="pr-5 py-0.5 font-display text-xs tracking-[0.15em] whitespace-nowrap text-ink-soft">{{ key }}</td>
           <td class="py-0.5">{{ action }}</td>
         </tr>

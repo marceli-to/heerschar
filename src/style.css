@@ -26,6 +26,9 @@
   --color-gold-light: #e0bf6a;
   --color-blood: #9b2d20;
   --color-blood-light: #c9483a;
+  /* Energy (approved 2e): deep blue. */
+  --color-energy: #1f3f8f;
+  --color-energy-light: #6f9be8;
 }
 
 @layer components {

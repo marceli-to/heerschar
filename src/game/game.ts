@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { reactive } from 'vue';
 import { createBattle, heroOf, step } from '../sim/battle';
-import { COUNTDOWN, DT, ENEMY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
+import { COUNTDOWN, DT, ENEMY, ENERGY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
 import { actionTiming } from '../sim/ai';
 import { heroKit } from '../sim/heroAbilities';
 import { angleTo, lerp, lerpAngle } from '../sim/math';
-import type { AreaKind, Battle, BattleEvent, ClassId, Unit } from '../sim/types';
+import type { AreaKind, Battle, BattleEvent, ClassId, HeroAbilityId, Unit } from '../sim/types';
 import { squadSetup, trialSetup } from '../data/encounters';
+import { STRINGS } from '../data/strings';
 import { hasStatus } from '../sim/statuses';
 import { botInput, createBot, type BotState } from '../sim/bot';
 import { KeyboardMouse } from '../input/keyboardMouse';
@@ -30,14 +31,46 @@ export interface DebugStats {
   tick: number;
   units: number;
   zoom: number;
-  /** Hero kit readout until the 2e HUD: energy, Q/E/R as "name cooldown", lock and mark ids. */
-  energy: number;
-  abilities: string;
+  /** Lock and mark target ids. */
   lock: number | null;
   mark: number | null;
 }
 
 export type Phase = 'intro' | 'playing' | 'paused' | 'ended';
+
+export interface HudAbility {
+  id: HeroAbilityId;
+  key: string;
+  cost: number;
+  /** Seconds of cooldown left, and that as a fraction of the full cooldown. */
+  cooldown: number;
+  cooldownFrac: number;
+  /** Enough energy to pay for it. */
+  affordable: boolean;
+  /** The hero is casting it right now. */
+  active: boolean;
+}
+
+export interface HudCompanion {
+  id: number;
+  name: string;
+  classId: ClassId;
+  hp: number;
+  maxHp: number;
+  dead: boolean;
+}
+
+/** An arrow at the screen edge towards something off screen. Positions in CSS pixels. */
+export interface HudEdgeMarker {
+  kind: 'ally' | 'mark';
+  /** Unit id, for the key; the class for the medallion. */
+  id: number;
+  classId: ClassId;
+  x: number;
+  y: number;
+  /** Screen angle the arrow points along, radians, 0 = right, clockwise positive (CSS). */
+  angle: number;
+}
 
 export interface HudState {
   phase: Phase;
@@ -50,6 +83,12 @@ export interface HudState {
   heroMaxHp: number;
   /** 0..1, 1 = dodge ready. */
   dodgeReady: number;
+  energy: number;
+  maxEnergy: number;
+  abilities: HudAbility[];
+  /** The hero's companions in formation order. */
+  squad: HudCompanion[];
+  edgeMarkers: HudEdgeMarker[];
   foes: number;
   outcome: 'running' | 'won' | 'lost';
   /** Seconds since the countdown ended. */
@@ -69,6 +108,10 @@ interface UnitSlot {
   /** Ground speed over the last tick, smoothed, for the walk cycle. */
   speed: number;
 }
+
+/** Edge markers: health fraction that counts as "in danger"; insets from the screen edges in px (clear of the HUD). */
+const EDGE = { danger: 0.3, side: 44, top: 90, bottom: 150 } as const;
+const _edge = new THREE.Vector3();
 
 const SHAKE = { heroHit: 0.45, heavy: 0.32, light: 0.14 } as const;
 
@@ -121,8 +164,8 @@ export class Game {
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
-    this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, energy: 0, abilities: '', lock: null, mark: null });
-    this.hud = reactive({ phase: 'intro', mode: this.trial ? 'trial' : 'squad', heroClass: this.heroClass, countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, foes: 0, outcome: 'running', time: 0 });
+    this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, lock: null, mark: null });
+    this.hud = reactive({ phase: 'intro', mode: this.trial ? 'trial' : 'squad', heroClass: this.heroClass, countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, energy: 0, maxEnergy: ENERGY.max, abilities: [], squad: [], edgeMarkers: [], foes: 0, outcome: 'running', time: 0 });
     this.buildUnits();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
@@ -195,6 +238,20 @@ export class Game {
     // Start behind the hero, looking across the field at the enemy.
     const hero = heroOf(this.battle);
     if (hero) this.rig.yaw = hero.facing;
+    this.buildHudLists();
+  }
+
+  /** Fixed lists for the HUD; `updateHud` only changes their values. */
+  private buildHudLists(): void {
+    const hero = heroOf(this.battle);
+    const kit = hero ? heroKit(hero) : null;
+    this.hud.abilities = kit
+      ? ([[kit.ability1, 'Q'], [kit.ability2, 'E'], [kit.leader, 'R']] as const).map(([id, key]) => ({ id, key, cost: HERO_ABILITIES[id].cost, cooldown: 0, cooldownFrac: 0, affordable: true, active: false }))
+      : [];
+    this.hud.squad = this.battle.units
+      .filter((u) => u.team === 'player' && !u.isHero)
+      .map((u) => ({ id: u.id, name: STRINGS.companionNames[u.classId] ?? STRINGS.classes[u.classId], classId: u.classId, hp: u.hp, maxHp: u.stats.maxHp, dead: false }));
+    this.hud.edgeMarkers = [];
   }
 
   private disposeSlot(slot: UnitSlot): void {
@@ -414,6 +471,72 @@ export class Game {
     h.dodgeReady = hero ? 1 - hero.dodgeCooldown / HERO.dodge.cooldown : 0;
     h.foes = b.units.filter((u) => u.team === 'enemy' && u.state !== 'dead').length;
     h.time = Math.max(0, b.tick * DT - COUNTDOWN);
+    if (hero) {
+      h.energy = Math.floor(hero.energy);
+      for (const a of h.abilities) {
+        const def = HERO_ABILITIES[a.id];
+        a.cooldown = Math.max(0, hero.abilityCooldowns[a.id] ?? 0);
+        a.cooldownFrac = Math.min(1, a.cooldown / def.cooldown);
+        a.affordable = hero.energy >= def.cost;
+        a.active = hero.action === a.id && (hero.state === 'windup' || hero.state === 'recover');
+      }
+    }
+    for (const c of h.squad) {
+      const u = this.unit(c.id);
+      if (!u) continue;
+      c.hp = Math.max(0, Math.ceil(u.hp));
+      c.dead = u.state === 'dead';
+    }
+    this.updateEdgeMarkers();
+  }
+
+  /** Arrows at the screen edge for companions under 30 % health and the marked enemy when off screen. */
+  private updateEdgeMarkers(): void {
+    const w = this.canvas.clientWidth;
+    const hgt = this.canvas.clientHeight;
+    const markers: HudEdgeMarker[] = [];
+    const playing = this.hud.phase === 'playing';
+    for (const u of this.battle.units) {
+      if (!playing || u.state === 'dead' || u.isHero) continue;
+      const danger = u.team === 'player' && u.hp / u.stats.maxHp < EDGE.danger;
+      const mark = u.id === this.battle.markTargetId;
+      if (!danger && !mark) continue;
+      const slot = this.units.get(u.id);
+      if (!slot) continue;
+      const p = this.edgePoint(slot.view.root.position.x, slot.view.barY * 0.6, slot.view.root.position.z, w, hgt);
+      if (p) markers.push({ kind: mark ? 'mark' : 'ally', id: u.id, classId: u.classId, ...p });
+    }
+    // Only replace the list when something changed, so Vue does not re-render every frame for nothing.
+    const old = this.hud.edgeMarkers;
+    const same = old.length === markers.length && old.every((m, i) => {
+      const n = markers[i];
+      return n !== undefined && m.id === n.id && m.kind === n.kind && Math.abs(m.x - n.x) < 0.5 && Math.abs(m.y - n.y) < 0.5;
+    });
+    if (!same) this.hud.edgeMarkers = markers;
+  }
+
+  /** Where a world point off screen sits on the screen edge, or null when it is on screen. */
+  private edgePoint(x: number, y: number, z: number, w: number, h: number): { x: number; y: number; angle: number } | null {
+    _edge.set(x, y, z).applyMatrix4(this.rig.camera.matrixWorldInverse);
+    const behind = _edge.z > 0;
+    _edge.applyMatrix4(this.rig.camera.projectionMatrix);
+    let nx = _edge.x;
+    let ny = _edge.y;
+    if (behind) {
+      nx = -nx;
+      ny = -ny;
+    }
+    if (!behind && Math.abs(nx) < 1 && Math.abs(ny) < 1) return null;
+    // Screen-space direction from the centre (y down), clamped to an inset rectangle.
+    const dx = nx * (w / 2);
+    const dy = -ny * (h / 2);
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-3) return { x: w / 2, y: h - EDGE.bottom, angle: Math.PI / 2 };
+    // Scale the direction until it meets the inset rectangle.
+    const hx = w / 2 - EDGE.side;
+    const reachY = dy > 0 ? h / 2 - EDGE.bottom : h / 2 - EDGE.top;
+    const s = Math.min(hx / Math.max(Math.abs(dx), 1e-6), Math.max(reachY, 1) / Math.max(Math.abs(dy), 1e-6));
+    return { x: w / 2 + dx * s, y: h / 2 + dy * s, angle: Math.atan2(dy, dx) };
   }
 
   private countFps(frameTime: number): void {
@@ -424,12 +547,6 @@ export class Game {
       this.debug.tick = this.battle.tick;
       this.debug.units = this.battle.units.length;
       this.debug.zoom = Math.round(this.rig.zoomLevel * 100) / 100;
-      const hero = heroOf(this.battle);
-      if (hero) {
-        const kit = heroKit(hero);
-        this.debug.energy = Math.floor(hero.energy);
-        this.debug.abilities = [kit.ability1, kit.ability2, kit.leader].map((id) => `${id} ${(hero.abilityCooldowns[id] ?? 0).toFixed(1)}`).join(' · ');
-      }
       this.debug.lock = this.battle.lockTargetId;
       this.debug.mark = this.battle.markTargetId;
       this.fpsFrames = 0;

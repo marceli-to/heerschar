@@ -2,11 +2,15 @@
 import { computed } from 'vue';
 import type { HudState } from '../game/game';
 import { STRINGS } from '../data/strings';
+import AbilitySlot from './hud/AbilitySlot.vue';
+import EdgeMarker from './hud/EdgeMarker.vue';
+import SquadCard from './hud/SquadCard.vue';
 
 const props = defineProps<{ hud: HudState }>();
 
 const hpFrac = computed(() => Math.max(0, props.hud.heroHp / props.hud.heroMaxHp));
 const lowHp = computed(() => hpFrac.value < 0.3);
+const energyFrac = computed(() => Math.max(0, props.hud.energy / props.hud.maxEnergy));
 const time = computed(() => {
   const s = Math.floor(props.hud.time);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -28,29 +32,48 @@ const time = computed(() => {
       </div>
     </div>
 
-    <!-- Hero plate -->
-    <div class="hud-plate absolute bottom-5 left-5 w-72 rounded-sm px-4 pt-2 pb-3">
-      <div class="flex items-baseline justify-between">
-        <span class="font-display text-sm font-bold tracking-[0.18em]">{{ STRINGS.classes[hud.heroClass] }}</span>
-        <span class="text-base tabular-nums text-ink-soft">{{ hud.heroHp }} / {{ hud.heroMaxHp }}</span>
-      </div>
-      <div class="mt-1 h-3.5 overflow-hidden rounded-[2px] border border-ink/70 bg-ink/25 shadow-[inset_0_1px_3px_rgb(0_0_0/0.4)]">
-        <div
-          class="h-full bg-gradient-to-b from-blood-light to-blood transition-[width] duration-150"
-          :class="{ 'animate-pulse': lowHp }"
-          :style="{ width: `${hpFrac * 100}%` }"
-        />
-      </div>
-      <div class="mt-2 flex items-center gap-2">
-        <div class="relative h-2 w-20 overflow-hidden rounded-[2px] border border-ink/50 bg-ink/15">
-          <div class="h-full bg-gold" :style="{ width: `${hud.dodgeReady * 100}%` }" />
+    <!-- Bottom row: hero plate, abilities, squad panel -->
+    <div class="absolute right-5 bottom-5 left-5 flex items-end gap-3">
+      <div class="hud-plate w-72 shrink-0 rounded-sm px-4 pt-2 pb-3">
+        <div class="flex items-baseline justify-between">
+          <span class="font-display text-sm font-bold tracking-[0.18em]">{{ STRINGS.classes[hud.heroClass] }}</span>
+          <span class="text-base tabular-nums text-ink-soft">{{ hud.heroHp }} / {{ hud.heroMaxHp }}</span>
         </div>
-        <span
-          class="font-display text-[10px] tracking-[0.22em] uppercase"
-          :class="hud.dodgeReady >= 1 ? 'text-ink' : 'text-ink-soft/70'"
-        >{{ STRINGS.dodge }} · Space</span>
+        <div class="mt-1 h-3.5 overflow-hidden rounded-[2px] border border-ink/70 bg-ink/25 shadow-[inset_0_1px_3px_rgb(0_0_0/0.4)]">
+          <div
+            class="h-full bg-gradient-to-b from-blood-light to-blood transition-[width] duration-150"
+            :class="{ 'animate-pulse': lowHp }"
+            :style="{ width: `${hpFrac * 100}%` }"
+          />
+        </div>
+        <div class="mt-1.5 flex items-center gap-2">
+          <div class="relative h-2.5 flex-1 overflow-hidden rounded-[2px] border border-ink/70 bg-ink/25 shadow-[inset_0_1px_3px_rgb(0_0_0/0.4)]">
+            <div class="h-full bg-gradient-to-b from-energy-light to-energy transition-[width] duration-100" :style="{ width: `${energyFrac * 100}%` }" />
+          </div>
+          <span class="w-7 text-right text-sm tabular-nums text-ink-soft">{{ hud.energy }}</span>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <div class="relative h-2 w-20 overflow-hidden rounded-[2px] border border-ink/50 bg-ink/15">
+            <div class="h-full bg-gold" :style="{ width: `${hud.dodgeReady * 100}%` }" />
+          </div>
+          <span
+            class="font-display text-[10px] tracking-[0.22em] uppercase"
+            :class="hud.dodgeReady >= 1 ? 'text-ink' : 'text-ink-soft/70'"
+          >{{ STRINGS.dodge }} · Space</span>
+        </div>
+      </div>
+
+      <div v-if="hud.abilities.length" class="flex shrink-0 gap-2 pb-0.5">
+        <AbilitySlot v-for="a in hud.abilities" :key="a.id" :ability="a" />
+      </div>
+
+      <div v-if="hud.squad.length" class="ml-3 flex flex-wrap items-end gap-2">
+        <SquadCard v-for="c in hud.squad" :key="c.id" :companion="c" />
       </div>
     </div>
+
+    <!-- Edge markers: off-screen companions in danger and the marked enemy -->
+    <EdgeMarker v-for="m in hud.edgeMarkers" :key="`${m.kind}-${m.id}`" :marker="m" />
 
     <!-- Countdown -->
     <div

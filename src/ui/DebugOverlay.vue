@@ -13,8 +13,6 @@ defineProps<{ stats: DebugStats }>();
     <div>tick {{ stats.tick }}</div>
     <div>units {{ stats.units }}</div>
     <div>zoom {{ stats.zoom }}</div>
-    <div>energy {{ stats.energy }}</div>
-    <div>{{ stats.abilities }}</div>
     <div>lock {{ stats.lock ?? '-' }} · mark {{ stats.mark ?? '-' }}</div>
     <div class="text-white/60">F3: hide</div>
   </div>
