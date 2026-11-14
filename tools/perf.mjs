@@ -1,0 +1,33 @@
+// Measures fps and tick rate in headless Chrome (needs the dev server and ?debug), then hides the tab
+// for 5 s and checks the loop resumes cleanly. Usage: node tools/perf.mjs "<url>"
+const C = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+import { spawn } from 'node:child_process';
+const chrome = spawn(C, ['--headless=new', '--use-angle=metal', '--remote-debugging-port=9333', '--window-size=1280,800', '--user-data-dir=/tmp/heerschar-chrome-perf', 'about:blank']);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+await sleep(1500);
+const targets = await (await fetch('http://127.0.0.1:9333/json')).json();
+const page = targets.find((t) => t.type === 'page');
+const ws = new WebSocket(page.webSocketDebuggerUrl);
+await new Promise((r) => ws.addEventListener('open', r));
+let id = 0; const pending = new Map();
+ws.addEventListener('message', (e) => { const m = JSON.parse(e.data); if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } });
+const send = (method, params = {}) => new Promise((r) => { const i = ++id; pending.set(i, r); ws.send(JSON.stringify({ id: i, method, params })); });
+const ev = async (expr) => (await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })).result.result.value;
+await send('Page.enable');
+await send("Page.navigate", { url: process.argv[2] ?? "http://localhost:5190/?debug&bot&seed=3" });
+await sleep(3000);
+const read = () => ev(`(() => { const t = document.body.innerText; return { fps: +t.match(/fps (\\d+)/)[1], tick: +t.match(/tick (\\d+)/)[1] }; })()`);
+const a = await read(); await sleep(3000); const b = await read();
+console.log('fps', b.fps, 'ticks/s', ((b.tick - a.tick) / 3).toFixed(1));
+await ev(`window.__vis = []; document.addEventListener('visibilitychange', () => window.__vis.push(document.visibilityState)); true`);
+await send('Emulation.setFocusEmulationEnabled', { enabled: false });
+const other = await send('Target.createTarget', { url: 'about:blank', background: false });
+await sleep(5000);
+console.log('during background:', await ev('document.visibilityState'));
+await send('Target.activateTarget', { targetId: page.id });
+await send('Target.closeTarget', { targetId: other.result.targetId });
+await sleep(500);
+console.log('visibility events', JSON.stringify(await ev('window.__vis')));
+const c = await read(); await sleep(2000); const d = await read();
+console.log('after freeze: fps', d.fps, 'ticks/s', ((d.tick - c.tick) / 2).toFixed(1), 'tick jump during freeze', c.tick - b.tick);
+chrome.kill(); process.exit(0);
