@@ -4,16 +4,18 @@ import { angleDiff, angleTo, dist } from './math';
 import { moveDir, turnTowards } from './movement';
 import { fireStraight, lob, placeArea } from './projectiles';
 import { range } from './rng';
-import { addStatus, getStatus, moveFactor, speedFactor } from './statuses';
+import { addStatus, getStatus, hasStatus, moveFactor, speedFactor } from './statuses';
 import { heroActionTiming } from './heroAbilities';
 import type { AbilityId, AiActionId, Battle, BattleEvent, ClassId, Unit } from './types';
 
 const OPTS = { invulnerableTime: HERO.dodge.invulnerable };
 /** Units must face their target within this angle before they start an attack. */
 const AIM_TOLERANCE = 0.5;
-const BACK_ROW: readonly ClassId[] = ['bogenschuetze', 'heiler', 'magier'];
+const BACK_ROW: readonly ClassId[] = ['bogenschuetze', 'heiler', 'magier', 'schamane'];
+/** Healers: what a Berserker goes for first. */
+const HEALERS: readonly ClassId[] = ['heiler', 'schamane'];
 type AiAbilityId = Extract<AbilityId, AiActionId>;
-const ABILITIES: readonly AiAbilityId[] = ['taunt', 'pierce', 'groupHeal', 'frostNova'];
+const ABILITIES: readonly AiAbilityId[] = ['taunt', 'pierce', 'groupHeal', 'frostNova', 'ward'];
 
 function isAbility(action: AiActionId): action is AiAbilityId {
   return (ABILITIES as readonly string[]).includes(action);
@@ -189,6 +191,11 @@ function release(battle: Battle, unit: Unit, events: BattleEvent[]): void {
       placeArea(battle, unit, { kind: 'frostNova', at: unit.pos, radius: n.radius, delay: n.delay, multiplier: n.multiplier, damageType: 'magic', freeze: n.freeze }, events);
       return;
     }
+    case 'ward': {
+      const w = ACTIONS.ward;
+      if (live && live.team === unit.team) addStatus(live, 'shielded', w.duration, events, unit.stats.power * w.shield, unit.id);
+      return;
+    }
   }
 }
 
@@ -223,8 +230,11 @@ function interceptTarget(battle: Battle, unit: Unit, foes: Unit[]): Unit | null 
   return nearest(unit, threats);
 }
 
-/** Close in, wind up visibly, swing; when two allies already strike the target, circle and wait. */
-function meleeEngage(battle: Battle, unit: Unit, target: Unit | null, dt: number, events: BattleEvent[]): void {
+/**
+ * Close in, wind up visibly, swing; when two allies already strike the target, circle and wait
+ * (unless `ignoreCap`).
+ */
+function meleeEngage(battle: Battle, unit: Unit, target: Unit | null, dt: number, events: BattleEvent[], ignoreCap = false): void {
   if (!target) {
     unit.targetId = null;
     setState(unit, 'idle');
@@ -238,7 +248,7 @@ function meleeEngage(battle: Battle, unit: Unit, target: Unit | null, dt: number
   const speed = speedOf(unit);
   const engage = ENEMY.attack.reach * ENEMY.engageFactor;
 
-  if (strikersOn(battle, unit, target.id) < ENEMY.maxAttackers) {
+  if (ignoreCap || strikersOn(battle, unit, target.id) < ENEMY.maxAttackers) {
     if (d > engage) {
       moveDir(unit, dir.x, dir.z, speed, dt);
       setState(unit, 'moving');
@@ -268,6 +278,26 @@ function meleeEngage(battle: Battle, unit: Unit, target: Unit | null, dt: number
   } else {
     setState(unit, 'idle');
   }
+}
+
+/** Schildtraeger: a slow wall of armour that hits the nearest foe. */
+function schildtraegerBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  const foes = livingFoes(battle, unit);
+  meleeEngage(battle, unit, forcedTarget(battle, unit, Infinity) ?? nearest(unit, foes), dt, events);
+}
+
+/**
+ * Berserker: runs past the front line for the back row (healers first, then the nearest back-row
+ * foe), and does not wait its turn behind other attackers. A taunt still pulls it off.
+ */
+function berserkerBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  const foes = livingFoes(battle, unit);
+  const target =
+    forcedTarget(battle, unit, Infinity) ??
+    nearest(unit, foes.filter((f) => HEALERS.includes(f.classId))) ??
+    nearest(unit, foes.filter((f) => BACK_ROW.includes(f.classId))) ??
+    nearest(unit, foes);
+  meleeEngage(battle, unit, target, dt, events, true);
 }
 
 /**
@@ -348,21 +378,47 @@ function healthFraction(u: Unit): number {
   return u.hp / u.stats.maxHp - (u.isHero ? BEHAVIOUR.heroTieBreak : 0);
 }
 
-/** Heiler: heals the ally with the lowest health fraction (the hero first on a tie), stays back. */
+/** Heiler: group heal when several allies nearby are hurt, else the support routine. */
 function healerBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
-  const allies = livingAllies(battle, unit);
-  const foes = livingFoes(battle, unit);
-  const closest = nearest(unit, foes);
-  const speed = speedOf(unit);
   const g = ACTIONS.groupHeal;
-
   if (abilityReady(unit, 'groupHeal')) {
-    const hurt = allies.filter((a) => dist(a.pos, unit.pos) <= g.radius && a.hp / a.stats.maxHp < g.below);
+    const hurt = livingAllies(battle, unit).filter((a) => dist(a.pos, unit.pos) <= g.radius && a.hp / a.stats.maxHp < g.below);
     if (hurt.length >= g.minHurt) {
       startAction(unit, 'groupHeal', null, events);
       return;
     }
   }
+  supportBrain(battle, unit, dt, events);
+}
+
+/** Schamane: shields the most hurt ally under attack, else the support routine. */
+function schamaneBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  if (abilityReady(unit, 'ward')) {
+    const foes = livingFoes(battle, unit);
+    let ward: Unit | null = null;
+    for (const a of livingAllies(battle, unit)) {
+      if (hasStatus(a, 'shielded') || dist(unit.pos, a.pos) > unit.stats.range) continue;
+      const threatened = foes.some((f) => f.targetId === a.id && dist(f.pos, a.pos) <= BEHAVIOUR.wardThreat);
+      if (threatened && (!ward || healthFraction(a) < healthFraction(ward))) ward = a;
+    }
+    if (ward) {
+      turnTowards(unit, angleTo(unit.pos, ward.pos), ENEMY.turnRate, dt);
+      startAction(unit, 'ward', ward, events);
+      return;
+    }
+  }
+  supportBrain(battle, unit, dt, events);
+}
+
+/**
+ * Healer routine (Heiler and Schamane): heals the ally with the lowest health fraction (the hero
+ * first on a tie), bolts a foe when nobody needs healing, stays behind its allies.
+ */
+function supportBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  const allies = livingAllies(battle, unit);
+  const foes = livingFoes(battle, unit);
+  const closest = nearest(unit, foes);
+  const speed = speedOf(unit);
 
   let patient: Unit | null = null;
   for (const a of allies) {
@@ -428,6 +484,9 @@ const BRAINS: Record<ClassId, (battle: Battle, unit: Unit, dt: number, events: B
   bogenschuetze: archerBrain,
   heiler: healerBrain,
   magier: mageBrain,
+  schildtraeger: schildtraegerBrain,
+  berserker: berserkerBrain,
+  schamane: schamaneBrain,
 };
 
 // ---------------------------------------------------------------------------------------------

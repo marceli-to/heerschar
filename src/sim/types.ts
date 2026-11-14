@@ -1,6 +1,10 @@
 import type { Vec2 } from './math';
 
-export type ClassId = 'krieger' | 'bogenschuetze' | 'heiler' | 'magier';
+/** The four playable classes. */
+export type PlayableClassId = 'krieger' | 'bogenschuetze' | 'heiler' | 'magier';
+/** Enemy-only types (PLAN section 6). */
+export type EnemyTypeId = 'schildtraeger' | 'berserker' | 'schamane';
+export type ClassId = PlayableClassId | EnemyTypeId;
 export type Team = 'player' | 'enemy';
 export type Outcome = 'running' | 'won' | 'lost';
 export type DamageType = 'physical' | 'magic';
@@ -24,7 +28,7 @@ export interface Stats {
 export type UnitState = 'idle' | 'moving' | 'windup' | 'recover' | 'dodging' | 'stunned' | 'dead';
 
 /** What an AI unit is winding up or recovering from. See `ACTIONS` in balance.ts. */
-export type AiActionId = 'strike' | 'taunt' | 'shot' | 'pierce' | 'heal' | 'groupHeal' | 'bolt' | 'fireball' | 'frostNova';
+export type AiActionId = 'strike' | 'taunt' | 'shot' | 'pierce' | 'heal' | 'groupHeal' | 'bolt' | 'fireball' | 'frostNova' | 'ward';
 /** Hero abilities: two per class plus the leader ability. See `HERO_ABILITIES` in balance.ts. */
 export type HeroAbilityId =
   | 'schildstoss'
@@ -39,7 +43,7 @@ export type HeroAbilityId =
 /** What a unit is winding up or recovering from. `null` on the hero means its basic attack chain. */
 export type ActionId = AiActionId | HeroAbilityId;
 /** Actions with a cooldown. */
-export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova' | HeroAbilityId;
+export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova' | 'ward' | HeroAbilityId;
 
 /**
  * Timed conditions on a unit. `stunned` is a unit state (it shares the stagger timer) and

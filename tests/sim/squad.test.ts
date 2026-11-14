@@ -288,3 +288,96 @@ describe('squad battle', () => {
     expect(play()).toBe(play());
   });
 });
+
+describe('schildtraeger', () => {
+  it('shrugs off physical damage but not magic', () => {
+    const b = battleWith([parked(), unit('enemy', 'schildtraeger', 5), unit('enemy', 'krieger', 8)]);
+    const [, shield, krieger] = b.units;
+    // Averaged over many rolls to wash out the damage variance.
+    const avg = (u: typeof shield, type: 'physical' | 'magic') => {
+      let sum = 0;
+      for (let i = 0; i < 400; i++) sum += computeDamage(b, 20, 1, u!, type);
+      return sum / 400;
+    };
+    expect(avg(shield, 'physical') / avg(krieger, 'physical')).toBeLessThan(0.75);
+    expect(avg(shield, 'magic')).toBeGreaterThan(avg(krieger, 'magic'));
+  });
+
+  it('is slower than a krieger and attacks the nearest foe', () => {
+    const b = battleWith([parked(), unit('player', 'krieger', 0, -4), unit('player', 'heiler', -6, 4), unit('enemy', 'schildtraeger', 10), unit('enemy', 'krieger', 10, 8)]);
+    run(b, seconds(1));
+    expect(b.units[3]!.targetId).toBe(2);
+    const travelled = (id: number, x: number, z: number) => Math.hypot(b.units[id - 1]!.pos.x - x, b.units[id - 1]!.pos.z - z);
+    expect(travelled(4, 10, 0)).toBeLessThan(travelled(5, 10, 8) * 0.85);
+  });
+});
+
+describe('berserker', () => {
+  it('runs past the front line for the healer', () => {
+    const b = battleWith([parked(), unit('player', 'krieger', 0), unit('player', 'bogenschuetze', -6, -3), unit('player', 'heiler', -6, 3), unit('enemy', 'berserker', 6)]);
+    hold(b, 2, 3, 4);
+    const events = run(b, seconds(4));
+    expect(b.units[4]!.targetId).toBe(4);
+    expect(hits(events, 4).length).toBeGreaterThan(0);
+    expect(hits(events, 2)).toHaveLength(0);
+  });
+
+  it('goes for the nearest back-row foe when there is no healer', () => {
+    const b = battleWith([parked(), unit('player', 'krieger', 2), unit('player', 'magier', -6, -3), unit('player', 'bogenschuetze', -6, 6), unit('enemy', 'berserker', 6)]);
+    hold(b, 2, 3, 4);
+    run(b, 1);
+    expect(b.units[4]!.targetId).toBe(3);
+  });
+
+  it('ignores the two-attacker cap', () => {
+    const b = battleWith([parked(), unit('player', 'heiler', 0), unit('enemy', 'krieger', 1.6, -1), unit('enemy', 'krieger', 1.6, 1), unit('enemy', 'berserker', 3)]);
+    hold(b, 2);
+    const events = run(b, seconds(2));
+    for (const id of [3, 4, 5]) expect(events.some((e) => e.type === 'attackStart' && e.unitId === id)).toBe(true);
+  });
+
+  it('a krieger taunt pulls it off the healer', () => {
+    const b = battleWith([parked(), unit('player', 'heiler', -6), unit('player', 'krieger', 0), unit('enemy', 'berserker', 1), unit('enemy', 'krieger', 1, 2)]);
+    hold(b, 2);
+    run(b, seconds(ACTIONS.taunt.windup) + 2);
+    expect(b.units[3]!.statuses.some((s) => s.kind === 'taunted')).toBe(true);
+    expect(b.units[3]!.targetId).toBe(3);
+  });
+});
+
+describe('schamane', () => {
+  it('heals the most hurt ally', () => {
+    const b = battleWith([parked(), unit('enemy', 'schamane', 10), unit('enemy', 'krieger', 6, -2), unit('enemy', 'krieger', 6, 2)]);
+    hold(b, 3, 4);
+    b.units[2]!.hp = b.units[2]!.stats.maxHp * 0.7;
+    b.units[3]!.hp = b.units[3]!.stats.maxHp * 0.4;
+    const events = run(b, seconds(ACTIONS.heal.windup) + 2);
+    const first = events.find((e) => e.type === 'heal');
+    expect(first?.type === 'heal' && first.targetId).toBe(4);
+  });
+
+  it('shields an ally under attack', () => {
+    const b = battleWith([parked(), unit('enemy', 'schamane', 10), unit('enemy', 'krieger', 5), unit('player', 'krieger', 3.5)]);
+    hold(b, 3, 4);
+    b.units[3]!.targetId = 3;
+    const events = run(b, seconds(ACTIONS.ward.windup) + 2);
+    expect(events.some((e) => e.type === 'action' && e.unitId === 2 && e.action === 'ward')).toBe(true);
+    const shield = b.units[2]!.statuses.find((s) => s.kind === 'shielded');
+    expect(shield?.amount).toBeCloseTo(b.units[1]!.stats.power * ACTIONS.ward.shield, 5);
+    expect(b.units[1]!.abilityCooldowns.ward).toBeGreaterThan(0);
+  });
+
+  it('does not ward an ally nobody is attacking', () => {
+    const b = battleWith([parked(), unit('enemy', 'schamane', 10), unit('enemy', 'krieger', 5)]);
+    hold(b, 3);
+    const events = run(b, seconds(2));
+    expect(events.some((e) => e.type === 'action' && e.action === 'ward')).toBe(false);
+  });
+
+  it('keeps away from foes', () => {
+    const b = battleWith([parked(), unit('enemy', 'schamane', 0), unit('player', 'krieger', -3)]);
+    hold(b, 3);
+    run(b, seconds(2));
+    expect(b.units[1]!.pos.x).toBeGreaterThan(2);
+  });
+});

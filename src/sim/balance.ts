@@ -120,6 +120,8 @@ export const ACTIONS = {
   bolt: { windup: 0.5, recover: 0.4, multiplier: 0.5, speed: 18, radius: 0.3 },
   fireball: { windup: 0.8, recover: 0.4, multiplier: 1.1, radius: 2.2, speed: 11, minFlight: 0.8, maxFlight: 1.5, clusterRadius: 2.5 },
   frostNova: { windup: 0.4, recover: 0.5, multiplier: 0.4, radius: 3.5, delay: 0.8, freeze: 2, cooldown: 14, trigger: 3 },
+  /** Schamane: shields an ally under attack for `shield × power` points. */
+  ward: { windup: 0.5, recover: 0.3, shield: 2.5, duration: 8, cooldown: 9 },
 } as const;
 
 /** Companion and enemy behaviour by class. */
@@ -142,6 +144,8 @@ export const BEHAVIOUR = {
   healerSafeDistance: 7,
   /** Healers count the hero's fraction this much lower, so the hero wins ties. */
   heroTieBreak: 1e-6,
+  /** Schamane: an ally counts as under attack when a foe targeting it is this close. */
+  wardThreat: 4,
 } as const;
 
 // ---------------------------------------------------------------------------------------------

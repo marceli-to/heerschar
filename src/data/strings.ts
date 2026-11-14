@@ -6,6 +6,9 @@ export const STRINGS = {
     bogenschuetze: 'Archer',
     heiler: 'Healer',
     magier: 'Mage',
+    schildtraeger: 'Shieldbearer',
+    berserker: 'Berserker',
+    schamane: 'Shaman',
   },
   trial: {
     name: 'The Trial',
