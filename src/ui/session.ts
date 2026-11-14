@@ -4,7 +4,10 @@ import { newGame, recordBattle, type GameState } from '../meta/game';
 import { clearSave, loadGame, saveGame, type SaveStorage } from '../meta/save';
 import type { PlayableClassId } from '../sim/types';
 
-export type Screen = 'title' | 'classSelect' | 'orders' | 'squad' | 'formation' | 'battle';
+export type Screen = 'title' | 'classSelect' | 'orders' | 'squad' | 'formation' | 'battle' | 'spoils';
+
+/** Where the player goes once the spoils are settled. */
+export type AfterSpoils = 'orders' | 'squad';
 
 /** The state between battles. `game` is what the save holds; the rest is navigation. */
 export interface Session {
@@ -13,6 +16,8 @@ export interface Session {
   encounterId: EncounterId;
   /** Bumped per battle so the battle view remounts fresh. */
   battleRun: number;
+  /** Where the spoils page leads when it is done. */
+  afterSpoils: AfterSpoils;
   /** Whether changes go to the save (off for the dev shortcut games). */
   persist: boolean;
   /** A usable save exists (Continue on the title). */
@@ -30,7 +35,7 @@ function storage(): SaveStorage | null {
 
 const store = storage();
 
-export const session: Session = reactive({ screen: 'title', game: null, encounterId: 'skirmish', battleRun: 0, persist: false, hasSave: store ? loadGame(store) !== null : false });
+export const session: Session = reactive({ screen: 'title', game: null, encounterId: 'skirmish', battleRun: 0, afterSpoils: 'orders', persist: false, hasSave: store ? loadGame(store) !== null : false });
 
 /**
  * Autosave (PLAN section 12): every change to the game state is written. The game state only
@@ -73,6 +78,7 @@ export function continueGame(): void {
   session.persist = true;
   session.game = g;
   session.screen = 'orders';
+  if (g.rewards) openSpoils('orders');
 }
 
 /** Dev shortcuts (`?bot`, `?hero=` …): a game that is never saved. */
@@ -96,4 +102,22 @@ export function startBattle(encounterId: EncounterId): void {
 /** A battle ended: pays a first win (and autosaves through the watch). */
 export function battleEnded(won: boolean): void {
   if (session.game) recordBattle(session.game, session.encounterId, won);
+}
+
+/** Pending rewards are settled on the spoils page before the player goes anywhere else. */
+function openSpoils(then: AfterSpoils): void {
+  session.afterSpoils = then;
+  session.screen = 'spoils';
+}
+
+/** Leaves a battle for the orders or the squad step, through the spoils page when a first win paid out. */
+export function leaveBattle(to: AfterSpoils): void {
+  if (session.game?.rewards) openSpoils(to);
+  else spoilsDone(to);
+}
+
+/** The spoils are settled (or there were none): on to where the player was heading. */
+export function spoilsDone(to: AfterSpoils = session.afterSpoils): void {
+  if (to === 'squad') prepare(session.encounterId);
+  else goTo('orders');
 }

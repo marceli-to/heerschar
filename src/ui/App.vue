@@ -10,8 +10,9 @@ import ClassSelect from './screens/ClassSelect.vue';
 import FormationScreen from './screens/FormationScreen.vue';
 import OrdersScreen from './screens/OrdersScreen.vue';
 import SquadScreen from './screens/SquadScreen.vue';
+import SpoilsScreen from './screens/SpoilsScreen.vue';
 import TitleScreen from './screens/TitleScreen.vue';
-import { battleEnded, continueGame, goTo, prepare, session, startBattle, startDevGame, startNewGame } from './session';
+import { battleEnded, continueGame, goTo, leaveBattle, prepare, session, spoilsDone, startBattle, startDevGame, startNewGame } from './session';
 
 const HERO_CLASSES: readonly PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
 
@@ -83,8 +84,9 @@ function fight(id: EncounterId): void {
       v-bind="flags"
       :can-leave="!trial"
       @ended="ended"
-      @leave="goTo('orders')"
-      @change-squad="prepare(session.encounterId)"
+      @leave="leaveBattle('orders')"
+      @change-squad="leaveBattle('squad')"
     />
+    <SpoilsScreen v-else-if="session.screen === 'spoils' && session.game" :game="session.game" @done="spoilsDone()" />
   </div>
 </template>

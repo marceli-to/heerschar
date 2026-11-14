@@ -288,4 +288,20 @@ export const STRINGS = {
     guardShield: 'Taunt and Shield Bash shield self ({v}× power)',
     selfRally: 'Taunt and Whirlwind rally self for {v} s',
   },
+  /** Stage 4c spoils page after a first win. Draft copy, not yet approved by Marcel. */
+  spoils: {
+    title: 'Spoils',
+    xpHint: 'Experience shared among the company.',
+    bench: 'Bench, half share',
+    levelUp: 'Level up',
+    level: 'Level',
+    chooseUpgrade: 'Choose an upgrade',
+    choosePath: 'Choose a path',
+    pathKind: 'Path',
+    pickCount: (n: number, of: number) => `Pick ${n} of ${of}`,
+    lootHint: 'Choose one to keep. It goes to the company’s baggage.',
+    weapon: (cls: string) => `${cls} weapon`,
+    trinket: 'Trinket, for anyone',
+    next: 'Next',
+  },
 } as const;
