@@ -14,8 +14,9 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 |---|---|
 | 0 Scaffold | done, committed |
 | 1 Hero alone | done, committed. **Gate passed**: Marcel playtested, "feels quite good, hard to beat 3 opponents, I like that". Keep current feel numbers. |
-| 2 Squad battle | in progress: **2a–2e done**, committed; **2f next** (breakdown below) |
-| 3–7 | not started |
+| 2 Squad battle | **2a–2f done**, committed. Done-when met in the headless tests (winnable, deterministic, bot cannot win alone); **waiting on Marcel's playtest** for "readable" |
+| 3 Preparation | **next** (after the playtest) |
+| 4–7 | not started |
 
 ## Design decisions (all approved by Marcel)
 
@@ -40,6 +41,22 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 - Layout: one bottom row: hero plate (health, energy with number, dodge), Q/E/R tiles, squad cards. Edge markers stay clear of the bottom row and the top plate.
 - Intro controls list the hero's own ability names on the Q · E row.
 - The debug overlay no longer shows energy/cooldowns (now on the HUD); lock/mark ids remain.
+
+## 2f decisions (Marcel)
+
+- Balance lever: **tougher armies**. In squad battles everyone has ×1.5 HP and companions and enemies hit ×1.2 harder (`SQUAD_SCALE` in `src/data/encounters.ts`); the hero's own damage stays as tuned in Stage 1, and the Stage 1 trial is untouched.
+- **Hero damage share (PLAN 20–30 %) deferred to Stage 5**: it is measured (balance report) but not tuned yet. Halving the hero's damage only reached ~30–47 % because AI units attack much slower than the hero's chain; the fix belongs with levels, items and the balance suite.
+
+## Balance after 2f (bot hero, 50 seeds, `REPORT=1 RUNS=50 npx vitest run tests/balance`)
+
+| Hero | squad win | length | hero share | solo win |
+|---|---|---|---|---|
+| Warrior | 100 % | 38 s | 50 % | 2 % |
+| Archer | 100 % | 40 s | 50 % | 0 % |
+| Healer | 94 % | 51 s | 39 % | 0 % (stalemates to the 180 s cap) |
+| Mage | 100 % | 34 s | 57 % | 0 % |
+
+PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s, hero share 20–30 %.
 
 ## Feel decisions made in Stage 1 (tunable, in `src/sim/balance.ts`)
 
@@ -76,6 +93,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 ## Architecture as built
 
 - `src/sim/` pure and deterministic (enforced by `tests/sim/purity.test.ts`). Hero kit (2b): `heroControl.ts` (input buffers, energy regen, state machine for chain + abilities), `heroAbilities.ts` (kit per class, aiming, ranged basic attack, `releaseAbility`, `heroActionTiming`), `heroTargeting.ts` (lock-on, mark). `Unit.action` is now `AiActionId | HeroAbilityId` (hero: `null` = basic chain). New events `release`, `lock`, `mark`; areas can heal and pulse (`heal`, `pulses`, `interval`). `battle.ts` has `createBattle(setup)` and `step(battle, input, dt)` → events, plus `slotPosition` / `formationSetup` (3 × 2 slots). Also `heroControl.ts`, `ai.ts` (one `updateAi` for companions and enemies: shared windup/recover runner, then a brain per class; `actionTiming(unit)` for the view), `combat.ts` (damage incl. frozen/marked multipliers, `applyDamage` with shield absorb + death, `applyHeal`, `stun`, `resolveMelee`, poise), `projectiles.ts` (straight + piercing shots, `lob` = arcing projectile whose damage is an area placed at launch, `placeArea`, `freeze`), `statuses.ts` (frozen, rallied, shielded, taunted; `stunned` is a unit state, `marked` is `Battle.markTargetId`), `movement.ts` (separation, elliptical soft bounds, knockback), `bot.ts` (scripted hero), `rng.ts` (state lives on `Battle.rngState`), `balance.ts`, `types.ts`.
+- Bot and headless (2f): `bot.ts` marks the Schamane, else the Heiler, first (cycles Tab until the lock sits on it, F, then Shift+Tab), attacks the marked enemy when it is at most 4 m farther than the nearest, dodges strikes and enemy area warnings, casts abilities when useful (situational slot first; keeps energy for Rueckzug/Frostring when enemies are within 8 m), ranged classes kite at 6 m. `headless.ts` `playHeadless(setup, maxSeconds)` → outcome, seconds, hero/player damage, events. `tests/balance/report.test.ts` is skipped unless `REPORT=1` and prints win rate, length and hero share per class, squad and solo.
 - `src/data/`: `classes.ts` (4 class stat lines), `encounters.ts` (`trialSetup`, `squadSetup` = warrior hero + Krieger, Bogenschuetze, Heiler, Magier vs 3 Krieger + Bogenschuetze, Heiler, Magier), `strings.ts`.
 - AI actions and behaviour numbers: `ACTIONS`, `BEHAVIOUR`, `STATUS`, `FORMATION` in `balance.ts`. Events added in 2a: `heal`, `action`, `shoot`, `areaStart`, `areaResolve`, `status`; `hit` has `absorbed`. Since 2d the game runs the squad battle (`squadSetup(seed, heroClass)`), `?trial` for the Stage 1 fight.
 - `src/view/`: `scene.ts`, `arena.ts`, `camera.ts` (zoom 0..1 curve, yaw, follow, shake; tuning in `CAMERA`), `figures.ts` (`buildFigure(classId, colors, hero)` → `FigureRig` for all 7 classes; arms have elbows; `PoseStyle` melee / archer / caster), `ik.ts` (two-bone arm IK `reach` + `orient` for props), `unitView.ts` (`UnitView` interface + `PrimitiveFigureView`; animation is **posed from sim state every frame**, so hit-stop freezes it for free; melee uses the Stage 1 Euler swing poses, archers/casters are posed by hand position via IK; action → pose in `actionPose`: swing, spin, bash, roar, draw, cast, slam, hop; frost tint + shield bubble from `AnimInput.frozen/shielded`), `projectileView.ts` (`ProjectileLayer`, synced to `battle.projectiles` by id, `capture()` before each tick for interpolation), `areaView.ts` (`AreaLayer`, filling-disc warnings and heal circles), `targetMarkers.ts` (`LockRing`, `MarkBanner`), `damageNumbers.ts` (DOM numbers over the canvas, projected every frame, stack when several pop at one spot), `markers.ts` (HealthBar), `effects.ts` (sparks, dust, swing arcs, `trail`, `burst`, `rise`, `ring`).
@@ -87,7 +105,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 ## Verify
 
-- `npm test` (109 tests; per-class and per-enemy-type behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
+- `npm test` (123 tests; bot battles in `tests/sim/bot.test.ts`: squad win ≥ 60 %, solo < 5 %, mark order, whole kit + replay per hero class; per-class and per-enemy-type behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
 - URL params: `?seed=`, `?zoom=0..1`, `?debug` (overlay + `window.__game`; shows lock and mark ids), `?bot` (bot plays the hero), `?hero=krieger|bogenschuetze|heiler|magier` (hero class), `?peaceful` (enemies stand still and never act, for trying abilities), `?trial` (Stage 1 hero-alone fight instead of the squad battle). Keys: Q/E abilities, R Sammeln, Tab / Shift+Tab lock, F mark.
 - Posing check: with `?debug&peaceful`, move units into a row and set `u.state = 'windup'`, `u.stateTime`, `u.action` from `__game` during the intro (no ticks run, so poses hold); set each slot's `prev` to the new position. Infinite `energy` for tests: set `hero.energy = 100` inside an injected `heroInput.sample`.
 - Driving the real game headless: with `?debug`, set `__game.hud.phase = 'playing'` and override `__game.heroInput.sample = (yaw) => ({...})` to inject presses.
@@ -102,5 +120,5 @@ PLAN sections: 5 (rules, statuses), 6 (classes, enemy types, companion behaviour
 3. ~~**2c Enemy types.**~~ Done. `ClassId` = `PlayableClassId | EnemyTypeId`. Stats in `CLASS_STATS` (first numbers): Schildtraeger 170 HP, armor 110, resist 0, speed 3.0, plain melee on the nearest foe; Berserker 95 HP, speed 5.4, interval 0.9, goes for healers (Heiler/Schamane) first, then the nearest back-row foe, **ignores the 2-attacker cap**, still taunt-able; Schamane shares `supportBrain` with the Heiler (heal lowest fraction, bolt, stay back) plus the AI ability `ward` (shields the most hurt ally that a foe within 4 m is targeting, 2.5 × power for 8 s, cooldown 9). `squadSetup` enemies are now Schildtraeger, Krieger, Berserker (front) and Bogenschuetze, Schamane, Magier (back). 30 seeds: bot hero wins 24/30, ~31 s, hero ≈ 57 % of player damage (tune in 2f); idle hero loses 30/30. English names in `STRINGS.classes`. All units still render as the warrior figure.
 4. ~~**2d View.**~~ Done (see "2d decisions" and "Made in 2d without asking"). All 7 class figures, projectiles with trails, filling-disc warnings, heal glow, frozen blue, shield bubble, lock ring, mark banner, damage numbers; the game runs the 5-vs-6 squad battle. 60 fps in the bot battle.
 5. ~~**2e HUD.**~~ Done (see "2e decisions" and "Made in 2e without asking"). `HudState` gains `energy`, `abilities`, `squad`, `edgeMarkers` (built once per battle in `buildHudLists`, values updated in `updateHud`; edge markers projected in `updateEdgeMarkers`, list only replaced when it changes). Components in `src/ui/hud/`: `ClassMedallion`, `AbilityIcon`, `AbilitySlot`, `SquadCard`, `EdgeMarker`. 60 fps in the bot battle.
-6. **2f Bot and headless test:** **← next session starts here.** bot uses abilities, marks Schamane/healer first; 5-vs-6 battle test; determinism test with the full kit; bot alone (no companions) must not win.
-7. **Done when:** a 5-against-6 battle is readable and winnable, the determinism test passes, and the bot cannot win it alone.
+6. ~~**2f Bot and headless test.**~~ Done (see "2f decisions" and "Balance after 2f"). Also: ability cooldown labels under 1 s round up to the tenth (no more "0.0").
+7. **Done when:** a 5-against-6 battle is readable and winnable, the determinism test passes, and the bot cannot win it alone. Tests pass; **next: Marcel playtests the squad battle** (`npm run dev`, try `?hero=` for each class), then Stage 3 (PLAN sections 9 and 14).

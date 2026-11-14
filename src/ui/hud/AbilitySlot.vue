@@ -11,7 +11,7 @@ const onCooldown = computed(() => props.ability.cooldown > 0);
 const ready = computed(() => !onCooldown.value && props.ability.affordable);
 /** The dark part still to go: it shrinks clockwise from 12 o'clock. */
 const sweep = computed(() => `conic-gradient(transparent ${(1 - props.ability.cooldownFrac) * 360}deg, rgb(12 8 4 / 0.72) 0)`);
-const seconds = computed(() => (props.ability.cooldown >= 1 ? Math.ceil(props.ability.cooldown) : props.ability.cooldown.toFixed(1)));
+const seconds = computed(() => (props.ability.cooldown >= 1 ? Math.ceil(props.ability.cooldown) : (Math.ceil(props.ability.cooldown * 10) / 10).toFixed(1)));
 
 // A short gold flash when the ability becomes usable again.
 const flash = ref(0);
