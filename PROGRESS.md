@@ -17,6 +17,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
+| Look spike | **next (before Stage 5)**: see "Look spike plan". The Stage 4 gate playtest can happen any time alongside. |
 | 5–7 | not started |
 
 ## Stage 4 decisions (Marcel, 2026-11-14)
@@ -38,7 +39,16 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 ## Visual outlook (talked through 2026-11-14)
 
-- Marcel asked how good Stage 6 can look. Answer given: the pack gives bodies and animation; the "cool" comes from code (bloom, particles, trails, decals, grading, outlines, hit feel). Watch-outs: KayKit's chunky proportions vs. the heroic proportions chosen in Stage 1 (Quaternius closer), phone budget in Stage 7, bosses / Shaman details may not exist in a pack. Offered: a small **look spike** (one pack figure + bloom + particles in the arena) before Stage 5 ends; Marcel has not decided yet.
+- Marcel asked how good Stage 6 can look. Answer given: the pack gives bodies and animation; the "cool" comes from code (bloom, particles, trails, decals, grading, outlines, hit feel). Watch-outs: KayKit's chunky proportions vs. the heroic proportions chosen in Stage 1 (Quaternius closer), phone budget in Stage 7, bosses / Shaman details may not exist in a pack. Marcel wants the **look spike before Stage 5**.
+
+## Look spike plan (Marcel, 2026-11-14)
+
+Goal: show Marcel what Stage 6 can look like before Stage 5 builds on the current visuals. A throwaway-friendly test, kept out of the real game.
+
+- **Packs: both, side by side.** One KayKit figure (chunky, polished; KayKit Adventurers) next to one Quaternius figure (closer to heroic proportions), same arena, same effects. Verify each licence first (both are expected to be CC0) and record it in `CREDITS.md`. If a download cannot be scripted (itch.io / Google Drive), ask Marcel to download the zip and say where it is. Put downloads in their own new directory (untrusted data rule).
+- **Effects: all four.** (1) Glow on magic (bloom on fireball, frost, holy light, shields, lock ring); (2) hit sparks + dust and a bright swing trail; (3) light and colour grade (warmer grade, slight distance haze, softer shadows); (4) ground marks (scorch after fire, frost on the grass).
+- Engineering (no need to ask): behind a URL flag (e.g. `?look`), so normal play and tests are untouched; models loaded with `GLTFLoader` and played with `AnimationMixer` (idle / walk / attack / hit / death); a simple scripted loop (the two figures attack dummies, cast a fireball and a frost ring) so screenshots and a short recording are easy. Check fps stays at 60 on desktop.
+- Deliverable: screenshots (and a short recording if possible) for Marcel, then his verdict on pack and style. That also settles the open theme question (medieval vs. stylised fantasy) and the hero proportions.
 
 ## 4d decisions (Marcel, 2026-11-14)
 
