@@ -74,6 +74,13 @@ export const STRINGS = {
       ['Esc', 'Pause'],
     ],
   },
+  /** Stage 3 sandbox battles. Draft copy, not yet approved by Marcel. */
+  encounters: {
+    skirmish: { name: 'The Skirmish', intro: 'A mixed band holds the far side of the field.' },
+    shieldWall: { name: 'The Shield Wall', intro: 'Three shieldbearers lock their shields while two shamans tend them. Steel will not break this wall easily.' },
+    berserkerRush: { name: 'The Berserker Rush', intro: 'Three berserkers howl for your healers, with archers at their backs.' },
+    archerLine: { name: 'The Archer Line', intro: 'A thin line of warriors guards archers and a mage. Close the distance, or outlast the arrows.' },
+  },
   paused: 'Paused',
   resume: 'Click to resume',
   restart: 'Fight again',

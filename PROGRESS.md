@@ -15,8 +15,16 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 0 Scaffold | done, committed |
 | 1 Hero alone | done, committed. **Gate passed**: Marcel playtested, "feels quite good, hard to beat 3 opponents, I like that". Keep current feel numbers. |
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
-| 3 Preparation | **next session starts here** (PLAN sections 9 and 14; expect many design questions: title, class select, squad screen, formation grid, character sheet) |
+| 3 Preparation | **in progress**: 3a done; see "Stage 3 breakdown" (PLAN sections 9 and 14) |
 | 4–7 | not started |
+
+## Stage 3 decisions (Marcel, 2026-11-14)
+
+- Preparation = **separate steps**: Squad → Formation → Fight, each a full parchment page with Back / Next.
+- Backdrop of all 2D screens (title, class select, preparation) = **war table**: dark oak boards, warm candlelight vignette at the edges, parchment sheets on top, wax-seal red accents. No 3D behind them.
+- Characters: class **medallions** in lists and the grid; the **real 3D figure** turning slowly on the class select and the character sheet.
+- **Sandbox roster**: hero + 7 companions (field 5, bench 2): Bran, Edda (Warrior), Hilde, Wulf (Archer), Maren (Healer), Osric, Ansel (Mage). Plus a list of ~4 hand-made battles to pick from. Replaced by the campaign start and camps in Stage 5.
+- Title stays **Heerschar**. The hero gets a **name typed by the player** on the class select (prefilled suggestion per class; suggestions not chosen yet).
 
 ## Design decisions (all approved by Marcel)
 
@@ -111,7 +119,15 @@ PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s,
 - Driving the real game headless: with `?debug`, set `__game.hud.phase = 'playing'` and override `__game.heroInput.sample = (yaw) => ({...})` to inject presses.
 - Headless checks (Chrome, needs the dev server): `node tools/shot.mjs "<url>" out.png '[{"wait":4500,"shot":"a.png"}]'` for screenshots (combat: `?bot&seed=5&zoom=0.2`), `node tools/perf.mjs "<url>"` for fps and the background-tab test. The T3 preview pane runs no animation frames, so use these instead.
 
-## Stage 2 breakdown (do in this order, commit after each)
+## Stage 3 breakdown (do in this order, commit after each)
+
+1. ~~**3a Data and squad rules.**~~ Done. `src/meta/squad.ts` (pure): `Character`, `SquadState` (`roster`, `fielded`, `formation`), `MAX_FIELDED` 6, `HERO_ID` 1, `setFielded`, `placeCharacter` (fielded: swap; benched onto a companion: the companion goes to the bench; never the hero), `freeSlotFor` (Krieger front, others back, centre first), `battleSetupFor(squad, encounter, seed)`. `src/data/roster.ts`: `SANDBOX_COMPANIONS`, `newSquad(heroClass, heroName)`. `src/data/encounters.ts`: `ENCOUNTERS` (skirmish, shieldWall, berserkerRush, archerLine) with enemy slots and a `strength` multiplier on enemy HP and power (1.5 / 2 / 1.5 / 1.3; stands in for enemy levels until Stage 4); `squadSetup` stays the Stage 2 battle at strength 1. Encounter names/intros in `STRINGS.encounters` are **drafts, to be approved**. `tests/meta/prepMatters.test.ts` proves the "done when" headless (skirmish without the healer ≥ 30 points fewer wins, hero in the back row ≥ 20 fewer; shield wall with two mages < 0.8 × the time without a mage). `REPORT=1 npx vitest run tests/balance/prep.test.ts` prints a composition/formation table per encounter. Note: enemy columns mirror (`slotPosition`): enemy col 0 stands opposite player col 2, so the preview must show the enemy grid as seen from the player side.
+2. **3b Flow, title, class select.** App state machine: title → class select (name field, turning 3D figure) → battle list → Squad → Formation → battle → result → back to the battle list. War-table backdrop. The game runs `battleSetupFor` instead of `squadSetup`; HUD names come from the roster (drop `STRINGS.companionNames`). Keep `?trial`, `?bot`, `?hero=` working (URL params may skip straight into a battle).
+3. **3c Squad screen and character sheet** (field/bench, stats, empty weapon/trinket slots, turning figure).
+4. **3d Formation grid** with drag and drop, the enemy formation opposite.
+5. **3e Polish and Marcel's playtest** ("done when": composition and formation visibly change how a battle goes).
+
+## Stage 2 breakdown (done)
 
 PLAN sections: 5 (rules, statuses), 6 (classes, enemy types, companion behaviour), 7 (hero abilities, energy, leader ability, mark), 8 (lock-on, HUD), 13 (bot, tests).
 
