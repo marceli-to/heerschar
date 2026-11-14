@@ -12,4 +12,4 @@ Figures, arena and effects are built in code.
 Look spike only (`?look`, `public/look/`, not used by the game):
 
 - KayKit Adventurers Character Pack 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Knight.glb, Mage.glb; licence in `public/look/kaykit/LICENSE.txt`.
-- RPG Character Pack by Quaternius (quaternius.com), CC0 1.0. Warrior.gltf, Wizard.gltf; note in `public/look/quaternius/LICENSE.txt`.
+- KayKit Character Pack : Skeletons 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Skeleton_Warrior.glb, Skeleton_Mage.glb, Skeleton_Blade / Shield_Large_A / Staff; licence in `public/look/kaykit-skeletons/LICENSE.txt`.

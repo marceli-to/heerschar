@@ -10,6 +10,8 @@ export interface ClipMap {
   death: string;
   cast: string;
   castRing: string;
+  /** Optional clip that gets back up after death (skeletons reassemble). */
+  revive?: string;
 }
 
 export interface FigureSpec {
@@ -19,6 +21,8 @@ export interface FigureSpec {
   /** The weapon mesh that draws the swing trail or emits spells. */
   weapon: string;
   clips: ClipMap;
+  /** Separate weapon files to parent to a bone (KayKit Skeletons ship weapons apart). */
+  attach?: { url: string; bone: string }[];
 }
 
 const HEIGHT = 1.8;
@@ -99,7 +103,12 @@ export class Actor {
   }
 
   static async load(spec: FigureSpec): Promise<Actor> {
-    const gltf = await loader.loadAsync(spec.url);
+    const [gltf, ...parts] = (await Promise.all([spec.url, ...(spec.attach ?? []).map((a) => a.url)].map((u) => loader.loadAsync(u)))) as [Awaited<ReturnType<GLTFLoader['loadAsync']>>, ...Awaited<ReturnType<GLTFLoader['loadAsync']>>[]];
+    (spec.attach ?? []).forEach((a, i) => {
+      const bone = gltf.scene.getObjectByName(sanitize(a.bone));
+      const part = parts[i]!.scene.children[0];
+      if (bone && part) bone.add(part);
+    });
     return new Actor(gltf, spec);
   }
 

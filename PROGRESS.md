@@ -17,7 +17,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
-| Look spike | **built, waiting for Marcel's verdict** (see "Look spike as built"). The Stage 4 gate playtest can happen any time alongside. |
+| Look spike | **pack chosen: KayKit** (Adventurers + Skeletons, wider KayKit family later); effects / theme verdict still open (see "Look spike as built"). The Stage 4 gate playtest can happen any time alongside. |
 | 5–7 | not started |
 
 ## Stage 4 decisions (Marcel, 2026-11-14)
@@ -48,7 +48,9 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 - Screenshots + a 12 s WebM for Marcel in `~/Downloads/heerschar-assets/look-spike/`. Tools: `tools/shot.mjs` (stills) and new `tools/record.mjs` (CDP screencast → WebM via Playwright's ffmpeg, the Homebrew ffmpeg is broken here).
 - fps: 60 (vsync-capped) in headless Chrome and the preview with all four effects on.
 - Things noticed: both packs are chibi (big heads), Quaternius somewhat less; neither matches the heroic proportions of the code figures. KayKit has far more clips (several 1H/2H attacks, block, dodge, spellcasts, hit A/B, death A/B); Quaternius has 13–15 per character (one or two attacks, one hit, spells only on Wizard). Quaternius Warrior is a woman; KayKit Knight's swing trail reads as a wide ghost blade because the sword is huge.
-- **Next:** Marcel's verdict on pack (KayKit / Quaternius / neither), which effects to keep and how strong, theme (medieval vs. stylised fantasy) and proportions. Then Stage 5 (PLAN section 14).
+- **Pack decision (Marcel, 2026-11-14): KayKit family.** He leaned KayKit over Quaternius; alternatives were shown (Quaternius Universal Base Characters + Fantasy Outfits + Universal Animation Library for heroic proportions; paid Synty) and he chose "stay with KayKit, the wider family, add Skeletons". So the spike now shows KayKit Adventurers (Knight + Mage, left) and KayKit Skeletons (Warrior with blade + large shield, Mage with staff, right); Quaternius files removed from `public/look/` (the zip stays in `~/Downloads/heerschar-assets/quaternius/`). Both KayKit packs share one rig and clip set (Skeletons add Spawn_Ground_Skeletons, Death_C_Skeletons + _Resurrect, Awaken, Walking_D_Skeletons; weapons are separate .gltf files parented to `handslot.r/l`). Both are on GitHub (`KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0`), fetchable by script; paid extras (Adventurers EXTRA, Mystery series, same rig) are an option later. Loop is now 14 s (skeleton gets back up with the resurrect clip).
+- This implies stylised fantasy with chunky proportions, replacing the Stage 1 "heroic proportions" decision for the final look (confirm with Marcel when Stage 6 starts).
+- **Next:** Marcel's verdict on the four effects (keep / strength), then Stage 5 (PLAN section 14).
 
 ## Look spike plan (Marcel, 2026-11-14)
 

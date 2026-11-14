@@ -8,8 +8,8 @@ import { FxWorld, SwingTrail, type Looks } from './fx';
 import { Post } from './post';
 
 /**
- * Look spike (?look): one KayKit pair and one Quaternius pair on the meadow, each hitting a
- * training dummy on the same scripted 12 s loop, with the four candidate effects switchable
+ * Look spike (?look): a KayKit Adventurers pair and a KayKit Skeletons pair on the meadow, each hitting a
+ * training dummy on the same scripted 14 s loop, with the four candidate effects switchable
  * (1 glow, 2 impacts, 3 grade, 4 ground marks). Throwaway; the game never imports this.
  */
 
@@ -56,44 +56,50 @@ const PACKS: PackSpec[] = [
     },
   },
   {
-    label: 'Quaternius RPG Characters',
+    label: 'KayKit Skeletons',
     x: 4.5,
     melee: {
-      url: `${BASE}look/quaternius/Warrior.gltf`,
+      url: `${BASE}look/kaykit-skeletons/Skeleton_Warrior.glb`,
       hide: [],
-      weapon: 'Warrior_Sword',
+      weapon: 'Skeleton_Blade',
+      attach: [
+        { url: `${BASE}look/kaykit-skeletons/Skeleton_Blade.gltf`, bone: 'handslot.r' },
+        { url: `${BASE}look/kaykit-skeletons/Skeleton_Shield_Large_A.gltf`, bone: 'handslot.l' },
+      ],
       clips: {
-        idle: 'Idle_Weapon',
-        walk: 'Walk',
-        attacks: ['Sword_Attack', 'Sword_Attack2'],
-        hit: 'RecieveHit',
-        death: 'Death',
-        cast: 'Punch',
-        castRing: 'Punch',
+        idle: 'Idle_Combat',
+        walk: 'Walking_D_Skeletons',
+        attacks: ['1H_Melee_Attack_Chop', '1H_Melee_Attack_Slice_Horizontal'],
+        hit: 'Hit_B',
+        death: 'Death_C_Skeletons',
+        cast: 'Spellcast_Shoot',
+        castRing: 'Spellcast_Raise',
+        revive: 'Death_C_Skeletons_Resurrect',
       },
     },
     caster: {
-      url: `${BASE}look/quaternius/Wizard.gltf`,
+      url: `${BASE}look/kaykit-skeletons/Skeleton_Mage.glb`,
       hide: [],
-      weapon: 'Wizard_Staff',
+      weapon: 'Skeleton_Staff',
+      attach: [{ url: `${BASE}look/kaykit-skeletons/Skeleton_Staff.gltf`, bone: 'handslot.r' }],
       clips: {
-        idle: 'Idle_Weapon',
-        walk: 'Walk',
-        attacks: ['Staff_Attack'],
-        hit: 'RecieveHit',
-        death: 'Death',
-        cast: 'Spell1',
-        castRing: 'Spell2',
+        idle: 'Idle',
+        walk: 'Walking_D_Skeletons',
+        attacks: ['2H_Melee_Attack_Stab'],
+        hit: 'Hit_A',
+        death: 'Death_A',
+        cast: 'Spellcast_Shoot',
+        castRing: 'Spellcast_Raise',
       },
     },
   },
 ];
 
-const CYCLE = 12;
+const CYCLE = 14;
 
 /** Camera presets (key V or ?view=1..4). */
 const VIEWS: { pos: [number, number, number]; target: [number, number, number] }[] = [
-  { pos: [0, 4.6, 11.5], target: [0, 1, -0.6] },
+  { pos: [0.6, 5.2, 13.8], target: [0.6, 0.9, -0.4] },
   { pos: [-5.0, 1.7, 2.1], target: [-5.1, 0.9, -2] },
   { pos: [4.0, 1.7, 2.1], target: [3.9, 0.9, -2] },
   { pos: [0, 15, 15], target: [0, 0, -1] },
@@ -265,7 +271,11 @@ export async function startLookSpike(host: HTMLElement): Promise<void> {
       at(t0 + 8.2, () => fx.holyLight(caster.root.position));
 
       at(t0 + 10.4, () => melee.once(melee.spec.clips.death, 0.15, true));
-      at(t0 + 11.75, () => melee.loop(melee.spec.clips.idle, 0.35));
+      at(t0 + (melee.spec.clips.revive ? 11.2 : 12.6), () => {
+        const revive = melee.spec.clips.revive;
+        if (revive) melee.once(revive, 0.1);
+        else melee.loop(melee.spec.clips.idle, 0.35);
+      });
     }
   };
 
