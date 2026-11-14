@@ -15,8 +15,9 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 0 Scaffold | done, committed |
 | 1 Hero alone | done, committed. **Gate passed**: Marcel playtested, "feels quite good, hard to beat 3 opponents, I like that". Keep current feel numbers. |
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
-| 3 Preparation | **in progress**: 3a–3e built; **waiting for Marcel's playtest** (the Stage 3 gate). Then Stage 4. |
-| 4–7 | not started |
+| 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
+| 4 Progression | **next**: read PLAN sections 4, 10, 12 and 14 (Stage 4) first. |
+| 5–7 | not started |
 
 ## Stage 3 decisions (Marcel, 2026-11-14)
 
@@ -99,6 +100,8 @@ PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s,
 
 **Ranged heroes are too fragile (Marcel's 3e playtest, 2026-11-14; fix deferred to Stage 5 by Marcel).** Marcel found the Archer hero "very, very difficult". Probe (bot, 20 seeds per cell, sandbox squad, win %): Skirmish Warrior 100 / Archer 10 / Healer 5 / Mage 5; Shield Wall 95 / 25 / 0 / 35; Berserker Rush 85 / 100 / 85 / 85; Archer Line 80 / 100 / 65 / 75. Cause is not damage: raw chain DPS Warrior 32.8, Archer 28.3, Mage 29.7, Healer 20.3, and the hero share is already ~45–60 %. In the Skirmish the Archer hero died in 18 of 20 battles, **all of it from the enemy archer**: `archerBrain` shoots the lowest-health foe in range, so once the hero (120 HP, armour 10) is hit he stays the weakest and gets focused down in ~10 s; the hero falling loses the battle. Arrows are physical, so the Archer also stalls on the Shield Wall (armour 110). Options offered: hero health bonus over the same-class companion (recommended), ranged enemies target by health fraction / switch targets, more Archer power (against the 20–30 % share target).
 
+**Marcel after more battles (2026-11-14):** "feels alright but it's quite hard to win"; **"the hero should definitely deal more damage"**. This conflicts with PLAN's 20–30 % hero damage share (bot share is already ~45–60 %). Raise it at the start of Stage 5: drop or raise the share target, and pair more hero damage with more hero health so ranged heroes survive.
+
 ## Feel decisions made in Stage 1 (tunable, in `src/sim/balance.ts`)
 
 - Attack direction = movement direction, else camera forward; melee aim assist (3.2 m, 55°).
@@ -159,7 +162,7 @@ PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s,
 3. ~~**3c Squad screen and character sheet.**~~ Done. Flow: orders → `prepare(id)` → `screen: 'squad'` (`SquadScreen.vue`) → Next starts the battle directly until 3d adds the Formation step in between; Back returns to the orders; leaving a battle still returns to the orders. `CharacterSheet.vue` (figure, ledger, XP, `ItemSlot.vue`). Pure helpers in `src/meta/squad.ts`: `characterStats(c)` (= the battle stats, tested against `battleSetupFor`), `swapIn(state, benchedId, fieldedId)`, `xpToNext`. Drag and drop is native HTML5 (`dragId` ref; drop on the field list, the bench list or a fielded row). Headless drag test: dispatch `DragEvent`s with one shared `new DataTransfer()` (dragstart on the source row, dragover + drop on the target); Vue re-renders on the next tick, so read the DOM in a later step.
 4. ~~**3d Formation grid.**~~ Done. Flow: orders → squad → `screen: 'formation'` (`FormationScreen.vue`, `FieldToken.vue`) → "To battle"; Back returns to the squad step. Pure helpers in `src/meta/squad.ts`: `canPlace(state, id, slot)` (same rules as `placeCharacter`, no mutation; tested against it for every character × slot) and `enemyViewCol(col)` = 2 − col (tested against `slotPosition`). Everyone, the hero too, can move on the grid; the hero never goes to the bench; a bench companion cannot replace the hero. Drag test as in 3c (cells: `.cell`, first 6 = enemy, then the squad's front row, back row; bench chips `.chip`, bench zone `.bench`).
 5. ~~**3e Polish.**~~ Done. `src/sim/ledger.ts` (pure: `tallyEvents`, `ledgerEntry`; hits credit attacker and target with health lost, heals credit the source, area heals the caster; tested against `playHeadless` totals). `Game` tallies every tick, fills `hud.ledger` (`HudLedgerRow`, hero first) on the outcome and clears it on restart. `src/ui/EndLedger.vue` on the end panel (squad battles only). `changeSquad` event: Overlays → BattleView → App → `prepare(encounterId)`. Fixed: italic enemy names on the formation map lost their last letter (italic overhang clipped by `truncate`; `px-1`).
-6. **Gate: Marcel's playtest** ("done when": composition and formation visibly change how a battle goes). Suggested: The Shield Wall with and without both mages (Osric, Ansel) — compare time and the ledger; The Skirmish without Maren; the hero in the back row.
+6. ~~**Gate: Marcel's playtest**~~ Passed ("done when": composition and formation visibly change how a battle goes). Suggested: The Shield Wall with and without both mages (Osric, Ansel) — compare time and the ledger; The Skirmish without Maren; the hero in the back row.
 
 ## Stage 2 breakdown (done)
 
