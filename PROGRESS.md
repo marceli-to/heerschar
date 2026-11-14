@@ -97,6 +97,8 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s, hero share 20–30 %.
 
+**Ranged heroes are too fragile (Marcel's 3e playtest, 2026-11-14; fix deferred to Stage 5 by Marcel).** Marcel found the Archer hero "very, very difficult". Probe (bot, 20 seeds per cell, sandbox squad, win %): Skirmish Warrior 100 / Archer 10 / Healer 5 / Mage 5; Shield Wall 95 / 25 / 0 / 35; Berserker Rush 85 / 100 / 85 / 85; Archer Line 80 / 100 / 65 / 75. Cause is not damage: raw chain DPS Warrior 32.8, Archer 28.3, Mage 29.7, Healer 20.3, and the hero share is already ~45–60 %. In the Skirmish the Archer hero died in 18 of 20 battles, **all of it from the enemy archer**: `archerBrain` shoots the lowest-health foe in range, so once the hero (120 HP, armour 10) is hit he stays the weakest and gets focused down in ~10 s; the hero falling loses the battle. Arrows are physical, so the Archer also stalls on the Shield Wall (armour 110). Options offered: hero health bonus over the same-class companion (recommended), ranged enemies target by health fraction / switch targets, more Archer power (against the 20–30 % share target).
+
 ## Feel decisions made in Stage 1 (tunable, in `src/sim/balance.ts`)
 
 - Attack direction = movement direction, else camera forward; melee aim assist (3.2 m, 55°).
