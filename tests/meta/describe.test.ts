@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../../src/data/items';
 import { LEVEL_CAP, xpToNext } from '../../src/data/progression';
 import { PATHS, UPGRADES } from '../../src/data/upgrades';
-import { effectLines, xpAt } from '../../src/meta/describe';
+import { effectLines, upgradeTally, xpAt } from '../../src/meta/describe';
 import type { XpGain } from '../../src/meta/game';
 
 describe('effect lines', () => {
@@ -41,5 +41,16 @@ describe('xp replay', () => {
   it('stays empty at the cap', () => {
     const g = gain(LEVEL_CAP - 1, 0, 10_000, LEVEL_CAP, 0);
     expect(xpAt(g, 0.9)).toMatchObject({ level: LEVEL_CAP, xp: 0 });
+  });
+});
+
+describe('upgrade tally', () => {
+  it('groups repeats in the order first taken', () => {
+    expect(upgradeTally(['stout', 'ironSkin', 'stout', 'bellow', 'stout'])).toEqual([
+      { id: 'stout', count: 3 },
+      { id: 'ironSkin', count: 1 },
+      { id: 'bellow', count: 1 },
+    ]);
+    expect(upgradeTally([])).toEqual([]);
   });
 });

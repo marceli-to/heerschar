@@ -138,6 +138,13 @@ export const STRINGS = {
     weapon: 'Weapon',
     trinket: 'Trinket',
     empty: 'Empty',
+    /** 4d additions. Draft copy, not yet approved by Marcel. */
+    takeOff: 'Take off',
+    baggageEmpty: 'Nothing in the baggage fits.',
+    pathAndUpgrades: 'Path & upgrades',
+    noUpgrades: 'No upgrades yet.',
+    pathNote: 'Path',
+    each: 'each',
     stats: {
       maxHp: 'Health',
       power: 'Power',

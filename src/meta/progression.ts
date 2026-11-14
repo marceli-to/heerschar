@@ -1,5 +1,5 @@
 import { playerSlotStats } from '../data/encounters';
-import { itemById, type Item } from '../data/items';
+import { itemById, type Item, type ItemSlot } from '../data/items';
 import { EFFECT_CAPS, LEVEL_CAP, OFFER_SIZE, PATH_LEVEL, statsAtLevel, sumEffects, xpToNext, type Effect } from '../data/progression';
 import { FILLER_UPGRADE, pathById, pathsOf, upgradeById, UPGRADES, type PathId, type Upgrade } from '../data/upgrades';
 import { int, type RngHolder } from '../sim/rng';
@@ -133,4 +133,9 @@ export function takePath(c: Character, id: PathId): void {
 
 export function canEquip(c: Character, item: Item): boolean {
   return item.classId === null || item.classId === c.classId;
+}
+
+/** The stats a character would fight with wearing `itemId` (or nothing) in `slot` (for the sheet's preview). */
+export function statsWithItem(c: Character, slot: ItemSlot, itemId: string | null): Stats {
+  return characterStats({ ...c, [slot]: itemId });
 }

@@ -42,3 +42,14 @@ export function xpAt(g: XpGain, t: number): XpPoint {
   xp = level >= LEVEL_CAP ? 0 : level === g.toLevel ? Math.min(g.toXp, xp + rest) : xp + rest;
   return { level, xp, needed: xpToNext(level) };
 }
+
+/** A character's upgrades for the sheet: one entry per upgrade, in the order first taken, with how often. */
+export function upgradeTally(upgrades: readonly string[]): { id: string; count: number }[] {
+  const out: { id: string; count: number }[] = [];
+  for (const id of upgrades) {
+    const e = out.find((x) => x.id === id);
+    if (e) e.count++;
+    else out.push({ id, count: 1 });
+  }
+  return out;
+}

@@ -4,8 +4,8 @@ import { ENCOUNTERS, encounterById, playerSlotStats } from '../../src/data/encou
 import { ITEMS, itemById } from '../../src/data/items';
 import { LEVEL_CAP, PATH_LEVEL, statsAtLevel, xpToNext } from '../../src/data/progression';
 import { PATHS, UPGRADES, pathsOf, upgradeById } from '../../src/data/upgrades';
-import { characterOf, choose, currentChoice, equip, isUnlocked, newGame, recordBattle, rollLoot, takeLoot, unequip, type GameState } from '../../src/meta/game';
-import { addXp, availableUpgrades, characterMods, characterStats, rollUpgradeOptions, takePath, takeUpgrade } from '../../src/meta/progression';
+import { characterOf, choose, currentChoice, equip, fittingItems, isUnlocked, newGame, recordBattle, rollLoot, takeLoot, unequip, type GameState } from '../../src/meta/game';
+import { addXp, availableUpgrades, characterMods, characterStats, rollUpgradeOptions, statsWithItem, takePath, takeUpgrade } from '../../src/meta/progression';
 import { battleSetupFor, HERO_ID, setFielded } from '../../src/meta/squad';
 import { createBattle } from '../../src/sim/battle';
 import { NEUTRAL_MODS, type PlayableClassId } from '../../src/sim/types';
@@ -206,6 +206,29 @@ describe('loot and equipment', () => {
     expect(unequip(s, HERO_ID, 'weapon')).toBe(true);
     expect(s.inventory).toHaveLength(3);
     expect(equip(s, HERO_ID, 'garnetRing')).toBe(false);
+  });
+
+  it('fitting items: only the slot and class, grouped, best rarity first', () => {
+    const s = game();
+    s.inventory.push('ironSword', 'huntingBow', 'copperRing', 'oathkeeper', 'ironSword', 'knightsBlade');
+    expect(fittingItems(s, HERO_ID, 'weapon')).toEqual([
+      { id: 'oathkeeper', count: 1 },
+      { id: 'knightsBlade', count: 1 },
+      { id: 'ironSword', count: 2 },
+    ]);
+    expect(fittingItems(s, HERO_ID, 'trinket')).toEqual([{ id: 'copperRing', count: 1 }]);
+  });
+
+  it('the stat preview matches what equipping gives', () => {
+    const s = game();
+    s.inventory.push('knightsBlade', 'garnetRing');
+    const c = characterOf(s, HERO_ID);
+    const preview = statsWithItem(c, 'weapon', 'knightsBlade');
+    expect(c.weapon).toBeNull();
+    equip(s, HERO_ID, 'knightsBlade');
+    expect(characterStats(c)).toEqual(preview);
+    expect(statsWithItem(c, 'weapon', null)).toEqual(characterStats({ ...c, weapon: null }));
+    expect(statsWithItem(c, 'weapon', null).power).toBeLessThan(preview.power);
   });
 
   it('every item has a valid slot and class', () => {

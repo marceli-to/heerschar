@@ -1,5 +1,5 @@
 // Headless Chrome screenshots. Usage: node tools/shot.mjs <url> <out.png> [actionsJson]
-// actions: [{"eval":"js"},{"wait":ms},{"shot":"file.png"},{"print":true}]. Use ?debug for window.__game, ?bot to autoplay.
+// actions: [{"eval":"js"},{"wait":ms},{"shot":"file.png"},{"print":true},{"mouse":[x,y]} (real move = CSS hover),{"hover":"css selector"} (moves to its centre)]. Use ?debug for window.__game, ?bot to autoplay.
 const C = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
@@ -19,6 +19,9 @@ await send('Page.navigate', { url });
 await sleep(2500);
 for (const a of JSON.parse(actions)) {
   if (a.eval) { const r = await send('Runtime.evaluate', { expression: a.eval, returnByValue: true, awaitPromise: true }); if (a.print) console.log(JSON.stringify(r.result.result.value)); }
+  let at = a.mouse;
+  if (a.hover) { const r = await send('Runtime.evaluate', { expression: `(() => { const b = document.querySelector(${JSON.stringify(a.hover)})?.getBoundingClientRect(); return b ? [b.x + b.width / 2, b.y + b.height / 2] : null; })()`, returnByValue: true }); at = r.result.result.value; if (!at) logs.push(`hover: no ${a.hover}`); }
+  if (at) await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at[0], y: at[1] });
   if (a.wait) await sleep(a.wait);
   if (a.shot) { const r = await send('Page.captureScreenshot', { format: 'png' }); writeFileSync(a.shot, Buffer.from(r.result.data, 'base64')); }
 }

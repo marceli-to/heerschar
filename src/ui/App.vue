@@ -64,6 +64,7 @@ function fight(id: EncounterId): void {
     <OrdersScreen v-else-if="session.screen === 'orders' && session.game" :won="session.game.won" @fight="fight" @back="goTo('title')" />
     <SquadScreen
       v-else-if="session.screen === 'squad' && session.game"
+      :game="session.game"
       :squad="session.game.squad"
       :encounter-id="session.encounterId"
       @next="goTo('formation')"
@@ -71,6 +72,7 @@ function fight(id: EncounterId): void {
     />
     <FormationScreen
       v-else-if="session.screen === 'formation' && session.game"
+      :game="session.game"
       :squad="session.game.squad"
       :encounter-id="session.encounterId"
       @next="startBattle(session.encounterId)"

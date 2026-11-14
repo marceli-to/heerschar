@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { encounterById, type EncounterId, type EncounterUnit } from '../../data/encounters';
 import { STRINGS } from '../../data/strings';
+import type { GameState } from '../../meta/game';
 import { canPlace, enemyViewCol, isFielded, occupantOf, placeCharacter, setFielded, type Character, type Slot, type SquadState } from '../../meta/squad';
 import ClassMedallion from '../hud/ClassMedallion.vue';
 import CharacterSheet from './CharacterSheet.vue';
@@ -14,7 +15,7 @@ import WarTable from './WarTable.vue';
  * Drag units between slots (swap), from the bench onto a slot (swap in) or onto the bench.
  * Hovering an enemy shows its threat; clicking one of yours opens its sheet on the right.
  */
-const props = defineProps<{ squad: SquadState; encounterId: EncounterId }>();
+const props = defineProps<{ game: GameState; squad: SquadState; encounterId: EncounterId }>();
 const emit = defineEmits<{ next: []; back: [] }>();
 
 const T = STRINGS.formationStep;
@@ -178,7 +179,7 @@ const OWN_ROWS = [0, 1] as const;
         </div>
 
         <div class="flex flex-col justify-center">
-          <CharacterSheet :character="selected" />
+          <CharacterSheet :character="selected" :game="game" />
         </div>
       </div>
       <div class="mt-6 flex w-full items-center justify-between px-2">

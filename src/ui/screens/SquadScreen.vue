@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import type { EncounterId } from '../../data/encounters';
 import { STRINGS } from '../../data/strings';
+import type { GameState } from '../../meta/game';
 import { fieldedCharacters, isFielded, MAX_FIELDED, setFielded, swapIn, type Character, type SquadState } from '../../meta/squad';
 import ClassMedallion from '../hud/ClassMedallion.vue';
 import CharacterSheet from './CharacterSheet.vue';
@@ -12,7 +13,7 @@ import WarTable from './WarTable.vue';
  * character's sheet on the right. Field or bench with the sheet's button or by dragging rows;
  * a benched character dropped onto a fielded companion swaps with it.
  */
-const props = defineProps<{ squad: SquadState; encounterId: EncounterId }>();
+const props = defineProps<{ game: GameState; squad: SquadState; encounterId: EncounterId }>();
 const emit = defineEmits<{ next: []; back: [] }>();
 
 const T = STRINGS.squadStep;
@@ -132,7 +133,7 @@ function onDrop(e: DragEvent, target: 'field' | 'bench' | number): void {
           </div>
         </div>
         <div class="flex flex-col">
-          <CharacterSheet :character="selected" />
+          <CharacterSheet :character="selected" :game="game" />
           <div class="mt-4 flex min-h-10 items-center justify-end gap-4">
             <span v-if="selected.isHero" class="italic text-ink-soft">{{ T.heroAlwaysFights }}</span>
             <template v-else>

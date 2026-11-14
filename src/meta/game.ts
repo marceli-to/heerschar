@@ -201,6 +201,26 @@ export function equip(state: GameState, characterId: number, itemId: string): bo
   return true;
 }
 
+const RARITY_ORDER: Record<Rarity, number> = { epic: 0, rare: 1, common: 2 };
+
+/** One kind of item in the baggage that fits a slot, with how many of it lie there. */
+export interface BaggageEntry {
+  id: string;
+  count: number;
+}
+
+/** Inventory items `characterId` can wear in `slot`, one entry per kind: best rarity first, then item list order. */
+export function fittingItems(state: GameState, characterId: number, slot: ItemSlot): BaggageEntry[] {
+  const c = characterOf(state, characterId);
+  const counts = new Map<string, number>();
+  for (const id of state.inventory) {
+    const item = itemById(id);
+    if (item.slot === slot && canEquip(c, item)) counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  const order = (id: string) => RARITY_ORDER[itemById(id).rarity] * ITEMS.length + ITEMS.findIndex((i) => i.id === id);
+  return [...counts].map(([id, count]) => ({ id, count })).sort((a, b) => order(a.id) - order(b.id));
+}
+
 /** Takes a character's item off into the inventory. */
 export function unequip(state: GameState, characterId: number, slot: ItemSlot): boolean {
   const c = characterOf(state, characterId);
