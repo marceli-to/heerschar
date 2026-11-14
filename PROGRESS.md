@@ -14,7 +14,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 |---|---|
 | 0 Scaffold | done, committed |
 | 1 Hero alone | done, committed. **Gate passed**: Marcel playtested, "feels quite good, hard to beat 3 opponents, I like that". Keep current feel numbers. |
-| 2 Squad battle | **next**, not started (breakdown below) |
+| 2 Squad battle | in progress: **2a done**, committed; **2b next** (breakdown below) |
 | 3–7 | not started |
 
 ## Design decisions (all approved by Marcel)
@@ -42,8 +42,9 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 ## Architecture as built
 
-- `src/sim/` pure and deterministic (enforced by `tests/sim/purity.test.ts`). `battle.ts` has `createBattle(setup)` and `step(battle, input, dt)` → events. Also `heroControl.ts`, `ai.ts` (Stage 1 melee enemy only), `combat.ts` (damage, `resolveMelee`, poise), `movement.ts` (separation, elliptical soft bounds, knockback), `bot.ts` (scripted hero), `rng.ts` (state lives on `Battle.rngState`), `balance.ts`, `types.ts`.
-- `src/data/`: `classes.ts` (4 class stat lines), `encounters.ts` (`trialSetup`), `strings.ts`.
+- `src/sim/` pure and deterministic (enforced by `tests/sim/purity.test.ts`). `battle.ts` has `createBattle(setup)` and `step(battle, input, dt)` → events, plus `slotPosition` / `formationSetup` (3 × 2 slots). Also `heroControl.ts`, `ai.ts` (one `updateAi` for companions and enemies: shared windup/recover runner, then a brain per class; `actionTiming(unit)` for the view), `combat.ts` (damage incl. frozen/marked multipliers, `applyDamage` with shield absorb + death, `applyHeal`, `stun`, `resolveMelee`, poise), `projectiles.ts` (straight + piercing shots, `lob` = arcing projectile whose damage is an area placed at launch, `placeArea`, `freeze`), `statuses.ts` (frozen, rallied, shielded, taunted; `stunned` is a unit state, `marked` is `Battle.markTargetId`), `movement.ts` (separation, elliptical soft bounds, knockback), `bot.ts` (scripted hero), `rng.ts` (state lives on `Battle.rngState`), `balance.ts`, `types.ts`.
+- `src/data/`: `classes.ts` (4 class stat lines), `encounters.ts` (`trialSetup`, `squadSetup` = warrior hero + Krieger, Bogenschuetze, Heiler, Magier vs 3 Krieger + Bogenschuetze, Heiler, Magier), `strings.ts`.
+- AI actions and behaviour numbers: `ACTIONS`, `BEHAVIOUR`, `STATUS`, `FORMATION` in `balance.ts`. Events added in 2a: `heal`, `action`, `shoot`, `areaStart`, `areaResolve`, `status`; `hit` has `absorbed`. The game still runs the trial; `game.ts` ignores the new events until 2d. `AnimInput.action` lets non-strike actions reuse the swing pose for now.
 - `src/view/`: `scene.ts`, `arena.ts`, `camera.ts` (zoom 0..1 curve, yaw, follow, shake; tuning in `CAMERA`), `unitView.ts` (`UnitView` interface + `PrimitiveWarriorView`; animation is **posed from sim state every frame**, so hit-stop freezes it for free), `markers.ts` (HealthBar), `effects.ts` (sparks, dust, swing arcs).
 - `src/input/`: `keyboardMouse.ts`, `heroInput.ts` (latches presses per frame and hands them to the next tick; camera-relative movement).
 - `src/game/`: `loop.ts` (fixed-timestep accumulator, visibility reset), `game.ts` (glue: phases intro/playing/paused/ended, interpolation, events → effects/shake, reactive `hud` and `debug` for Vue).
@@ -52,7 +53,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 ## Verify
 
-- `npm test` (39 tests), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
+- `npm test` (66 tests; per-class behaviour in `tests/sim/squad.test.ts`, test helpers `unit()` and `hold()` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
 - URL params: `?seed=`, `?zoom=0..1`, `?debug` (overlay + `window.__game`), `?bot` (bot plays the hero).
 - Headless checks (Chrome, needs the dev server): `node tools/shot.mjs "<url>" out.png '[{"wait":4500,"shot":"a.png"}]'` for screenshots (combat: `?bot&seed=5&zoom=0.2`), `node tools/perf.mjs "<url>"` for fps and the background-tab test. The T3 preview pane runs no animation frames, so use these instead.
 
@@ -60,7 +61,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 PLAN sections: 5 (rules, statuses), 6 (classes, enemy types, companion behaviour), 7 (hero abilities, energy, leader ability, mark), 8 (lock-on, HUD), 13 (bot, tests).
 
-1. **2a Sim: squad and classes.** Generalise `ai.ts` per class (Krieger intercepts and taunts, Bogenschuetze kites and shoots lowest HP, Heiler heals lowest fraction (hero first on ties), Magier casts at clusters + frost nova). Projectiles (straight and arcing, aim at the current position), area effects (telegraphed circles 0.8–1.5 s), heals, statuses (frozen, stunned, marked, rallied, shielded). Formation setup: 3 × 2 slots per side, about 24 m apart. Companion abilities. Tests for each.
+1. ~~**2a Sim: squad and classes.**~~ Done. Notes: Krieger taunt fires when ≥ 2 non-hero foes are within 6 m (the hero is never taunted); Bogenschuetze uses its piercing shot whenever it is off cooldown; Heiler casts a weak magic bolt (0.5 × power) when nobody needs healing; frost nova also deals a little damage (0.4 ×). First numbers on `squadSetup` (30 seeds): Stage 1 bot hero wins 29/30, ~27 s per battle, hero ≈ 45 % of player damage (target 20–30 %, tune in 2f); an idle hero loses all. Original 2a brief: Generalise `ai.ts` per class (Krieger intercepts and taunts, Bogenschuetze kites and shoots lowest HP, Heiler heals lowest fraction (hero first on ties), Magier casts at clusters + frost nova). Projectiles (straight and arcing, aim at the current position), area effects (telegraphed circles 0.8–1.5 s), heals, statuses (frozen, stunned, marked, rallied, shielded). Formation setup: 3 × 2 slots per side, about 24 m apart. Companion abilities. Tests for each.
 2. **2b Sim: hero kit.** Energy (start 30, +4/s, +5 per landed basic attack), Warrior abilities Schildstoss / Wirbel (and the other three classes' sets), leader ability Sammeln (rallied 6 s), lock-on (Tab / cycle / Shift+Tab), mark (F). Extend `HeroInput`. The hero has no self-heal unless Heiler (reduced).
 3. **2c Enemy types:** Schildtraeger, Berserker, Schamane.
 4. **2d View:** figures for Archer (hood, bow), Healer (robe, glowing orb), Mage (pointed hat, staff), plus the three enemy types (silhouettes: ask Marcel if unclear). Projectiles with trails, filling-disc area warnings, heal glow, frozen = blue, lock ring under the target, banner icon over the marked one, damage numbers.

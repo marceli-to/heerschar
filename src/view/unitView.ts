@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { ENEMY, HERO, heroAttack, type MeleeAttack } from '../sim/balance';
+import { ACTIONS, ENEMY, HERO, heroAttack, type MeleeAttack } from '../sim/balance';
 import { clamp, lerp } from '../sim/math';
-import type { UnitState } from '../sim/types';
+import type { ActionId, UnitState } from '../sim/types';
 import type { FigureColors } from './palette';
 
 /** What a figure needs from the sim each frame to pose itself. */
@@ -11,6 +11,8 @@ export interface AnimInput {
   chain: number;
   stunDuration: number;
   isHero: boolean;
+  /** AI: the action being wound up or recovered from (non-strike actions reuse the swing pose until 2d). */
+  action: ActionId | null;
   /** Ground speed in m/s (from interpolated positions), for the walk cycle. */
   speed: number;
 }
@@ -178,7 +180,11 @@ export class PrimitiveWarriorView implements UnitView {
     this.updateFlash(frameTime);
     this.idleTime += frameTime;
     this.resetPose();
-    const attack: MeleeAttack = a.isHero ? heroAttack(a.chain) : ENEMY.attack;
+    const attack: MeleeAttack = a.isHero
+      ? heroAttack(a.chain)
+      : a.action === null || a.action === 'strike'
+        ? ENEMY.attack
+        : { ...ENEMY.attack, windup: ACTIONS[a.action].windup, recover: ACTIONS[a.action].recover };
 
     switch (a.state) {
       case 'idle':

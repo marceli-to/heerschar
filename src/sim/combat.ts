@@ -1,6 +1,7 @@
-import { DAMAGE_VARIANCE, STAGGER_IMMUNITY, UNIT_RADIUS, type MeleeAttack } from './balance';
+import { DAMAGE_VARIANCE, STAGGER_IMMUNITY, STATUS, UNIT_RADIUS, type MeleeAttack } from './balance';
 import { angleDiff, angleTo, dist } from './math';
 import { range } from './rng';
+import { getStatus, hasStatus, removeStatus } from './statuses';
 import type { Battle, BattleEvent, DamageType, Unit } from './types';
 
 export function isAlive(u: Unit): boolean {
@@ -11,11 +12,64 @@ export function isInvulnerable(u: Unit, invulnerableTime: number): boolean {
   return u.state === 'dodging' && u.stateTime < invulnerableTime;
 }
 
-/** `power × multiplier × 100 / (100 + armor or resist)`, ±variance from the battle RNG. */
+/**
+ * `power × multiplier × 100 / (100 + armor or resist)`, ±variance from the battle RNG,
+ * then +50% physical on frozen targets and +15% on the marked target.
+ */
 export function computeDamage(battle: Battle, power: number, multiplier: number, target: Unit, type: DamageType): number {
   const defence = type === 'physical' ? target.stats.armor : target.stats.resist;
-  const base = (power * multiplier * 100) / (100 + defence);
-  return base * range(battle, 1 - DAMAGE_VARIANCE, 1 + DAMAGE_VARIANCE);
+  let amount = ((power * multiplier * 100) / (100 + defence)) * range(battle, 1 - DAMAGE_VARIANCE, 1 + DAMAGE_VARIANCE);
+  if (type === 'physical' && hasStatus(target, 'frozen')) amount *= STATUS.frozenPhysical;
+  if (battle.markTargetId === target.id) amount *= STATUS.marked;
+  return amount;
+}
+
+export function kill(unit: Unit, events: BattleEvent[]): void {
+  unit.state = 'dead';
+  unit.stateTime = 0;
+  unit.action = null;
+  unit.statuses = [];
+  events.push({ type: 'death', unitId: unit.id });
+}
+
+/**
+ * Deals already computed damage: a shield absorbs first, then health. Emits the hit and,
+ * when the target falls, its death. Returns true if the target died.
+ */
+export function applyDamage(attacker: Unit, target: Unit, amount: number, heavy: boolean, events: BattleEvent[]): boolean {
+  let absorbed = 0;
+  const shield = getStatus(target, 'shielded');
+  if (shield) {
+    absorbed = Math.min(shield.amount, amount);
+    shield.amount -= absorbed;
+    if (shield.amount <= 0) removeStatus(target, 'shielded', events);
+  }
+  const dealt = Math.min(target.hp, amount - absorbed);
+  target.hp -= dealt;
+  events.push({ type: 'hit', attackerId: attacker.id, targetId: target.id, amount: dealt, absorbed, heavy, x: target.pos.x, z: target.pos.z });
+  if (target.hp <= 0) {
+    target.hp = 0;
+    kill(target, events);
+    return true;
+  }
+  return false;
+}
+
+/** Restores health up to the maximum. Emits the heal with the amount actually restored. */
+export function applyHeal(source: Unit, target: Unit, amount: number, events: BattleEvent[]): void {
+  if (!isAlive(target)) return;
+  const restored = Math.min(amount, target.stats.maxHp - target.hp);
+  target.hp += restored;
+  events.push({ type: 'heal', sourceId: source.id, targetId: target.id, amount: restored, x: target.pos.x, z: target.pos.z });
+}
+
+/** Puts a unit into the stunned state; any windup in progress is lost. */
+export function stun(unit: Unit, duration: number): void {
+  if (!isAlive(unit)) return;
+  unit.state = 'stunned';
+  unit.stateTime = 0;
+  unit.stunDuration = duration;
+  unit.action = null;
 }
 
 /** True when `target` lies inside the attack's arc in front of `attacker`. */
@@ -50,22 +104,14 @@ export function resolveMelee(battle: Battle, attacker: Unit, attack: MeleeAttack
     }
     hits++;
     const amount = computeDamage(battle, attacker.stats.power, attack.multiplier, target, 'physical');
-    target.hp = Math.max(0, target.hp - amount);
-    events.push({ type: 'hit', attackerId: attacker.id, targetId: target.id, amount, heavy: attack.heavy, x: target.pos.x, z: target.pos.z });
-
     const away = angleTo(attacker.pos, target.pos);
     target.vel.x += Math.sin(away) * attack.knockback;
     target.vel.z += -Math.cos(away) * attack.knockback;
     target.hitstop = Math.max(target.hitstop, attack.hitstop);
 
-    if (target.hp <= 0) {
-      target.state = 'dead';
-      target.stateTime = 0;
-      events.push({ type: 'death', unitId: target.id });
-    } else if (canStagger(target, attack)) {
-      target.state = 'stunned';
-      target.stateTime = 0;
-      target.stunDuration = attack.stagger;
+    if (applyDamage(attacker, target, amount, attack.heavy, events)) continue;
+    if (canStagger(target, attack) && !hasStatus(target, 'frozen')) {
+      stun(target, attack.stagger);
       target.staggerImmunity = STAGGER_IMMUNITY;
     }
   }

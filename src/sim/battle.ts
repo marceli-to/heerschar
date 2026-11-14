@@ -1,9 +1,11 @@
-import { ARENA, COUNTDOWN } from './balance';
-import { updateEnemy } from './ai';
+import { ARENA, COUNTDOWN, FORMATION } from './balance';
+import { updateAi } from './ai';
 import { isAlive } from './combat';
 import { bufferHeroInput, updateHero } from './heroControl';
 import { applyKnockback, keepInBounds, separate } from './movement';
+import { updateAreas, updateProjectiles } from './projectiles';
 import { seedState } from './rng';
+import { hasStatus, tickStatuses } from './statuses';
 import type { Battle, BattleEvent, ClassId, HeroInput, Stats, Team, Unit } from './types';
 
 export interface UnitSetup {
@@ -45,7 +47,35 @@ function createUnit(id: number, s: UnitSetup): Unit {
     hitstop: 0,
     attackBuffer: 0,
     dodgeBuffer: 0,
+    statuses: [],
+    abilityCooldowns: {},
+    action: null,
   };
+}
+
+export interface FormationSlot {
+  classId: ClassId;
+  /** 0..2, left to right as seen from the player side. */
+  col: number;
+  /** 0 = front, 1 = back. */
+  row: number;
+  isHero?: boolean;
+  stats: Stats;
+}
+
+/** World position of a formation slot. The player side stands on -x and faces +x. */
+export function slotPosition(team: Team, col: number, row: number): { x: number; z: number } {
+  const side = team === 'player' ? -1 : 1;
+  const x = side * (FORMATION.frontX + row * FORMATION.rowGap);
+  // Columns run left to right as each side sees it, so they mirror across the field.
+  const z = (col - 1) * FORMATION.colGap * (team === 'player' ? 1 : -1);
+  return { x, z };
+}
+
+/** Builds a battle setup from two formations of 3 × 2 slots. */
+export function formationSetup(seed: number, player: FormationSlot[], enemy: FormationSlot[]): BattleSetup {
+  const place = (team: Team) => (s: FormationSlot): UnitSetup => ({ team, classId: s.classId, isHero: s.isHero ?? false, stats: { ...s.stats }, ...slotPosition(team, s.col, s.row) });
+  return { seed, units: [...player.map(place('player')), ...enemy.map(place('enemy'))] };
 }
 
 export function createBattle(setup: BattleSetup): Battle {
@@ -54,6 +84,10 @@ export function createBattle(setup: BattleSetup): Battle {
     rngState: seedState(setup.seed),
     arena: { width: ARENA.width, depth: ARENA.depth },
     units: setup.units.map((u, i) => createUnit(i + 1, u)),
+    projectiles: [],
+    areas: [],
+    nextId: 1,
+    markTargetId: null,
     countdown: COUNTDOWN,
     outcome: 'running',
   };
@@ -88,12 +122,24 @@ export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[
         unit.hitstop = Math.max(0, unit.hitstop - dt);
         continue;
       }
+      tickStatuses(unit, dt, events);
+      if (hasStatus(unit, 'frozen')) {
+        applyKnockback(unit, dt);
+        continue;
+      }
       if (unit.isHero) updateHero(battle, unit, input, dt, events);
-      else updateEnemy(battle, unit, dt, events);
+      else updateAi(battle, unit, dt, events);
     } else {
       unit.stateTime += dt;
     }
     applyKnockback(unit, dt);
+  }
+
+  updateProjectiles(battle, dt, events);
+  updateAreas(battle, dt, events);
+  if (battle.markTargetId !== null) {
+    const marked = battle.units.find((u) => u.id === battle.markTargetId);
+    if (!marked || marked.state === 'dead') battle.markTargetId = null;
   }
 
   separate(battle);

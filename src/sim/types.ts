@@ -23,6 +23,30 @@ export interface Stats {
 
 export type UnitState = 'idle' | 'moving' | 'windup' | 'recover' | 'dodging' | 'stunned' | 'dead';
 
+/** What an AI unit is winding up or recovering from. See `ACTIONS` in balance.ts. */
+export type ActionId = 'strike' | 'taunt' | 'shot' | 'pierce' | 'heal' | 'groupHeal' | 'bolt' | 'fireball' | 'frostNova';
+/** Abilities with a cooldown, a subset of the actions. */
+export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova';
+
+/**
+ * Timed conditions on a unit. `stunned` is a unit state (it shares the stagger timer) and
+ * `marked` lives on `Battle.markTargetId`, so neither appears here.
+ * - frozen: cannot act, takes +50% physical damage
+ * - rallied: +25% attack speed and move speed
+ * - shielded: absorbs `amount` damage
+ * - taunted: must target `sourceId`
+ */
+export type StatusKind = 'frozen' | 'rallied' | 'shielded' | 'taunted';
+
+export interface Status {
+  kind: StatusKind;
+  /** Seconds left. */
+  time: number;
+  /** Shield points left (shielded only). */
+  amount: number;
+  sourceId: number;
+}
+
 /** One fighter inside a battle. Fields are added stage by stage as rules arrive. */
 export interface Unit {
   id: number;
@@ -56,6 +80,63 @@ export interface Unit {
   /** Hero input buffers: seconds left in which a press still counts. */
   attackBuffer: number;
   dodgeBuffer: number;
+  statuses: Status[];
+  /** Seconds until each ability may be used again. */
+  abilityCooldowns: Partial<Record<AbilityId, number>>;
+  /** AI: the action in windup or recover. */
+  action: ActionId | null;
+}
+
+export type ProjectileKind = 'arrow' | 'piercing' | 'bolt' | 'fireball';
+
+/**
+ * Straight projectiles fly along `dir` and hit the first foe in their radius (piercing ones
+ * hit every foe once). Arcing projectiles fly from `from` to `to` in `duration` and only carry
+ * the look: their damage is the area effect `areaId`, telegraphed at launch.
+ */
+export interface Projectile {
+  id: number;
+  kind: ProjectileKind;
+  team: Team;
+  ownerId: number;
+  pos: Vec2;
+  arc: boolean;
+  /** Straight: unit direction and speed. */
+  dir: Vec2;
+  speed: number;
+  radius: number;
+  /** Straight: metres left before it drops. */
+  rangeLeft: number;
+  power: number;
+  multiplier: number;
+  damageType: DamageType;
+  pierce: boolean;
+  hitIds: number[];
+  /** Arcing: flight path and timing. */
+  from: Vec2;
+  to: Vec2;
+  time: number;
+  duration: number;
+  areaId: number | null;
+}
+
+export type AreaKind = 'fireball' | 'frostNova';
+
+/** A telegraphed ground circle: resolves on every foe inside once `time` reaches `delay`. */
+export interface AreaEffect {
+  id: number;
+  kind: AreaKind;
+  team: Team;
+  ownerId: number;
+  pos: Vec2;
+  radius: number;
+  delay: number;
+  time: number;
+  power: number;
+  multiplier: number;
+  damageType: DamageType;
+  /** Seconds of `frozen` applied to those hit (0 = none). */
+  freeze: number;
 }
 
 export interface Battle {
@@ -63,6 +144,12 @@ export interface Battle {
   rngState: number;
   arena: { width: number; depth: number };
   units: Unit[];
+  projectiles: Projectile[];
+  areas: AreaEffect[];
+  /** Next id for projectiles and areas. */
+  nextId: number;
+  /** The enemy the hero marked as the squad's focus target (takes +15%). */
+  markTargetId: number | null;
   /** Seconds before the fight starts. */
   countdown: number;
   outcome: Outcome;
@@ -87,7 +174,13 @@ export type BattleEvent =
   | { type: 'countdown'; value: number }
   | { type: 'attackStart'; unitId: number; chain: number }
   | { type: 'swing'; unitId: number; chain: number }
-  | { type: 'hit'; attackerId: number; targetId: number; amount: number; heavy: boolean; x: number; z: number }
+  | { type: 'hit'; attackerId: number; targetId: number; amount: number; absorbed: number; heavy: boolean; x: number; z: number }
+  | { type: 'heal'; sourceId: number; targetId: number; amount: number; x: number; z: number }
+  | { type: 'action'; unitId: number; action: ActionId }
+  | { type: 'shoot'; projectileId: number; kind: ProjectileKind }
+  | { type: 'areaStart'; areaId: number; kind: AreaKind }
+  | { type: 'areaResolve'; areaId: number; kind: AreaKind; x: number; z: number; radius: number }
+  | { type: 'status'; unitId: number; kind: StatusKind; on: boolean }
   | { type: 'evade'; unitId: number }
   | { type: 'dodge'; unitId: number }
   | { type: 'death'; unitId: number }

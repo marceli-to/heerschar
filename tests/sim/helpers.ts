@@ -1,7 +1,7 @@
 import { createBattle, step, type UnitSetup } from '../../src/sim/battle';
 import { DT } from '../../src/sim/balance';
 import { CLASS_STATS } from '../../src/data/classes';
-import { emptyInput, type Battle, type BattleEvent, type HeroInput } from '../../src/sim/types';
+import { emptyInput, type Battle, type BattleEvent, type ClassId, type HeroInput } from '../../src/sim/types';
 
 export function hero(x = 0, z = 0): UnitSetup {
   return { team: 'player', classId: 'krieger', isHero: true, stats: { ...CLASS_STATS.krieger }, x, z };
@@ -38,4 +38,13 @@ export function run(b: Battle, ticks: number, p: Partial<HeroInput> = {}): Battl
 
 export function seconds(s: number): number {
   return Math.round(s / DT);
+}
+
+export function unit(team: 'player' | 'enemy', classId: ClassId, x: number, z = 0): UnitSetup {
+  return { team, classId, isHero: false, stats: { ...CLASS_STATS[classId] }, x, z };
+}
+
+/** Holds units in place for a test: frozen for a long time (they can still be hit). */
+export function hold(b: Battle, ...ids: number[]): void {
+  for (const id of ids) b.units[id - 1]!.statuses.push({ kind: 'frozen', time: 999, amount: 0, sourceId: 0 });
 }

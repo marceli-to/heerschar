@@ -211,7 +211,7 @@ export class Game {
       case 'swing': {
         const u = this.unit(e.unitId);
         if (!u) break;
-        const attack = u.isHero ? heroAttack(e.chain) : ENEMY.attack;
+        const attack = u.isHero ? heroAttack(e.chain) : ENEMY.attack; // swing events are melee only
         this.effects.swingArc(u.pos.x, u.pos.z, u.facing, attack.reach, attack.arc, attack.heavy);
         break;
       }
@@ -233,6 +233,13 @@ export class Game {
       case 'countdown':
       case 'attackStart':
       case 'evade':
+      // Visuals for these arrive in Stage 2d.
+      case 'heal':
+      case 'action':
+      case 'shoot':
+      case 'areaStart':
+      case 'areaResolve':
+      case 'status':
         break;
     }
   }
@@ -248,7 +255,7 @@ export class Game {
       const x = lerp(slot.prev.x, u.pos.x, a);
       const z = lerp(slot.prev.z, u.pos.z, a);
       slot.view.setPose(x, z, lerpAngle(slot.prev.facing, u.facing, a));
-      slot.view.animate({ state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, speed: slot.speed }, animTime);
+      slot.view.animate({ state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, speed: slot.speed }, animTime);
       if (slot.bar) {
         slot.bar.group.visible = u.state !== 'dead';
         slot.bar.update(x, 2.15, z, u.hp / u.stats.maxHp, this.rig.camera, frameTime);

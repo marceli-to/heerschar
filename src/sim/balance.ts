@@ -90,3 +90,53 @@ export function heroAttack(chain: number): MeleeAttack {
   if (!a) throw new Error('hero chain is empty');
   return a;
 }
+
+/** Status effect strengths (PLAN section 5). */
+export const STATUS = {
+  /** Frozen units take this much more physical damage. */
+  frozenPhysical: 1.5,
+  /** The marked enemy takes this much more damage. */
+  marked: 1.15,
+  /** Rallied units attack and move this much faster. */
+  rallied: 1.25,
+} as const;
+
+/** Formations: 3 columns × 2 rows per side, front rows about 24 m apart. */
+export const FORMATION = { frontX: 12, rowGap: 2.5, colGap: 3 } as const;
+
+/**
+ * AI actions. Every action has a windup (the tell, never under 0.35 s for anything aimed at the
+ * player) and a recover. The strike is `ENEMY.attack`.
+ */
+export const ACTIONS = {
+  taunt: { windup: 0.4, recover: 0.3, radius: 6, duration: 4, cooldown: 12 },
+  shot: { windup: 0.5, recover: 0.3, multiplier: 1.0, speed: 24, radius: 0.3 },
+  pierce: { windup: 0.8, recover: 0.4, multiplier: 1.6, speed: 28, radius: 0.35, cooldown: 10 },
+  heal: { windup: 0.6, recover: 0.4, multiplier: 1.0 },
+  groupHeal: { windup: 0.9, recover: 0.5, multiplier: 0.8, radius: 4.5, cooldown: 12, minHurt: 2, below: 0.75 },
+  bolt: { windup: 0.5, recover: 0.4, multiplier: 0.5, speed: 18, radius: 0.3 },
+  fireball: { windup: 0.8, recover: 0.4, multiplier: 1.1, radius: 2.2, speed: 11, minFlight: 0.8, maxFlight: 1.5, clusterRadius: 2.5 },
+  frostNova: { windup: 0.4, recover: 0.5, multiplier: 0.4, radius: 3.5, delay: 0.8, freeze: 2, cooldown: 14, trigger: 3 },
+} as const;
+
+/** Companion and enemy behaviour by class. */
+export const BEHAVIOUR = {
+  /** Straight projectiles fly this multiple of the shooter's range before dropping. */
+  projectileRangeFactor: 1.3,
+  /** Krieger: intercept a foe heading for a back-row ally when it is this close to the krieger. */
+  interceptRange: 14,
+  /** Taunt is used when at least this many non-hero foes are inside its radius. */
+  tauntMinFoes: 2,
+  /** Ranged units back away from foes closer than this while their attack recharges. */
+  fleeDistance: 4,
+  /** Ranged units try to stay at least this far from the nearest foe. */
+  rangedMinDistance: 7,
+  /** Heiler: heal allies below this health fraction. */
+  healBelow: 0.95,
+  /** Heiler: idle position this far behind the allies' centre, away from the foes. */
+  healerBehind: 3,
+  /** Heiler: keep at least this far from the nearest foe. */
+  healerSafeDistance: 7,
+  /** Healers count the hero's fraction this much lower, so the hero wins ties. */
+  heroTieBreak: 1e-6,
+} as const;
