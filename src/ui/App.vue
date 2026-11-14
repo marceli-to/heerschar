@@ -91,6 +91,7 @@ function fight(id: EncounterId): void {
       :can-leave="!trial"
       @won="won"
       @leave="goTo('orders')"
+      @change-squad="prepare(session.encounterId)"
     />
   </div>
 </template>

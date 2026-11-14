@@ -8,7 +8,7 @@ import Overlays from './Overlays.vue';
 
 /** One battle: mounts a Game on its own canvas and disposes it when the battle is left. */
 const props = defineProps<{ spec: BattleSpec; seed: number; zoom?: number; debug: boolean; peaceful: boolean; bot: boolean; canLeave: boolean }>();
-const emit = defineEmits<{ won: []; leave: [] }>();
+const emit = defineEmits<{ won: []; leave: []; changeSquad: [] }>();
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const game = shallowRef<Game | null>(null);
@@ -42,7 +42,7 @@ onBeforeUnmount(() => {
     <canvas ref="canvas" class="block h-full w-full" />
     <template v-if="game">
       <Hud :hud="game.hud" />
-      <Overlays :hud="game.hud" :can-leave="canLeave" @take-control="game.takeControl()" @restart="game.restart()" @leave="emit('leave')" />
+      <Overlays :hud="game.hud" :can-leave="canLeave" @take-control="game.takeControl()" @restart="game.restart()" @leave="emit('leave')" @change-squad="emit('changeSquad')" />
       <DebugOverlay :stats="game.debug" />
     </template>
   </div>

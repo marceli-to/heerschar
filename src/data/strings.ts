@@ -100,6 +100,15 @@ export const STRINGS = {
     leave: 'Return to the war table',
     back: 'Back',
     next: 'Next',
+    /** End panel shortcut back to the squad step of the same battle (approved 3e). */
+    changeSquad: 'Change squad',
+  },
+  /** End panel ledger (approved 3e: dealt / taken / healed per squad member). Column labels are draft copy. */
+  ledger: {
+    dealt: 'Dealt',
+    taken: 'Taken',
+    healed: 'Healed',
+    fallen: 'Fallen',
   },
   /** Stage 3c squad step and character sheet. Draft copy, not yet approved by Marcel. */
   squadStep: {

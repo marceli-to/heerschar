@@ -8,6 +8,7 @@ import { angleTo, lerp, lerpAngle } from '../sim/math';
 import type { AreaKind, Battle, BattleEvent, ClassId, HeroAbilityId, Unit } from '../sim/types';
 import { STRINGS } from '../data/strings';
 import { hasStatus } from '../sim/statuses';
+import { ledgerEntry, tallyEvents, type Ledger } from '../sim/ledger';
 import { botInput, createBot, type BotState } from '../sim/bot';
 import { KeyboardMouse } from '../input/keyboardMouse';
 import { HeroInputSampler } from '../input/heroInput';
@@ -83,6 +84,18 @@ export interface HudEdgeMarker {
   angle: number;
 }
 
+/** One squad member's line on the end panel. */
+export interface HudLedgerRow {
+  id: number;
+  name: string;
+  classId: ClassId;
+  hero: boolean;
+  fallen: boolean;
+  dealt: number;
+  taken: number;
+  healed: number;
+}
+
 export interface HudState {
   phase: Phase;
   /** Which fight runs: the Stage 1 trial (`?trial`) or a squad battle. */
@@ -108,6 +121,8 @@ export interface HudState {
   outcome: 'running' | 'won' | 'lost';
   /** Seconds since the countdown ended. */
   time: number;
+  /** The player side's ledger, hero first; filled when the battle ends. */
+  ledger: HudLedgerRow[];
 }
 
 interface Pose {
@@ -149,6 +164,7 @@ export class Game {
   private heroInput: HeroInputSampler;
   private effects = new Effects();
   private units = new Map<number, UnitSlot>();
+  private ledger: Ledger = new Map();
   private unitLayer = new THREE.Group();
   private loop: RunningLoop | null = null;
   private fpsFrames = 0;
@@ -179,7 +195,7 @@ export class Game {
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
     this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, lock: null, mark: null });
-    this.hud = reactive({ phase: 'intro', mode: this.spec.mode, title: this.spec.title, intro: this.spec.intro, heroClass: hero?.classId ?? 'krieger', heroName: this.spec.names[0] ?? '', countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, energy: 0, maxEnergy: ENERGY.max, abilities: [], squad: [], edgeMarkers: [], foes: 0, outcome: 'running', time: 0 });
+    this.hud = reactive({ phase: 'intro', mode: this.spec.mode, title: this.spec.title, intro: this.spec.intro, heroClass: hero?.classId ?? 'krieger', heroName: this.spec.names[0] ?? '', countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, energy: 0, maxEnergy: ENERGY.max, abilities: [], squad: [], edgeMarkers: [], foes: 0, outcome: 'running', time: 0, ledger: [] });
     this.buildUnits();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
@@ -207,6 +223,8 @@ export class Game {
     this.numbers.clear();
     this.heroInput.clear();
     if (this.bot) this.bot = createBot();
+    this.ledger = new Map();
+    this.hud.ledger = [];
     this.hud.outcome = 'running';
     this.hud.phase = 'playing';
     this.kbm.requestLock();
@@ -307,7 +325,27 @@ export class Game {
       const v = Math.hypot(u.pos.x - slot.prev.x, u.pos.z - slot.prev.z) / DT;
       slot.speed += (v - slot.speed) * 0.25;
     }
+    tallyEvents(this.ledger, events);
     for (const e of events) this.onEvent(e);
+  }
+
+  /** The player side in formation order, hero first, with what each did. */
+  private ledgerRows(): HudLedgerRow[] {
+    const side = this.battle.units.filter((u) => u.team === 'player');
+    side.sort((a, b) => Number(b.isHero) - Number(a.isHero));
+    return side.map((u) => {
+      const e = ledgerEntry(this.ledger, u.id);
+      return {
+        id: u.id,
+        name: this.spec.names[u.id - 1] ?? STRINGS.classes[u.classId],
+        classId: u.classId,
+        hero: u.isHero,
+        fallen: u.state === 'dead',
+        dealt: Math.round(e.dealt),
+        taken: Math.round(e.taken),
+        healed: Math.round(e.healed),
+      };
+    });
   }
 
   private unit(id: number): Unit | undefined {
@@ -390,6 +428,7 @@ export class Game {
       }
       case 'outcome':
         this.hud.outcome = e.outcome;
+        this.hud.ledger = this.ledgerRows();
         this.hud.phase = 'ended';
         if (this.kbm.locked) document.exitPointerLock();
         break;

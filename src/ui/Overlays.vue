@@ -2,10 +2,11 @@
 import { computed } from 'vue';
 import type { HudState } from '../game/game';
 import { STRINGS } from '../data/strings';
+import EndLedger from './EndLedger.vue';
 import ParchmentPanel from './ParchmentPanel.vue';
 
 const props = defineProps<{ hud: HudState; canLeave?: boolean }>();
-const emit = defineEmits<{ takeControl: []; restart: []; leave: [] }>();
+const emit = defineEmits<{ takeControl: []; restart: []; leave: []; changeSquad: [] }>();
 
 const copy = computed(() => (props.hud.mode === 'trial' ? STRINGS.trial : STRINGS.squad));
 /** The squad controls with the hero's own ability names on the Q · E row. */
@@ -55,9 +56,13 @@ const time = computed(() => {
       :subtitle="`${STRINGS.time} ${time}`"
     >
       <p class="text-lg italic">{{ endText }}</p>
+      <EndLedger v-if="hud.mode === 'squad' && hud.ledger.length" :rows="hud.ledger" class="mt-4" />
       <button class="btn-gold mt-6 rounded-sm px-7 py-2.5 text-sm" @click="emit('restart')">{{ STRINGS.restart }}</button>
       <p class="mt-2 text-sm text-ink-soft italic">{{ STRINGS.restartHint }}</p>
-      <button v-if="canLeave" class="btn-gold mt-5 rounded-sm px-7 py-2.5 text-sm" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
+      <div v-if="canLeave" class="mt-5 flex justify-center gap-3">
+        <button class="btn-gold rounded-sm px-5 py-2.5 text-sm whitespace-nowrap" @click="emit('changeSquad')">{{ STRINGS.prep.changeSquad }}</button>
+        <button class="btn-gold rounded-sm px-5 py-2.5 text-sm whitespace-nowrap" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
+      </div>
     </ParchmentPanel>
   </div>
 </template>
