@@ -1,4 +1,5 @@
-import { DAMAGE_VARIANCE, STAGGER_IMMUNITY, STATUS, UNIT_RADIUS, type MeleeAttack } from './balance';
+import { DAMAGE_VARIANCE, ENERGY, STAGGER_IMMUNITY, STATUS, UNIT_RADIUS, type MeleeAttack } from './balance';
+import { clamp } from './math';
 import { angleDiff, angleTo, dist } from './math';
 import { range } from './rng';
 import { getStatus, hasStatus, removeStatus } from './statuses';
@@ -88,6 +89,13 @@ export function canStagger(target: Unit, attack: MeleeAttack): boolean {
 export interface MeleeOptions {
   /** Seconds of dodge invulnerability, to tell evades from hits. */
   invulnerableTime: number;
+  /** A stun ability: stuns for `attack.stagger` regardless of poise, and grants no immunity. */
+  stun?: boolean;
+}
+
+/** Hero energy, kept within 0..max. */
+export function gainEnergy(unit: Unit, amount: number): void {
+  unit.energy = clamp(unit.energy + amount, 0, ENERGY.max);
 }
 
 /**
@@ -110,7 +118,9 @@ export function resolveMelee(battle: Battle, attacker: Unit, attack: MeleeAttack
     target.hitstop = Math.max(target.hitstop, attack.hitstop);
 
     if (applyDamage(attacker, target, amount, attack.heavy, events)) continue;
-    if (canStagger(target, attack) && !hasStatus(target, 'frozen')) {
+    if (opts.stun) {
+      stun(target, attack.stagger);
+    } else if (canStagger(target, attack) && !hasStatus(target, 'frozen')) {
       stun(target, attack.stagger);
       target.staggerImmunity = STAGGER_IMMUNITY;
     }

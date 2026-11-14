@@ -3,8 +3,8 @@ import { DT } from '../../src/sim/balance';
 import { CLASS_STATS } from '../../src/data/classes';
 import { emptyInput, type Battle, type BattleEvent, type ClassId, type HeroInput } from '../../src/sim/types';
 
-export function hero(x = 0, z = 0): UnitSetup {
-  return { team: 'player', classId: 'krieger', isHero: true, stats: { ...CLASS_STATS.krieger }, x, z };
+export function hero(x = 0, z = 0, classId: ClassId = 'krieger'): UnitSetup {
+  return { team: 'player', classId, isHero: true, stats: { ...CLASS_STATS[classId] }, x, z };
 }
 
 export function enemy(x: number, z = 0): UnitSetup {
@@ -18,6 +18,9 @@ export function battleWith(units: UnitSetup[], seed = 1): Battle {
   return b;
 }
 
+/** Edge-triggered input fields: true only on the tick of the press. */
+export const PRESSES = ['attack', 'dodge', 'ability1', 'ability2', 'leader', 'lock', 'unlock', 'mark'] as const;
+
 export function input(p: Partial<HeroInput> = {}): HeroInput {
   return { ...emptyInput(), ...p };
 }
@@ -28,8 +31,7 @@ export function run(b: Battle, ticks: number, p: Partial<HeroInput> = {}): Battl
   for (let i = 0; i < ticks; i++) {
     const inp = input(p);
     if (i > 0) {
-      inp.attack = false;
-      inp.dodge = false;
+      for (const k of PRESSES) inp[k] = false;
     }
     events.push(...step(b, inp, DT));
   }

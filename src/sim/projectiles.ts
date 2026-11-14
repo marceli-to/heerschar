@@ -1,6 +1,7 @@
-import { HERO, UNIT_RADIUS } from './balance';
+import { ENERGY, HERO, HERO_SELF_HEAL, UNIT_RADIUS } from './balance';
 import { addStatus } from './statuses';
-import { applyDamage, computeDamage, isAlive, isInvulnerable } from './combat';
+import { applyDamage, applyHeal, computeDamage, gainEnergy, isAlive, isInvulnerable } from './combat';
+import { range as rngRange } from './rng';
 import { clamp, dist, lerp, type Vec2 } from './math';
 import type { AreaEffect, AreaKind, Battle, BattleEvent, DamageType, Projectile, ProjectileKind, Unit } from './types';
 
@@ -16,6 +17,8 @@ export interface StraightShot {
   multiplier: number;
   damageType: DamageType;
   pierce: boolean;
+  /** The hero's basic attack: a hit gives energy. */
+  basic?: boolean;
 }
 
 function blankProjectile(battle: Battle, owner: Unit, kind: ProjectileKind): Projectile {
@@ -40,6 +43,7 @@ function blankProjectile(battle: Battle, owner: Unit, kind: ProjectileKind): Pro
     time: 0,
     duration: 0,
     areaId: null,
+    basic: false,
   };
 }
 
@@ -56,6 +60,7 @@ export function fireStraight(battle: Battle, owner: Unit, shot: StraightShot, ev
   p.multiplier = shot.multiplier;
   p.damageType = shot.damageType;
   p.pierce = shot.pierce;
+  p.basic = shot.basic ?? false;
   battle.projectiles.push(p);
   events.push({ type: 'shoot', projectileId: p.id, kind: p.kind });
   return p;
@@ -69,6 +74,11 @@ export interface AreaSpec {
   multiplier: number;
   damageType: DamageType;
   freeze: number;
+  /** Heals allies instead of damaging foes. */
+  heal?: boolean;
+  /** How often it resolves (default 1), `interval` seconds apart. */
+  pulses?: number;
+  interval?: number;
 }
 
 /** Places a telegraphed ground circle. */
@@ -86,6 +96,9 @@ export function placeArea(battle: Battle, owner: Unit, spec: AreaSpec, events: B
     multiplier: spec.multiplier,
     damageType: spec.damageType,
     freeze: spec.freeze,
+    heal: spec.heal ?? false,
+    pulses: spec.pulses ?? 1,
+    interval: spec.interval ?? 0,
   };
   battle.areas.push(a);
   events.push({ type: 'areaStart', areaId: a.id, kind: a.kind });
@@ -150,7 +163,10 @@ export function updateProjectiles(battle: Battle, dt: number, events: BattleEven
         events.push({ type: 'evade', unitId: target.id });
         continue;
       }
-      if (owner) applyDamage(owner, target, computeDamage(battle, p.power, p.multiplier, target, p.damageType), p.pierce, events);
+      if (owner) {
+        applyDamage(owner, target, computeDamage(battle, p.power, p.multiplier, target, p.damageType), p.pierce, events);
+        if (p.basic && owner.isHero) gainEnergy(owner, ENERGY.perBasicHit);
+      }
       if (!p.pierce) {
         spent = true;
         break;
@@ -172,6 +188,15 @@ export function updateAreas(battle: Battle, dt: number, events: BattleEvent[]): 
     }
     events.push({ type: 'areaResolve', areaId: a.id, kind: a.kind, x: a.pos.x, z: a.pos.z, radius: a.radius });
     const owner = ownerOf(battle, a.ownerId);
+    if (a.pulses > 1) {
+      a.pulses--;
+      a.delay += a.interval;
+      keep.push(a);
+    }
+    if (a.heal) {
+      if (owner) healInside(battle, owner, a, events);
+      continue;
+    }
     for (const u of battle.units) {
       if (u.team === a.team || !isAlive(u) || dist(u.pos, a.pos) > a.radius + UNIT_RADIUS) continue;
       if (isInvulnerable(u, INVULNERABLE)) {
@@ -186,6 +211,15 @@ export function updateAreas(battle: Battle, dt: number, events: BattleEvent[]): 
     }
   }
   battle.areas = keep;
+}
+
+/** One pulse of a healing area on every ally inside. The hero heals himself at reduced strength. */
+function healInside(battle: Battle, owner: Unit, a: AreaEffect, events: BattleEvent[]): void {
+  for (const u of battle.units) {
+    if (u.team !== a.team || !isAlive(u) || dist(u.pos, a.pos) > a.radius + UNIT_RADIUS) continue;
+    const self = u === owner && owner.isHero ? HERO_SELF_HEAL : 1;
+    applyHeal(owner, u, a.power * a.multiplier * self * rngRange(battle, 0.9, 1.1), events);
+  }
 }
 
 /** Freezes a unit: it cannot act, and any windup is lost. */

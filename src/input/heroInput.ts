@@ -10,18 +10,29 @@ import type { KeyboardMouse } from './keyboardMouse';
 export class HeroInputSampler {
   private pendingAttack = false;
   private pendingDodge = false;
+  private pending = { ability1: false, ability2: false, leader: false, lock: false, unlock: false, mark: false };
 
   constructor(private readonly kbm: KeyboardMouse) {}
 
   /** Once per animation frame, before `endFrame` on the device. */
   collect(): void {
     if (this.kbm.mousePressed(0)) this.pendingAttack = true;
-    if (this.kbm.pressed('Space')) this.pendingDodge = true;
+    const k = this.kbm;
+    if (k.pressed('Space')) this.pendingDodge = true;
+    if (k.pressed('KeyQ')) this.pending.ability1 = true;
+    if (k.pressed('KeyE')) this.pending.ability2 = true;
+    if (k.pressed('KeyR')) this.pending.leader = true;
+    if (k.pressed('KeyF')) this.pending.mark = true;
+    if (k.pressed('Tab')) {
+      if (k.down('ShiftLeft') || k.down('ShiftRight')) this.pending.unlock = true;
+      else this.pending.lock = true;
+    }
   }
 
   clear(): void {
     this.pendingAttack = false;
     this.pendingDodge = false;
+    this.pending = { ability1: false, ability2: false, leader: false, lock: false, unlock: false, mark: false };
   }
 
   /** Once per tick. Movement is made camera-relative with the camera's yaw. */
@@ -48,6 +59,7 @@ export class HeroInputSampler {
     input.moveZ = mz;
     input.attack = this.pendingAttack;
     input.dodge = this.pendingDodge;
+    Object.assign(input, this.pending);
     this.clear();
     return input;
   }

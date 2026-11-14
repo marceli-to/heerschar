@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import { reactive } from 'vue';
 import { createBattle, heroOf, step } from '../sim/battle';
-import { COUNTDOWN, DT, ENEMY, HERO, heroAttack } from '../sim/balance';
-import { lerp, lerpAngle } from '../sim/math';
-import type { Battle, BattleEvent, Unit } from '../sim/types';
+import { COUNTDOWN, DT, ENEMY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
+import { actionTiming } from '../sim/ai';
+import { heroKit } from '../sim/heroAbilities';
+import { angleTo, lerp, lerpAngle } from '../sim/math';
+import type { Battle, BattleEvent, ClassId, Unit } from '../sim/types';
 import { trialSetup } from '../data/encounters';
 import { botInput, createBot, type BotState } from '../sim/bot';
 import { KeyboardMouse } from '../input/keyboardMouse';
@@ -23,6 +25,11 @@ export interface DebugStats {
   tick: number;
   units: number;
   zoom: number;
+  /** Hero kit readout until the 2e HUD: energy, Q/E/R as "name cooldown", lock and mark ids. */
+  energy: number;
+  abilities: string;
+  lock: number | null;
+  mark: number | null;
 }
 
 export type Phase = 'intro' | 'playing' | 'paused' | 'ended';
@@ -63,6 +70,7 @@ export class Game {
   readonly hud: HudState;
   private battle: Battle;
   private seed: number;
+  private heroClass: ClassId;
   private parts: SceneParts;
   private rig: CameraRig;
   private kbm: KeyboardMouse;
@@ -77,15 +85,16 @@ export class Game {
   /** Debug: when set, the scripted bot plays the hero (`?bot`). */
   bot: BotState | null = null;
 
-  constructor(private readonly canvas: HTMLCanvasElement, opts: { seed: number; zoom?: number; debug?: boolean }) {
+  constructor(private readonly canvas: HTMLCanvasElement, opts: { seed: number; zoom?: number; debug?: boolean; heroClass?: ClassId }) {
     this.seed = opts.seed;
-    this.battle = createBattle(trialSetup(this.seed));
+    this.heroClass = opts.heroClass ?? 'krieger';
+    this.battle = createBattle(trialSetup(this.seed, this.heroClass));
     this.parts = createScene(canvas);
     this.parts.scene.add(createArena(this.battle.arena.width, this.battle.arena.depth), this.unitLayer, this.effects.group);
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
-    this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel });
+    this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, energy: 0, abilities: '', lock: null, mark: null });
     this.hud = reactive({ phase: 'intro', countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, foes: 0, outcome: 'running', time: 0 });
     this.buildUnits();
     this.resizeObserver = new ResizeObserver(() => this.resize());
@@ -105,7 +114,7 @@ export class Game {
   /** Starts a fresh trial. Called from the end screen. */
   restart(): void {
     this.seed = (this.seed * 1103515245 + 12345) >>> 0;
-    this.battle = createBattle(trialSetup(this.seed));
+    this.battle = createBattle(trialSetup(this.seed, this.heroClass));
     this.buildUnits();
     this.heroInput.clear();
     if (this.bot) this.bot = createBot();
@@ -163,7 +172,9 @@ export class Game {
     if (k.pressed('F3')) this.debug.visible = !this.debug.visible;
     if (this.hud.phase === 'ended' && k.pressed('Enter')) this.restart();
     this.rig.addZoom(k.consumeWheel());
-    this.rig.addYaw(k.consumeMouse().dx);
+    // While locked on, the camera frames the target itself.
+    const mouse = k.consumeMouse();
+    if (this.battle.lockTargetId === null) this.rig.addYaw(mouse.dx);
     this.heroInput.collect();
     k.endFrame();
     this.countFps(frameTime);
@@ -225,6 +236,18 @@ export class Game {
         if (u) this.effects.dust(u.pos.x, u.pos.z, 14);
         break;
       }
+      case 'release': {
+        // Placeholder look until 2d: melee abilities reuse the swing arc, the leap kicks up dust.
+        const u = this.unit(e.unitId);
+        if (!u) break;
+        if (e.action === 'schildstoss' || e.action === 'wirbel') {
+          const a = HERO_ABILITIES[e.action];
+          this.effects.swingArc(u.pos.x, u.pos.z, u.facing, a.reach, a.arc, true);
+        } else if (e.action === 'rueckzug') {
+          this.effects.dust(u.pos.x, u.pos.z, 8);
+        }
+        break;
+      }
       case 'outcome':
         this.hud.outcome = e.outcome;
         this.hud.phase = 'ended';
@@ -240,6 +263,8 @@ export class Game {
       case 'areaStart':
       case 'areaResolve':
       case 'status':
+      case 'lock':
+      case 'mark':
         break;
     }
   }
@@ -255,13 +280,16 @@ export class Game {
       const x = lerp(slot.prev.x, u.pos.x, a);
       const z = lerp(slot.prev.z, u.pos.z, a);
       slot.view.setPose(x, z, lerpAngle(slot.prev.facing, u.facing, a));
-      slot.view.animate({ state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, speed: slot.speed }, animTime);
+      slot.view.animate({ state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed }, animTime);
       if (slot.bar) {
         slot.bar.group.visible = u.state !== 'dead';
         slot.bar.update(x, 2.15, z, u.hp / u.stats.maxHp, this.rig.camera, frameTime);
       }
       if (u.isHero) heroPos = { x, z };
     }
+    const hero = heroOf(this.battle);
+    const lock = this.battle.units.find((u) => u.id === this.battle.lockTargetId);
+    if (hero && lock && this.hud.phase === 'playing') this.rig.steerYaw(angleTo(hero.pos, lock.pos), frameTime);
     this.rig.update(heroPos, frameTime);
     this.effects.update(animTime);
     this.parts.renderer.render(this.parts.scene, this.rig.camera);
@@ -288,6 +316,14 @@ export class Game {
       this.debug.tick = this.battle.tick;
       this.debug.units = this.battle.units.length;
       this.debug.zoom = Math.round(this.rig.zoomLevel * 100) / 100;
+      const hero = heroOf(this.battle);
+      if (hero) {
+        const kit = heroKit(hero);
+        this.debug.energy = Math.floor(hero.energy);
+        this.debug.abilities = [kit.ability1, kit.ability2, kit.leader].map((id) => `${id} ${(hero.abilityCooldowns[id] ?? 0).toFixed(1)}`).join(' · ');
+      }
+      this.debug.lock = this.battle.lockTargetId;
+      this.debug.mark = this.battle.markTargetId;
       this.fpsFrames = 0;
       this.fpsTime = 0;
     }

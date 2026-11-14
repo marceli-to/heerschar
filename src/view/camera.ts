@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clamp, dirFromAngle, lerp, type Vec2 } from '../sim/math';
+import { angleDiff, clamp, dirFromAngle, lerp, type Vec2 } from '../sim/math';
 
 /**
  * Camera tuning. One zoom value z in 0..1 blends from over-the-shoulder (z = 0)
@@ -15,6 +15,8 @@ export const CAMERA = {
   yawSensitivity: 0.0028,
   /** Higher = snappier follow. */
   followRate: 9,
+  /** How fast the yaw swings round to keep a lock target framed. */
+  lockRate: 6,
   zoomRate: 10,
   fov: 55,
   /** Max shake rotation in radians at full trauma, how fast it wobbles, how fast it fades. */
@@ -48,6 +50,11 @@ export class CameraRig {
 
   addYaw(pixels: number): void {
     this.yaw += pixels * CAMERA.yawSensitivity;
+  }
+
+  /** Swings the yaw towards `angle` (lock-on framing). */
+  steerYaw(angle: number, frameTime: number): void {
+    this.yaw += angleDiff(this.yaw, angle) * (1 - Math.exp(-CAMERA.lockRate * frameTime));
   }
 
   /** Adds screen shake; heavy hits ~0.5, light ones ~0.2. */

@@ -4,24 +4,32 @@ import { angleDiff, angleTo, dist } from './math';
 import { moveDir, turnTowards } from './movement';
 import { fireStraight, lob, placeArea } from './projectiles';
 import { range } from './rng';
-import { addStatus, getStatus, speedFactor } from './statuses';
-import type { AbilityId, ActionId, Battle, BattleEvent, ClassId, Unit } from './types';
+import { addStatus, getStatus, moveFactor, speedFactor } from './statuses';
+import { heroActionTiming } from './heroAbilities';
+import type { AbilityId, AiActionId, Battle, BattleEvent, ClassId, Unit } from './types';
 
 const OPTS = { invulnerableTime: HERO.dodge.invulnerable };
 /** Units must face their target within this angle before they start an attack. */
 const AIM_TOLERANCE = 0.5;
 const BACK_ROW: readonly ClassId[] = ['bogenschuetze', 'heiler', 'magier'];
-const ABILITIES: readonly ActionId[] = ['taunt', 'pierce', 'groupHeal', 'frostNova'];
+type AiAbilityId = Extract<AbilityId, AiActionId>;
+const ABILITIES: readonly AiAbilityId[] = ['taunt', 'pierce', 'groupHeal', 'frostNova'];
 
-function isAbility(action: ActionId): action is AbilityId {
-  return ABILITIES.includes(action);
+function isAbility(action: AiActionId): action is AiAbilityId {
+  return (ABILITIES as readonly string[]).includes(action);
+}
+
+/** The AI action of a non-hero unit (`null` = none or a basic strike). */
+function aiAction(unit: Unit): AiActionId | null {
+  return unit.isHero ? null : (unit.action as AiActionId | null);
 }
 
 /** Windup and recover of what a unit is doing, for the sim and for posing the view. */
 export function actionTiming(unit: Unit): { windup: number; recover: number } {
-  if (unit.isHero) return heroAttack(unit.chain);
-  if (unit.action === null || unit.action === 'strike') return ENEMY.attack;
-  return ACTIONS[unit.action];
+  if (unit.isHero) return heroActionTiming(unit);
+  const action = aiAction(unit);
+  if (action === null || action === 'strike') return ENEMY.attack;
+  return ACTIONS[action];
 }
 
 /** The melee attack a unit swings (hero chain step or the AI strike). */
@@ -71,7 +79,7 @@ function setState(unit: Unit, state: Unit['state']): void {
   unit.stateTime = 0;
 }
 
-function startAction(unit: Unit, action: ActionId, target: Unit | null, events: BattleEvent[]): void {
+function startAction(unit: Unit, action: AiActionId, target: Unit | null, events: BattleEvent[]): void {
   unit.action = action;
   if (target) unit.targetId = target.id;
   setState(unit, 'windup');
@@ -85,7 +93,7 @@ function abilityReady(unit: Unit, ability: AbilityId): boolean {
 }
 
 function speedOf(unit: Unit): number {
-  return unit.stats.moveSpeed * speedFactor(unit);
+  return unit.stats.moveSpeed * moveFactor(unit);
 }
 
 function moveTowards(unit: Unit, to: Unit['pos'], speed: number, dt: number): void {
@@ -122,7 +130,8 @@ function release(battle: Battle, unit: Unit, events: BattleEvent[]): void {
   const target = byId(battle, unit.targetId);
   const live = target && isAlive(target) ? target : null;
   const shotRange = unit.stats.range * BEHAVIOUR.projectileRangeFactor;
-  switch (unit.action) {
+  const action = aiAction(unit);
+  switch (action) {
     case null:
     case 'strike':
       events.push({ type: 'swing', unitId: unit.id, chain: 0 });
@@ -141,19 +150,19 @@ function release(battle: Battle, unit: Unit, events: BattleEvent[]): void {
     case 'pierce':
     case 'bolt': {
       if (!live) return;
-      const a = ACTIONS[unit.action];
+      const a = ACTIONS[action];
       fireStraight(
         battle,
         unit,
         {
-          kind: unit.action === 'shot' ? 'arrow' : unit.action === 'pierce' ? 'piercing' : 'bolt',
+          kind: action === 'shot' ? 'arrow' : action === 'pierce' ? 'piercing' : 'bolt',
           at: live.pos,
           speed: a.speed,
           radius: a.radius,
           range: shotRange,
           multiplier: a.multiplier,
-          damageType: unit.action === 'bolt' ? 'magic' : 'physical',
-          pierce: unit.action === 'pierce',
+          damageType: action === 'bolt' ? 'magic' : 'physical',
+          pierce: action === 'pierce',
         },
         events,
       );
@@ -447,7 +456,8 @@ export function updateAi(battle: Battle, unit: Unit, dt: number, events: BattleE
       }
       if (unit.stateTime >= actionTiming(unit).windup) {
         release(battle, unit, events);
-        if (unit.action === null || !isAbility(unit.action)) {
+        const action = aiAction(unit);
+        if (action === null || !isAbility(action)) {
           unit.attackCooldown = unit.stats.attackInterval + range(battle, 0, ENEMY.cooldownJitter);
         }
         setState(unit, 'recover');

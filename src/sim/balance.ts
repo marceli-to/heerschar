@@ -56,6 +56,7 @@ export const HERO = {
   /** Seconds a press is remembered while the hero is busy. */
   attackBuffer: 0.3,
   dodgeBuffer: 0.25,
+  abilityBuffer: 0.3,
   dodge: { distance: 4, duration: 0.35, invulnerable: 0.25, cooldown: 1.2 },
   /** Melee aim assist: snap the swing to an enemy this close and within this angle. */
   aimAssist: { range: 3.2, angle: 55 * DEG },
@@ -99,6 +100,8 @@ export const STATUS = {
   marked: 1.15,
   /** Rallied units attack and move this much faster. */
   rallied: 1.25,
+  /** Slowed units move this much slower (attack speed is unaffected). */
+  slowed: 0.6,
 } as const;
 
 /** Formations: 3 columns × 2 rows per side, front rows about 24 m apart. */
@@ -140,3 +143,77 @@ export const BEHAVIOUR = {
   /** Healers count the hero's fraction this much lower, so the hero wins ties. */
   heroTieBreak: 1e-6,
 } as const;
+
+// ---------------------------------------------------------------------------------------------
+// Hero kit (PLAN section 7)
+
+/** Energy pays for hero abilities. */
+export const ENERGY = { max: 100, start: 30, perSecond: 4, perBasicHit: 5 } as const;
+
+/** A basic attack that fires a projectile along the aim (ranged hero classes). */
+export interface RangedAttack {
+  windup: number;
+  recover: number;
+  multiplier: number;
+  speed: number;
+  radius: number;
+  heavy: boolean;
+}
+
+/** Two-shot chains for the ranged hero classes. Bogenschuetze shoots arrows, the casters bolts. */
+export const HERO_RANGED = {
+  bogenschuetze: [
+    { windup: 0.16, recover: 0.26, multiplier: 1.0, speed: 30, radius: 0.3, heavy: false },
+    { windup: 0.24, recover: 0.4, multiplier: 1.5, speed: 34, radius: 0.35, heavy: true },
+  ],
+  heiler: [
+    { windup: 0.2, recover: 0.3, multiplier: 0.6, speed: 20, radius: 0.35, heavy: false },
+    { windup: 0.26, recover: 0.42, multiplier: 0.9, speed: 22, radius: 0.4, heavy: true },
+  ],
+  magier: [
+    { windup: 0.2, recover: 0.3, multiplier: 0.7, speed: 20, radius: 0.35, heavy: false },
+    { windup: 0.26, recover: 0.42, multiplier: 1.05, speed: 22, radius: 0.4, heavy: true },
+  ],
+} as const satisfies Record<'bogenschuetze' | 'heiler' | 'magier', readonly RangedAttack[]>;
+
+/** Aim assist for ranged hero attacks: snap to an enemy in range within this angle of the aim. */
+export const RANGED_AIM_ASSIST = 12 * DEG;
+
+/** Healing the hero gives himself (Heiler class only) is scaled by this. */
+export const HERO_SELF_HEAL = 0.5;
+
+/**
+ * Hero abilities. Every one has an energy cost, a cooldown, a windup and a recover. Energy and
+ * cooldown are paid when the windup completes, so an interrupted cast costs nothing.
+ */
+export const HERO_ABILITIES = {
+  /** Krieger: shield bash, stuns everyone in a cone (ignores poise). */
+  schildstoss: { cost: 30, cooldown: 6, windup: 0.22, recover: 0.38, multiplier: 0.6, reach: 2.6, arc: 110 * DEG, knockback: 6, stun: 1.2, lunge: 0.5, hitstop: 0.08 },
+  /** Krieger: spin, damages and staggers everyone around. */
+  wirbel: { cost: 45, cooldown: 9, windup: 0.28, recover: 0.45, multiplier: 1.4, reach: 2.6, arc: 2 * Math.PI, knockback: 5, stagger: 0.4, lunge: 0, hitstop: 0.1 },
+  /** Bogenschuetze: three arrows in a fan. */
+  salve: { cost: 30, cooldown: 5, windup: 0.3, recover: 0.35, multiplier: 1.0, arrows: 3, spread: 12 * DEG, speed: 30, radius: 0.3 },
+  /** Bogenschuetze: slows enemies in front, then leaps back (invulnerable like a dodge). */
+  rueckzug: { cost: 35, cooldown: 8, windup: 0.12, recover: 0.2, reach: 4.5, arc: 100 * DEG, slow: 3, distance: 5, duration: 0.35 },
+  /** Heiler: a ground circle at the hero's feet that heals allies inside over time. */
+  heilkreis: { cost: 40, cooldown: 12, windup: 0.4, recover: 0.35, radius: 4, multiplier: 0.25, pulses: 10, interval: 0.5 },
+  /** Heiler: shields the ally with the lowest health fraction in range. */
+  segen: { cost: 30, cooldown: 6, windup: 0.3, recover: 0.3, range: 12, shield: 2.5, duration: 8 },
+  /** Magier: arcing fireball, damage in a circle where it lands. */
+  feuerball: { cost: 40, cooldown: 6, windup: 0.4, recover: 0.35, multiplier: 1.6, radius: 2.5, speed: 14, minFlight: 0.5, maxFlight: 1.1, range: 14, fallback: 10 },
+  /** Magier: freezes and lightly damages everyone around the hero. */
+  frostring: { cost: 45, cooldown: 12, windup: 0.25, recover: 0.35, multiplier: 0.5, radius: 4, freeze: 2.5 },
+  /** Leader ability, every class: all companions are rallied. */
+  sammeln: { cost: 50, cooldown: 20, windup: 0.3, recover: 0.3, duration: 6 },
+} as const;
+
+/** The hero's two class abilities (Q, E). The leader ability (R) is always `sammeln`. */
+export const HERO_KIT = {
+  krieger: ['schildstoss', 'wirbel'],
+  bogenschuetze: ['salve', 'rueckzug'],
+  heiler: ['heilkreis', 'segen'],
+  magier: ['feuerball', 'frostring'],
+} as const;
+
+/** Lock-on: candidates within `range`; the first pick weighs view angle against distance. */
+export const LOCK = { range: 30, metresPerRadian: 12 } as const;

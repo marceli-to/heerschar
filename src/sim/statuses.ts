@@ -44,7 +44,12 @@ export function tickStatuses(unit: Unit, dt: number, events: BattleEvent[]): voi
   }
 }
 
-/** Multiplier on move speed and on how fast attack cooldowns recharge. */
+/** Multiplier on how fast attack cooldowns recharge. */
 export function speedFactor(unit: Unit): number {
   return hasStatus(unit, 'rallied') ? STATUS.rallied : 1;
+}
+
+/** Multiplier on move speed. */
+export function moveFactor(unit: Unit): number {
+  return speedFactor(unit) * (hasStatus(unit, 'slowed') ? STATUS.slowed : 1);
 }

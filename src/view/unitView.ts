@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ACTIONS, ENEMY, HERO, heroAttack, type MeleeAttack } from '../sim/balance';
+import { HERO } from '../sim/balance';
 import { clamp, lerp } from '../sim/math';
 import type { ActionId, UnitState } from '../sim/types';
 import type { FigureColors } from './palette';
@@ -11,8 +11,11 @@ export interface AnimInput {
   chain: number;
   stunDuration: number;
   isHero: boolean;
-  /** AI: the action being wound up or recovered from (non-strike actions reuse the swing pose until 2d). */
+  /** The action being wound up or recovered from (non-strike actions reuse the swing pose until 2d). */
   action: ActionId | null;
+  /** Windup and recover of the current action, from the sim's `actionTiming`. */
+  windup: number;
+  recover: number;
   /** Ground speed in m/s (from interpolated positions), for the walk cycle. */
   speed: number;
 }
@@ -180,11 +183,8 @@ export class PrimitiveWarriorView implements UnitView {
     this.updateFlash(frameTime);
     this.idleTime += frameTime;
     this.resetPose();
-    const attack: MeleeAttack = a.isHero
-      ? heroAttack(a.chain)
-      : a.action === null || a.action === 'strike'
-        ? ENEMY.attack
-        : { ...ENEMY.attack, windup: ACTIONS[a.action].windup, recover: ACTIONS[a.action].recover };
+    // Hero abilities use the heavy swing pose until 2d.
+    const chain = a.isHero ? (a.action === null ? a.chain : 1) : -1;
 
     switch (a.state) {
       case 'idle':
@@ -192,10 +192,10 @@ export class PrimitiveWarriorView implements UnitView {
         this.poseLocomotion(a.speed, frameTime);
         break;
       case 'windup':
-        this.poseWindup(easeOut(a.stateTime / attack.windup), a.isHero ? a.chain : -1);
+        this.poseWindup(easeOut(a.stateTime / a.windup), chain);
         break;
       case 'recover':
-        this.poseRecover(a.stateTime, attack, a.isHero ? a.chain : -1);
+        this.poseRecover(a.stateTime, a.recover, chain);
         break;
       case 'dodging':
         this.poseDodge(a.stateTime / HERO.dodge.duration);
@@ -254,12 +254,12 @@ export class PrimitiveWarriorView implements UnitView {
     this.hips.position.y = 0.95 - p * (heavy || enemy ? 0.08 : 0.04);
   }
 
-  private poseRecover(t: number, attack: MeleeAttack, chain: number): void {
+  private poseRecover(t: number, recover: number, chain: number): void {
     const heavy = chain === 1;
     const enemy = chain === -1;
     // The strike itself is the first ~0.07 s of the recover; then ease back into guard.
     const strike = easeOut(t / 0.07);
-    const back = easeIn((t - 0.1) / Math.max(0.05, attack.recover - 0.1));
+    const back = easeIn((t - 0.1) / Math.max(0.05, recover - 0.1));
     const from = heavy || enemy ? 3.0 : 2.5;
     const armX = lerp(from, -0.2, strike);
     this.armR.rotation.x = lerp(armX, 0.55, back);

@@ -24,9 +24,22 @@ export interface Stats {
 export type UnitState = 'idle' | 'moving' | 'windup' | 'recover' | 'dodging' | 'stunned' | 'dead';
 
 /** What an AI unit is winding up or recovering from. See `ACTIONS` in balance.ts. */
-export type ActionId = 'strike' | 'taunt' | 'shot' | 'pierce' | 'heal' | 'groupHeal' | 'bolt' | 'fireball' | 'frostNova';
-/** Abilities with a cooldown, a subset of the actions. */
-export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova';
+export type AiActionId = 'strike' | 'taunt' | 'shot' | 'pierce' | 'heal' | 'groupHeal' | 'bolt' | 'fireball' | 'frostNova';
+/** Hero abilities: two per class plus the leader ability. See `HERO_ABILITIES` in balance.ts. */
+export type HeroAbilityId =
+  | 'schildstoss'
+  | 'wirbel'
+  | 'salve'
+  | 'rueckzug'
+  | 'heilkreis'
+  | 'segen'
+  | 'feuerball'
+  | 'frostring'
+  | 'sammeln';
+/** What a unit is winding up or recovering from. `null` on the hero means its basic attack chain. */
+export type ActionId = AiActionId | HeroAbilityId;
+/** Actions with a cooldown. */
+export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova' | HeroAbilityId;
 
 /**
  * Timed conditions on a unit. `stunned` is a unit state (it shares the stagger timer) and
@@ -35,8 +48,9 @@ export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova';
  * - rallied: +25% attack speed and move speed
  * - shielded: absorbs `amount` damage
  * - taunted: must target `sourceId`
+ * - slowed: moves slower
  */
-export type StatusKind = 'frozen' | 'rallied' | 'shielded' | 'taunted';
+export type StatusKind = 'frozen' | 'rallied' | 'shielded' | 'taunted' | 'slowed';
 
 export interface Status {
   kind: StatusKind;
@@ -83,8 +97,13 @@ export interface Unit {
   statuses: Status[];
   /** Seconds until each ability may be used again. */
   abilityCooldowns: Partial<Record<AbilityId, number>>;
-  /** AI: the action in windup or recover. */
+  /** The action in windup or recover (hero: `null` = basic attack, or an ability). */
   action: ActionId | null;
+  /** Hero: 0..100, pays for abilities. */
+  energy: number;
+  /** Hero: the ability pressed most recently, remembered while `abilityBuffer` > 0. */
+  queuedAbility: HeroAbilityId | null;
+  abilityBuffer: number;
 }
 
 export type ProjectileKind = 'arrow' | 'piercing' | 'bolt' | 'fireball';
@@ -118,11 +137,17 @@ export interface Projectile {
   time: number;
   duration: number;
   areaId: number | null;
+  /** The hero's basic attack: a hit gives energy. */
+  basic: boolean;
 }
 
-export type AreaKind = 'fireball' | 'frostNova';
+export type AreaKind = 'fireball' | 'frostNova' | 'heilkreis' | 'frostring';
 
-/** A telegraphed ground circle: resolves on every foe inside once `time` reaches `delay`. */
+/**
+ * A telegraphed ground circle: resolves on every foe inside once `time` reaches `delay`.
+ * Healing areas resolve on allies instead, and areas with `pulses` > 1 resolve again every
+ * `interval` seconds.
+ */
 export interface AreaEffect {
   id: number;
   kind: AreaKind;
@@ -137,6 +162,11 @@ export interface AreaEffect {
   damageType: DamageType;
   /** Seconds of `frozen` applied to those hit (0 = none). */
   freeze: number;
+  /** Heals allies by `power × multiplier` per pulse instead of damaging foes. */
+  heal: boolean;
+  /** Resolutions left, including the next one. */
+  pulses: number;
+  interval: number;
 }
 
 export interface Battle {
@@ -150,6 +180,8 @@ export interface Battle {
   nextId: number;
   /** The enemy the hero marked as the squad's focus target (takes +15%). */
   markTargetId: number | null;
+  /** The enemy the hero is locked on to: it faces it and aims at it. */
+  lockTargetId: number | null;
   /** Seconds before the fight starts. */
   countdown: number;
   outcome: Outcome;
@@ -164,10 +196,20 @@ export interface HeroInput {
   /** Edge-triggered: true on the tick the button was pressed. */
   attack: boolean;
   dodge: boolean;
+  /** Class abilities (Q / E) and the leader ability (R). */
+  ability1: boolean;
+  ability2: boolean;
+  leader: boolean;
+  /** Tab: lock on to the enemy nearest the view centre, or cycle to the next one. */
+  lock: boolean;
+  /** Shift+Tab: release the lock. */
+  unlock: boolean;
+  /** F: mark the locked enemy (or the one nearest the view centre) as the squad's focus. */
+  mark: boolean;
 }
 
 export function emptyInput(): HeroInput {
-  return { moveX: 0, moveZ: 0, aimAngle: 0, attack: false, dodge: false };
+  return { moveX: 0, moveZ: 0, aimAngle: 0, attack: false, dodge: false, ability1: false, ability2: false, leader: false, lock: false, unlock: false, mark: false };
 }
 
 export type BattleEvent =
@@ -177,10 +219,14 @@ export type BattleEvent =
   | { type: 'hit'; attackerId: number; targetId: number; amount: number; absorbed: number; heavy: boolean; x: number; z: number }
   | { type: 'heal'; sourceId: number; targetId: number; amount: number; x: number; z: number }
   | { type: 'action'; unitId: number; action: ActionId }
+  /** A hero ability's windup completed and it took effect. */
+  | { type: 'release'; unitId: number; action: HeroAbilityId }
   | { type: 'shoot'; projectileId: number; kind: ProjectileKind }
   | { type: 'areaStart'; areaId: number; kind: AreaKind }
   | { type: 'areaResolve'; areaId: number; kind: AreaKind; x: number; z: number; radius: number }
   | { type: 'status'; unitId: number; kind: StatusKind; on: boolean }
+  | { type: 'lock'; targetId: number | null }
+  | { type: 'mark'; targetId: number | null }
   | { type: 'evade'; unitId: number }
   | { type: 'dodge'; unitId: number }
   | { type: 'death'; unitId: number }

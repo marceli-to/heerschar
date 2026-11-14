@@ -1,7 +1,8 @@
-import { ARENA, COUNTDOWN, FORMATION } from './balance';
+import { ARENA, COUNTDOWN, ENERGY, FORMATION } from './balance';
 import { updateAi } from './ai';
 import { isAlive } from './combat';
 import { bufferHeroInput, updateHero } from './heroControl';
+import { clearDeadTargets, updateTargeting } from './heroTargeting';
 import { applyKnockback, keepInBounds, separate } from './movement';
 import { updateAreas, updateProjectiles } from './projectiles';
 import { seedState } from './rng';
@@ -50,6 +51,9 @@ function createUnit(id: number, s: UnitSetup): Unit {
     statuses: [],
     abilityCooldowns: {},
     action: null,
+    energy: s.isHero ? ENERGY.start : 0,
+    queuedAbility: null,
+    abilityBuffer: 0,
   };
 }
 
@@ -88,6 +92,7 @@ export function createBattle(setup: BattleSetup): Battle {
     areas: [],
     nextId: 1,
     markTargetId: null,
+    lockTargetId: null,
     countdown: COUNTDOWN,
     outcome: 'running',
   };
@@ -114,6 +119,9 @@ export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[
     return events;
   }
 
+  const hero = heroOf(battle);
+  if (hero) updateTargeting(battle, hero, input, events);
+
   for (const unit of battle.units) {
     if (unit.isHero) bufferHeroInput(unit, input, dt);
     if (unit.state !== 'stunned') unit.staggerImmunity = Math.max(0, unit.staggerImmunity - dt);
@@ -137,15 +145,11 @@ export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[
 
   updateProjectiles(battle, dt, events);
   updateAreas(battle, dt, events);
-  if (battle.markTargetId !== null) {
-    const marked = battle.units.find((u) => u.id === battle.markTargetId);
-    if (!marked || marked.state === 'dead') battle.markTargetId = null;
-  }
+  clearDeadTargets(battle, events);
 
   separate(battle);
   for (const unit of battle.units) keepInBounds(battle, unit);
 
-  const hero = heroOf(battle);
   if (!hero || !isAlive(hero)) {
     battle.outcome = 'lost';
     events.push({ type: 'outcome', outcome: 'lost' });
