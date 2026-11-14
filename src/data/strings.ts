@@ -132,6 +132,26 @@ export const STRINGS = {
     perSecond: 'm/s',
     every: (s: string) => `every ${s} s`,
   },
+  /** Stage 3d formation step. Draft copy, not yet approved by Marcel. */
+  formationStep: {
+    title: 'Formation',
+    hint: 'Drag to change places. Drop a bench companion on a slot to swap them in.',
+    front: 'Front',
+    back: 'Back',
+    bench: 'Bench',
+    benchEmpty: 'Nobody waits on the bench.',
+    fight: 'To battle',
+    /** One-line threat per enemy type, shown when hovering an enemy on the map. */
+    threats: {
+      krieger: 'Holds the front and draws your blows.',
+      bogenschuetze: 'Shoots the weakest of you from afar.',
+      heiler: 'Keeps its comrades standing.',
+      magier: 'Burns tight crowds; frost holds whoever comes close.',
+      schildtraeger: 'Heavy plate; steel barely scratches it. Bring magic.',
+      berserker: 'Fast and frail. Goes for your healers first.',
+      schamane: 'Heals and shields its allies. Mark it first.',
+    },
+  },
   paused: 'Paused',
   resume: 'Click to resume',
   restart: 'Fight again',

@@ -162,3 +162,23 @@ export function swapIn(state: SquadState, benchedId: number, fieldedId: number):
   const slot = state.formation[fieldedId];
   return slot ? placeCharacter(state, benchedId, slot) : false;
 }
+
+/**
+ * Whether `placeCharacter(state, id, slot)` would change anything, without mutating. The
+ * formation screen uses it to decide where a dragged character may drop.
+ */
+export function canPlace(state: SquadState, id: number, slot: Slot): boolean {
+  const occupant = occupantOf(state, slot);
+  if (occupant === id) return false;
+  if (isFielded(state, id)) return true;
+  if (occupant !== null) return !characterById(state, occupant).isHero;
+  return state.fielded.length < MAX_FIELDED;
+}
+
+/**
+ * The column an enemy slot appears in when seen from the player side. Enemy columns run left
+ * to right as the enemy sees them, so enemy column 0 stands opposite player column 2.
+ */
+export function enemyViewCol(col: 0 | 1 | 2): 0 | 1 | 2 {
+  return (2 - col) as 0 | 1 | 2;
+}

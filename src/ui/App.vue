@@ -8,6 +8,7 @@ import { heroOfSquad } from '../meta/squad';
 import type { PlayableClassId } from '../sim/types';
 import BattleView from './BattleView.vue';
 import ClassSelect from './screens/ClassSelect.vue';
+import FormationScreen from './screens/FormationScreen.vue';
 import OrdersScreen from './screens/OrdersScreen.vue';
 import SquadScreen from './screens/SquadScreen.vue';
 import TitleScreen from './screens/TitleScreen.vue';
@@ -71,8 +72,15 @@ function fight(id: EncounterId): void {
       v-else-if="session.screen === 'squad' && session.squad"
       :squad="session.squad"
       :encounter-id="session.encounterId"
-      @next="startBattle(session.encounterId)"
+      @next="goTo('formation')"
       @back="goTo('orders')"
+    />
+    <FormationScreen
+      v-else-if="session.screen === 'formation' && session.squad"
+      :squad="session.squad"
+      :encounter-id="session.encounterId"
+      @next="startBattle(session.encounterId)"
+      @back="goTo('squad')"
     />
     <BattleView
       v-else-if="session.screen === 'battle' && spec"

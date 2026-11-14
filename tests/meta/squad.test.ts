@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENCOUNTERS, encounterById } from '../../src/data/encounters';
 import { newSquad } from '../../src/data/roster';
-import { battleSetupFor, characterStats, HERO_ID, swapIn, isFielded, MAX_FIELDED, occupantOf, placeCharacter, setFielded, slotKey } from '../../src/meta/squad';
+import { battleSetupFor, canPlace, characterStats, enemyViewCol, HERO_ID, swapIn, isFielded, MAX_FIELDED, occupantOf, placeCharacter, setFielded, slotKey } from '../../src/meta/squad';
 import { slotPosition } from '../../src/sim/battle';
 
 describe('squad rules', () => {
@@ -76,7 +76,7 @@ describe('squad rules', () => {
 
 describe('squad screen helpers', () => {
   it('swapIn benches the companion and gives its slot to the newcomer, never replacing the hero', () => {
-    
+
     const s = newSquad('krieger', 'Aldric');
     const benched = s.roster.find((c) => !isFielded(s, c.id))!;
     const companion = s.fielded.find((id) => id !== HERO_ID)!;
@@ -90,5 +90,28 @@ describe('squad screen helpers', () => {
     const setup = battleSetupFor(s, encounterById('skirmish'), 1);
     const hero = s.roster.find((c) => c.isHero)!;
     expect(characterStats(hero)).toEqual(setup.units.find((u) => u.isHero)!.stats);
+  });
+});
+
+describe('formation screen helpers', () => {
+  it('canPlace agrees with placeCharacter for every character and slot', () => {
+    const base = newSquad('krieger', 'Aldric');
+    setFielded(base, base.fielded.find((id) => id !== HERO_ID)!, false); // leave one slot empty
+    for (const c of base.roster) {
+      for (const row of [0, 1] as const) {
+        for (const col of [0, 1, 2] as const) {
+          const s = structuredClone(base);
+          const expected = canPlace(s, c.id, { col, row });
+          expect(placeCharacter(s, c.id, { col, row })).toBe(expected);
+          expect(s).toEqual(expected ? s : base); // a refused placement changes nothing
+        }
+      }
+    }
+  });
+
+  it('enemyViewCol puts each enemy opposite the player column it faces', () => {
+    for (const col of [0, 1, 2] as const) {
+      expect(slotPosition('enemy', col, 0).z).toBeCloseTo(slotPosition('player', enemyViewCol(col), 0).z);
+    }
   });
 });
