@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENCOUNTERS, encounterById } from '../../src/data/encounters';
 import { newSquad } from '../../src/data/roster';
-import { battleSetupFor, HERO_ID, isFielded, MAX_FIELDED, occupantOf, placeCharacter, setFielded, slotKey } from '../../src/meta/squad';
+import { battleSetupFor, characterStats, HERO_ID, swapIn, isFielded, MAX_FIELDED, occupantOf, placeCharacter, setFielded, slotKey } from '../../src/meta/squad';
 import { slotPosition } from '../../src/sim/battle';
 
 describe('squad rules', () => {
@@ -71,5 +71,24 @@ describe('squad rules', () => {
     const setup = battleSetupFor(s, encounterById('skirmish'), 1);
     const heroSlot = s.formation[HERO_ID]!;
     expect({ x: setup.units[0]!.x, z: setup.units[0]!.z }).toEqual(slotPosition('player', heroSlot.col, heroSlot.row));
+  });
+});
+
+describe('squad screen helpers', () => {
+  it('swapIn benches the companion and gives its slot to the newcomer, never replacing the hero', () => {
+    
+    const s = newSquad('krieger', 'Aldric');
+    const benched = s.roster.find((c) => !isFielded(s, c.id))!;
+    const companion = s.fielded.find((id) => id !== HERO_ID)!;
+    const slot = { ...s.formation[companion]! };
+    expect(swapIn(s, benched.id, HERO_ID)).toBe(false);
+    expect(swapIn(s, benched.id, companion)).toBe(true);
+    expect(isFielded(s, companion)).toBe(false);
+    expect(s.formation[benched.id]).toEqual(slot);
+    expect(s.fielded).toHaveLength(MAX_FIELDED);
+    // The sheet shows the stats the unit fights with.
+    const setup = battleSetupFor(s, encounterById('skirmish'), 1);
+    const hero = s.roster.find((c) => c.isHero)!;
+    expect(characterStats(hero)).toEqual(setup.units.find((u) => u.isHero)!.stats);
   });
 });

@@ -9,8 +9,9 @@ import type { PlayableClassId } from '../sim/types';
 import BattleView from './BattleView.vue';
 import ClassSelect from './screens/ClassSelect.vue';
 import OrdersScreen from './screens/OrdersScreen.vue';
+import SquadScreen from './screens/SquadScreen.vue';
 import TitleScreen from './screens/TitleScreen.vue';
-import { goTo, markWon, session, startBattle } from './session';
+import { goTo, markWon, prepare, session, startBattle } from './session';
 
 const HERO_CLASSES: readonly PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
 
@@ -57,7 +58,7 @@ function won(): void {
 }
 
 function fight(id: EncounterId): void {
-  startBattle(id);
+  prepare(id);
 }
 </script>
 
@@ -66,6 +67,13 @@ function fight(id: EncounterId): void {
     <TitleScreen v-if="session.screen === 'title'" @new-game="goTo('classSelect')" />
     <ClassSelect v-else-if="session.screen === 'classSelect'" @choose="chooseHero" @back="goTo('title')" />
     <OrdersScreen v-else-if="session.screen === 'orders'" :won="session.won" @fight="fight" @back="goTo('classSelect')" />
+    <SquadScreen
+      v-else-if="session.screen === 'squad' && session.squad"
+      :squad="session.squad"
+      :encounter-id="session.encounterId"
+      @next="startBattle(session.encounterId)"
+      @back="goTo('orders')"
+    />
     <BattleView
       v-else-if="session.screen === 'battle' && spec"
       :key="session.battleRun"

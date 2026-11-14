@@ -1,6 +1,6 @@
 import { enemySlots, playerSlotStats, type Encounter } from '../data/encounters';
 import { formationSetup, type BattleSetup, type FormationSlot } from '../sim/battle';
-import type { PlayableClassId } from '../sim/types';
+import type { PlayableClassId, Stats } from '../sim/types';
 
 /** A persistent character outside battles (PLAN section 4). Levels, upgrades and items come in Stage 4. */
 export interface Character {
@@ -141,4 +141,24 @@ export function battleSetupFor(state: SquadState, encounter: Encounter, seed: nu
     return { classId: c.classId, col: slot.col, row: slot.row, isHero: c.isHero, stats: playerSlotStats(c.classId, c.isHero) };
   });
   return formationSetup(seed, player, enemySlots(encounter));
+}
+
+/** The stats a character takes into battle (what the character sheet shows). */
+export function characterStats(c: Character): Stats {
+  return playerSlotStats(c.classId, c.isHero);
+}
+
+/** Experience needed for the next level. Placeholder until the Stage 4 curve (PLAN section 10). */
+export function xpToNext(level: number): number {
+  return 100 * level;
+}
+
+/**
+ * Moves a benched character onto the field in place of a fielded companion (they swap: the
+ * companion goes to the bench, the newcomer takes its slot). Never replaces the hero. Mutates `state`.
+ */
+export function swapIn(state: SquadState, benchedId: number, fieldedId: number): boolean {
+  if (isFielded(state, benchedId) || !isFielded(state, fieldedId)) return false;
+  const slot = state.formation[fieldedId];
+  return slot ? placeCharacter(state, benchedId, slot) : false;
 }

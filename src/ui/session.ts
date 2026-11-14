@@ -2,7 +2,7 @@ import { reactive } from 'vue';
 import type { EncounterId } from '../data/encounters';
 import type { SquadState } from '../meta/squad';
 
-export type Screen = 'title' | 'classSelect' | 'orders' | 'battle';
+export type Screen = 'title' | 'classSelect' | 'orders' | 'squad' | 'battle';
 
 /** The state between battles. Saving arrives in Stage 4; until then a reload starts over. */
 export interface Session {
@@ -19,6 +19,12 @@ export const session: Session = reactive({ screen: 'title', squad: null, encount
 
 export function goTo(screen: Screen): void {
   session.screen = screen;
+}
+
+/** Opens the preparation steps (squad, then formation) for a battle from the orders. */
+export function prepare(encounterId: EncounterId): void {
+  session.encounterId = encounterId;
+  session.screen = 'squad';
 }
 
 export function startBattle(encounterId: EncounterId): void {
