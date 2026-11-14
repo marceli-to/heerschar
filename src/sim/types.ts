@@ -25,6 +25,49 @@ export interface Stats {
   range: number;
 }
 
+/**
+ * What levels, upgrades, paths and items change inside a battle beyond the plain stats
+ * (Stage 4). Neutral values (`NEUTRAL_MODS`) leave the rules exactly as before.
+ */
+export interface UnitMods {
+  /** Multiplier on damage dealt. */
+  damage: number;
+  /** Multiplier on damage taken (after armour or resist). */
+  damageTaken: number;
+  /** Multiplier on heals and shields given. */
+  healing: number;
+  /** Multiplier on ability cooldowns. */
+  cooldown: number;
+  /** Fraction of damage dealt that heals the dealer. */
+  lifesteal: number;
+  /** Seconds added to the control effects the unit applies: taunt, stun, freeze, slow. */
+  control: number;
+  /** Seconds of `slowed` on foes hit by the unit's arrows. */
+  slowOnHit: number;
+  /** Multiplier on the radius of the ground circles the unit places. */
+  area: number;
+  /** Taunt / Shield Bash also shields the unit itself for this many × power. */
+  guardShield: number;
+  /** Chance for a hit to be critical. */
+  crit: number;
+  /** Taunt / Whirlwind also rallies the unit itself for this many seconds. */
+  selfRally: number;
+}
+
+export const NEUTRAL_MODS: Readonly<UnitMods> = {
+  damage: 1,
+  damageTaken: 1,
+  healing: 1,
+  cooldown: 1,
+  lifesteal: 0,
+  control: 0,
+  slowOnHit: 0,
+  area: 1,
+  guardShield: 0,
+  crit: 0,
+  selfRally: 0,
+};
+
 export type UnitState = 'idle' | 'moving' | 'windup' | 'recover' | 'dodging' | 'stunned' | 'dead';
 
 /** What an AI unit is winding up or recovering from. See `ACTIONS` in balance.ts. */
@@ -72,6 +115,8 @@ export interface Unit {
   classId: ClassId;
   isHero: boolean;
   stats: Stats;
+  /** Battle effects of levels, upgrades and items (neutral for enemies and plain setups). */
+  mods: UnitMods;
   hp: number;
   pos: Vec2;
   /** Knockback velocity, decays by friction. Steering movement is applied directly. */

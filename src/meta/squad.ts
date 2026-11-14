@@ -1,15 +1,24 @@
-import { enemySlots, playerSlotStats, type Encounter } from '../data/encounters';
+import { enemySlots, type Encounter } from '../data/encounters';
+import type { PathId } from '../data/upgrades';
 import { formationSetup, type BattleSetup, type FormationSlot } from '../sim/battle';
-import type { PlayableClassId, Stats } from '../sim/types';
+import type { PlayableClassId } from '../sim/types';
+import { characterMods, characterStats } from './progression';
 
-/** A persistent character outside battles (PLAN section 4). Levels, upgrades and items come in Stage 4. */
+/** A persistent character outside battles (PLAN section 4). */
 export interface Character {
   id: number;
   name: string;
   classId: PlayableClassId;
   isHero: boolean;
+  /** 1..LEVEL_CAP */
   level: number;
+  /** Experience into the current level. */
   xp: number;
+  /** Upgrade ids chosen at level-ups, in order (repeats allowed up to each upgrade's max). */
+  upgrades: string[];
+  /** Specialisation chosen at PATH_LEVEL. */
+  path: PathId | null;
+  /** Item ids. */
   weapon: string | null;
   trinket: string | null;
 }
@@ -138,19 +147,9 @@ export function battleSetupFor(state: SquadState, encounter: Encounter, seed: nu
   const player: FormationSlot[] = fieldedCharacters(state).map((c) => {
     const slot = state.formation[c.id];
     if (!slot) throw new Error(`fielded character ${c.id} has no slot`);
-    return { classId: c.classId, col: slot.col, row: slot.row, isHero: c.isHero, stats: playerSlotStats(c.classId, c.isHero) };
+    return { classId: c.classId, col: slot.col, row: slot.row, isHero: c.isHero, stats: characterStats(c), mods: characterMods(c) };
   });
   return formationSetup(seed, player, enemySlots(encounter));
-}
-
-/** The stats a character takes into battle (what the character sheet shows). */
-export function characterStats(c: Character): Stats {
-  return playerSlotStats(c.classId, c.isHero);
-}
-
-/** Experience needed for the next level. Placeholder until the Stage 4 curve (PLAN section 10). */
-export function xpToNext(level: number): number {
-  return 100 * level;
 }
 
 /**

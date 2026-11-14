@@ -81,7 +81,7 @@ export interface AreaSpec {
   interval?: number;
 }
 
-/** Places a telegraphed ground circle. */
+/** Places a telegraphed ground circle (radius scaled by the owner's `mods.area`, freezes lengthened by `mods.control`). */
 export function placeArea(battle: Battle, owner: Unit, spec: AreaSpec, events: BattleEvent[]): AreaEffect {
   const a: AreaEffect = {
     id: battle.nextId++,
@@ -89,13 +89,13 @@ export function placeArea(battle: Battle, owner: Unit, spec: AreaSpec, events: B
     team: owner.team,
     ownerId: owner.id,
     pos: { x: spec.at.x, z: spec.at.z },
-    radius: spec.radius,
+    radius: spec.radius * owner.mods.area,
     delay: spec.delay,
     time: 0,
     power: owner.stats.power,
     multiplier: spec.multiplier,
     damageType: spec.damageType,
-    freeze: spec.freeze,
+    freeze: spec.freeze > 0 ? spec.freeze + owner.mods.control : 0,
     heal: spec.heal ?? false,
     pulses: spec.pulses ?? 1,
     interval: spec.interval ?? 0,
@@ -164,8 +164,9 @@ export function updateProjectiles(battle: Battle, dt: number, events: BattleEven
         continue;
       }
       if (owner) {
-        applyDamage(owner, target, computeDamage(battle, p.power, p.multiplier, target, p.damageType), p.pierce, events);
+        const died = applyDamage(owner, target, computeDamage(battle, p.power, p.multiplier, target, p.damageType, owner), p.pierce, events);
         if (p.basic && owner.isHero) gainEnergy(owner, ENERGY.perBasicHit);
+        if (!died && owner.mods.slowOnHit > 0 && (p.kind === 'arrow' || p.kind === 'piercing')) addStatus(target, 'slowed', owner.mods.slowOnHit, events, 0, owner.id);
       }
       if (!p.pierce) {
         spent = true;
@@ -205,7 +206,7 @@ export function updateAreas(battle: Battle, dt: number, events: BattleEvent[]): 
       }
       if (a.multiplier > 0 && owner) {
         // Freeze after the damage, so the +50% physical bonus does not apply to the nova itself.
-        if (applyDamage(owner, u, computeDamage(battle, a.power, a.multiplier, u, a.damageType), true, events)) continue;
+        if (applyDamage(owner, u, computeDamage(battle, a.power, a.multiplier, u, a.damageType, owner), true, events)) continue;
       }
       if (a.freeze > 0) freeze(u, a.freeze, events);
     }

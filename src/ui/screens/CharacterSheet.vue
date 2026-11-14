@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { STRINGS } from '../../data/strings';
-import { characterStats, xpToNext, type Character } from '../../meta/squad';
+import type { Character } from '../../meta/squad';
+import { characterStats } from '../../meta/progression';
+import { xpToNext } from '../../data/progression';
 import FigurePreview from './FigurePreview.vue';
 import ItemSlot from './ItemSlot.vue';
 

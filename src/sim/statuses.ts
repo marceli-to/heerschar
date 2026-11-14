@@ -1,4 +1,4 @@
-import { STATUS } from './balance';
+import { GUARD_SHIELD_TIME, STATUS } from './balance';
 import type { BattleEvent, Status, StatusKind, Unit } from './types';
 
 export function getStatus(unit: Unit, kind: StatusKind): Status | undefined {
@@ -52,4 +52,13 @@ export function speedFactor(unit: Unit): number {
 /** Multiplier on move speed. */
 export function moveFactor(unit: Unit): number {
   return speedFactor(unit) * (hasStatus(unit, 'slowed') ? STATUS.slowed : 1);
+}
+
+/**
+ * Path signatures on Taunt (companion) and Shield Bash / Whirlwind (hero): the unit shields
+ * itself (`mods.guardShield` × power) and/or rallies itself (`mods.selfRally` seconds).
+ */
+export function guardAndRally(unit: Unit, events: BattleEvent[], shield = true, rally = true): void {
+  if (shield && unit.mods.guardShield > 0) addStatus(unit, 'shielded', GUARD_SHIELD_TIME, events, unit.stats.power * unit.mods.guardShield, unit.id);
+  if (rally && unit.mods.selfRally > 0) addStatus(unit, 'rallied', unit.mods.selfRally, events, 0, unit.id);
 }

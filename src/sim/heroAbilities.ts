@@ -3,7 +3,7 @@ import { inArc, isAlive, resolveMelee } from './combat';
 import { lockTarget } from './heroTargeting';
 import { angleDiff, angleTo, dirFromAngle, dist, type Vec2 } from './math';
 import { fireStraight, lob, placeArea } from './projectiles';
-import { addStatus } from './statuses';
+import { addStatus, guardAndRally } from './statuses';
 import type { ActionId, Battle, BattleEvent, ClassId, HeroAbilityId, HeroInput, Unit } from './types';
 
 const DODGE_OPTS = { invulnerableTime: HERO.dodge.invulnerable };
@@ -194,9 +194,11 @@ export function releaseAbility(battle: Battle, hero: Unit, id: HeroAbilityId, in
   switch (id) {
     case 'schildstoss':
       resolveMelee(battle, hero, abilityMelee(id), { ...DODGE_OPTS, stun: true }, events);
+      guardAndRally(hero, events, true, false);
       return false;
     case 'wirbel':
       resolveMelee(battle, hero, abilityMelee(id), DODGE_OPTS, events);
+      guardAndRally(hero, events, false, true);
       return false;
     case 'salve': {
       const s = HERO_ABILITIES.salve;
@@ -211,7 +213,7 @@ export function releaseAbility(battle: Battle, hero: Unit, id: HeroAbilityId, in
       const r = HERO_ABILITIES.rueckzug;
       const cone = { reach: r.reach, arc: r.arc } as MeleeAttack;
       for (const u of battle.units) {
-        if (u.team !== hero.team && isAlive(u) && inArc(hero, u, cone)) addStatus(u, 'slowed', r.slow, events);
+        if (u.team !== hero.team && isAlive(u) && inArc(hero, u, cone)) addStatus(u, 'slowed', r.slow + hero.mods.control, events);
       }
       return true;
     }
@@ -223,7 +225,7 @@ export function releaseAbility(battle: Battle, hero: Unit, id: HeroAbilityId, in
     case 'segen': {
       const s = HERO_ABILITIES.segen;
       const ally = weakestAlly(battle, hero, s.range);
-      if (ally) addStatus(ally, 'shielded', s.duration, events, hero.stats.power * s.shield * (ally === hero ? HERO_SELF_HEAL : 1), hero.id);
+      if (ally) addStatus(ally, 'shielded', s.duration, events, hero.stats.power * s.shield * hero.mods.healing * (ally === hero ? HERO_SELF_HEAL : 1), hero.id);
       return false;
     }
     case 'feuerball': {

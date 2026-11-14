@@ -104,6 +104,11 @@ export const STATUS = {
   slowed: 0.6,
 } as const;
 
+/** A critical hit (from upgrades and items, `UnitMods.crit`) deals this much more. */
+export const CRIT_MULTIPLIER = 1.5;
+/** Seconds the Warden's guard shield (`UnitMods.guardShield`) lasts. */
+export const GUARD_SHIELD_TIME = 6;
+
 /** Formations: 3 columns × 2 rows per side, front rows about 24 m apart. */
 export const FORMATION = { frontX: 12, rowGap: 2.5, colGap: 3 } as const;
 

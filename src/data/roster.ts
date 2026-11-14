@@ -17,7 +17,7 @@ export const SANDBOX_COMPANIONS: readonly { name: string; classId: PlayableClass
 ];
 
 function character(id: number, name: string, classId: PlayableClassId, isHero: boolean): Character {
-  return { id, name, classId, isHero, level: 1, xp: 0, weapon: null, trinket: null };
+  return { id, name, classId, isHero, level: 1, xp: 0, upgrades: [], path: null, weapon: null, trinket: null };
 }
 
 /** A fresh squad: the hero plus the sandbox companions, the first five fielded in default slots. */

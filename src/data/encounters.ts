@@ -1,4 +1,6 @@
 import { CLASS_STATS } from './classes';
+import type { LootTier } from './items';
+import { statsAtLevel } from './progression';
 import { formationSetup, type BattleSetup, type FormationSlot } from '../sim/battle';
 import type { ClassId, Stats } from '../sim/types';
 
@@ -41,66 +43,46 @@ export interface EncounterUnit {
 /** A battle defined in data. Names and intros live in `STRINGS.encounters[id]`. */
 export interface Encounter {
   id: EncounterId;
-  /** Enemy health and power multiplier on top of the squad scaling. Stands in for enemy levels until Stage 4. */
+  /** Enemy level: their stats grow with it like the squad's (`LEVEL_GROWTH`). */
+  level: number;
+  /** Extra enemy health and power multiplier on top of level and squad scaling. */
   strength: number;
+  /** Experience the first win pays, shared by the fielded characters (PLAN section 10). */
+  xp: number;
+  loot: LootTier;
   enemies: EncounterUnit[];
 }
 
-export type EncounterId = 'skirmish' | 'shieldWall' | 'berserkerRush' | 'archerLine';
+export type EncounterId = 'skirmish' | 'shieldWall' | 'berserkerRush' | 'archerLine' | 'ambush' | 'shamansGrove' | 'burningField' | 'ironColumn' | 'wolfPack' | 'warband';
+
+const E = (classId: ClassId, col: 0 | 1 | 2, row: 0 | 1): EncounterUnit => ({ classId, col, row });
 
 /**
- * Stage 3 sandbox battles, each asking something different of the squad:
+ * The battle chain, in order: each one unlocks when the one before is won (Stage 4; the campaign
+ * map replaces this in Stage 5). Each asks something different of the squad:
  * - skirmish: the Stage 2 mixed band.
  * - shieldWall: armoured front with healers behind; physical damage bounces off, bring magic.
  * - berserkerRush: fast frail divers that go for healers and the back row; guard them.
  * - archerLine: a thin front and a lot of ranged damage behind; close the gap or out-heal it.
+ * - ambush: berserkers and mages; the back row gets jumped while fire falls.
+ * - shamansGrove: three shamans keep two shieldbearers standing; kill the shamans first.
+ * - burningField: three mages behind a warrior wall; spread out.
+ * - ironColumn: six heavy and steady, a long fight.
+ * - wolfPack: four berserkers with a shaman; protect the healer.
+ * - warband: everything at once, elite loot.
+ * Strength and level are first numbers; the campaign tuning comes in Stage 5.
  */
 export const ENCOUNTERS: readonly Encounter[] = [
-  {
-    id: 'skirmish',
-    strength: 1.5,
-    enemies: [
-      { classId: 'schildtraeger', col: 0, row: 0 },
-      { classId: 'krieger', col: 1, row: 0 },
-      { classId: 'berserker', col: 2, row: 0 },
-      { classId: 'bogenschuetze', col: 0, row: 1 },
-      { classId: 'schamane', col: 1, row: 1 },
-      { classId: 'magier', col: 2, row: 1 },
-    ],
-  },
-  {
-    id: 'shieldWall',
-    strength: 2,
-    enemies: [
-      { classId: 'schildtraeger', col: 0, row: 0 },
-      { classId: 'schildtraeger', col: 1, row: 0 },
-      { classId: 'schildtraeger', col: 2, row: 0 },
-      { classId: 'schamane', col: 0, row: 1 },
-      { classId: 'schamane', col: 2, row: 1 },
-    ],
-  },
-  {
-    id: 'berserkerRush',
-    strength: 1.5,
-    enemies: [
-      { classId: 'berserker', col: 0, row: 0 },
-      { classId: 'berserker', col: 1, row: 0 },
-      { classId: 'berserker', col: 2, row: 0 },
-      { classId: 'bogenschuetze', col: 0, row: 1 },
-      { classId: 'bogenschuetze', col: 2, row: 1 },
-    ],
-  },
-  {
-    id: 'archerLine',
-    strength: 1.3,
-    enemies: [
-      { classId: 'krieger', col: 0, row: 0 },
-      { classId: 'krieger', col: 2, row: 0 },
-      { classId: 'bogenschuetze', col: 0, row: 1 },
-      { classId: 'magier', col: 1, row: 1 },
-      { classId: 'bogenschuetze', col: 2, row: 1 },
-    ],
-  },
+  { id: 'skirmish', level: 1, strength: 1.5, xp: 600, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
+  { id: 'shieldWall', level: 2, strength: 1.8, xp: 660, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 1, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
+  { id: 'berserkerRush', level: 3, strength: 1.5, xp: 720, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'archerLine', level: 4, strength: 1.3, xp: 780, loot: 'normal', enemies: [E('krieger', 0, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('magier', 1, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'ambush', level: 5, strength: 1.7, xp: 840, loot: 'normal', enemies: [E('berserker', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('magier', 0, 1), E('magier', 2, 1)] },
+  { id: 'shamansGrove', level: 5, strength: 1.8, xp: 900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 1, 1), E('schamane', 2, 1)] },
+  { id: 'burningField', level: 6, strength: 1.9, xp: 960, loot: 'normal', enemies: [E('krieger', 0, 0), E('schildtraeger', 1, 0), E('krieger', 2, 0), E('magier', 0, 1), E('magier', 1, 1), E('magier', 2, 1)] },
+  { id: 'ironColumn', level: 7, strength: 2.0, xp: 1020, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('schildtraeger', 2, 0), E('bogenschuetze', 0, 1), E('krieger', 1, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'wolfPack', level: 8, strength: 2.1, xp: 1080, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('berserker', 0, 1), E('schamane', 2, 1)] },
+  { id: 'warband', level: 9, strength: 2.3, xp: 1140, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
 ];
 
 export function encounterById(id: EncounterId): Encounter {
@@ -109,10 +91,10 @@ export function encounterById(id: EncounterId): Encounter {
   return e;
 }
 
-/** A side of a battle in formation slots, with squad-battle scaling applied. */
-export function enemySlots(encounter: Encounter, strength = encounter.strength): FormationSlot[] {
+/** A side of a battle in formation slots, with squad-battle scaling, level and strength applied. */
+export function enemySlots(encounter: Encounter, strength = encounter.strength, level = encounter.level): FormationSlot[] {
   return encounter.enemies.map((e) => {
-    const st = armyStats(CLASS_STATS[e.classId]);
+    const st = statsAtLevel(armyStats(CLASS_STATS[e.classId]), e.classId, level);
     return { classId: e.classId, col: e.col, row: e.row, stats: { ...st, maxHp: st.maxHp * strength, power: st.power * strength } };
   });
 }
@@ -136,6 +118,6 @@ export function squadSetup(seed: number, heroClass: ClassId = 'krieger'): Battle
       { classId: 'heiler', col: 1, row: 1, stats: playerSlotStats('heiler', false) },
       { classId: 'magier', col: 2, row: 1, stats: playerSlotStats('magier', false) },
     ],
-    enemySlots(encounterById('skirmish'), 1),
+    enemySlots(encounterById('skirmish'), 1, 1),
   );
 }

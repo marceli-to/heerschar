@@ -528,7 +528,7 @@ export class Game {
       for (const a of h.abilities) {
         const def = HERO_ABILITIES[a.id];
         a.cooldown = Math.max(0, hero.abilityCooldowns[a.id] ?? 0);
-        a.cooldownFrac = Math.min(1, a.cooldown / def.cooldown);
+        a.cooldownFrac = Math.min(1, a.cooldown / (def.cooldown * hero.mods.cooldown));
         a.affordable = hero.energy >= def.cost;
         a.active = hero.action === a.id && (hero.state === 'windup' || hero.state === 'recover');
       }

@@ -1,7 +1,7 @@
-import { DAMAGE_VARIANCE, ENERGY, STAGGER_IMMUNITY, STATUS, UNIT_RADIUS, type MeleeAttack } from './balance';
+import { CRIT_MULTIPLIER, DAMAGE_VARIANCE, ENERGY, STAGGER_IMMUNITY, STATUS, UNIT_RADIUS, type MeleeAttack } from './balance';
 import { clamp } from './math';
 import { angleDiff, angleTo, dist } from './math';
-import { range } from './rng';
+import { nextFloat, range } from './rng';
 import { getStatus, hasStatus, removeStatus } from './statuses';
 import type { Battle, BattleEvent, DamageType, Unit } from './types';
 
@@ -15,14 +15,20 @@ export function isInvulnerable(u: Unit, invulnerableTime: number): boolean {
 
 /**
  * `power × multiplier × 100 / (100 + armor or resist)`, ±variance from the battle RNG,
- * then +50% physical on frozen targets and +15% on the marked target.
+ * then +50% physical on frozen targets and +15% on the marked target, then the dealer's and
+ * the target's mods (a crit roll only when the dealer has a crit chance, so plain battles draw
+ * the same random numbers as before).
  */
-export function computeDamage(battle: Battle, power: number, multiplier: number, target: Unit, type: DamageType): number {
+export function computeDamage(battle: Battle, power: number, multiplier: number, target: Unit, type: DamageType, source?: Unit): number {
   const defence = type === 'physical' ? target.stats.armor : target.stats.resist;
   let amount = ((power * multiplier * 100) / (100 + defence)) * range(battle, 1 - DAMAGE_VARIANCE, 1 + DAMAGE_VARIANCE);
   if (type === 'physical' && hasStatus(target, 'frozen')) amount *= STATUS.frozenPhysical;
   if (battle.markTargetId === target.id) amount *= STATUS.marked;
-  return amount;
+  if (source) {
+    amount *= source.mods.damage;
+    if (source.mods.crit > 0 && nextFloat(battle) < source.mods.crit) amount *= CRIT_MULTIPLIER;
+  }
+  return amount * target.mods.damageTaken;
 }
 
 export function kill(unit: Unit, events: BattleEvent[]): void {
@@ -48,6 +54,7 @@ export function applyDamage(attacker: Unit, target: Unit, amount: number, heavy:
   const dealt = Math.min(target.hp, amount - absorbed);
   target.hp -= dealt;
   events.push({ type: 'hit', attackerId: attacker.id, targetId: target.id, amount: dealt, absorbed, heavy, x: target.pos.x, z: target.pos.z });
+  if (attacker.mods.lifesteal > 0 && dealt > 0 && attacker !== target) restore(attacker, attacker, dealt * attacker.mods.lifesteal, events);
   if (target.hp <= 0) {
     target.hp = 0;
     kill(target, events);
@@ -56,12 +63,19 @@ export function applyDamage(attacker: Unit, target: Unit, amount: number, heavy:
   return false;
 }
 
-/** Restores health up to the maximum. Emits the heal with the amount actually restored. */
-export function applyHeal(source: Unit, target: Unit, amount: number, events: BattleEvent[]): void {
+function restore(source: Unit, target: Unit, amount: number, events: BattleEvent[]): void {
   if (!isAlive(target)) return;
   const restored = Math.min(amount, target.stats.maxHp - target.hp);
   target.hp += restored;
   events.push({ type: 'heal', sourceId: source.id, targetId: target.id, amount: restored, x: target.pos.x, z: target.pos.z });
+}
+
+/**
+ * Restores health up to the maximum, scaled by the healer's `mods.healing`. Emits the heal
+ * with the amount actually restored.
+ */
+export function applyHeal(source: Unit, target: Unit, amount: number, events: BattleEvent[]): void {
+  restore(source, target, amount * source.mods.healing, events);
 }
 
 /** Puts a unit into the stunned state; any windup in progress is lost. */
@@ -111,7 +125,7 @@ export function resolveMelee(battle: Battle, attacker: Unit, attack: MeleeAttack
       continue;
     }
     hits++;
-    const amount = computeDamage(battle, attacker.stats.power, attack.multiplier, target, 'physical');
+    const amount = computeDamage(battle, attacker.stats.power, attack.multiplier, target, 'physical', attacker);
     const away = angleTo(attacker.pos, target.pos);
     target.vel.x += Math.sin(away) * attack.knockback;
     target.vel.z += -Math.cos(away) * attack.knockback;
@@ -119,7 +133,7 @@ export function resolveMelee(battle: Battle, attacker: Unit, attack: MeleeAttack
 
     if (applyDamage(attacker, target, amount, attack.heavy, events)) continue;
     if (opts.stun) {
-      stun(target, attack.stagger);
+      stun(target, attack.stagger + attacker.mods.control);
     } else if (canStagger(target, attack) && !hasStatus(target, 'frozen')) {
       stun(target, attack.stagger);
       target.staggerImmunity = STAGGER_IMMUNITY;

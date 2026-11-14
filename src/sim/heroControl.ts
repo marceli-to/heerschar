@@ -129,7 +129,7 @@ function windupAbility(battle: Battle, hero: Unit, id: HeroAbilityId, input: Her
   if (hero.stateTime < a.windup) return;
   // Paid on release, so an interrupted cast costs nothing.
   hero.energy -= a.cost;
-  hero.abilityCooldowns[id] = a.cooldown;
+  hero.abilityCooldowns[id] = a.cooldown * hero.mods.cooldown;
   const leap = releaseAbility(battle, hero, id, input, events);
   hero.stateTime = 0;
   if (leap) {

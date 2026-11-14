@@ -7,13 +7,15 @@ import { applyKnockback, keepInBounds, separate } from './movement';
 import { updateAreas, updateProjectiles } from './projectiles';
 import { seedState } from './rng';
 import { hasStatus, tickStatuses } from './statuses';
-import type { Battle, BattleEvent, ClassId, HeroInput, Stats, Team, Unit } from './types';
+import { NEUTRAL_MODS, type Battle, type BattleEvent, type ClassId, type HeroInput, type Stats, type Team, type Unit, type UnitMods } from './types';
 
 export interface UnitSetup {
   team: Team;
   classId: ClassId;
   isHero: boolean;
   stats: Stats;
+  /** Defaults to `NEUTRAL_MODS`. */
+  mods?: Partial<UnitMods>;
   x: number;
   z: number;
 }
@@ -32,6 +34,7 @@ function createUnit(id: number, s: UnitSetup): Unit {
     classId: s.classId,
     isHero: s.isHero,
     stats: { ...s.stats },
+    mods: { ...NEUTRAL_MODS, ...s.mods },
     hp: s.stats.maxHp,
     pos: { x: s.x, z: s.z },
     vel: { x: 0, z: 0 },
@@ -67,6 +70,7 @@ export interface FormationSlot {
   row: number;
   isHero?: boolean;
   stats: Stats;
+  mods?: Partial<UnitMods>;
 }
 
 /** World position of a formation slot. The player side stands on -x and faces +x. */
@@ -80,7 +84,7 @@ export function slotPosition(team: Team, col: number, row: number): { x: number;
 
 /** Builds a battle setup from two formations of 3 × 2 slots. */
 export function formationSetup(seed: number, player: FormationSlot[], enemy: FormationSlot[]): BattleSetup {
-  const place = (team: Team) => (s: FormationSlot): UnitSetup => ({ team, classId: s.classId, isHero: s.isHero ?? false, stats: { ...s.stats }, ...slotPosition(team, s.col, s.row) });
+  const place = (team: Team) => (s: FormationSlot): UnitSetup => ({ team, classId: s.classId, isHero: s.isHero ?? false, stats: { ...s.stats }, ...(s.mods ? { mods: { ...s.mods } } : {}), ...slotPosition(team, s.col, s.row) });
   return { seed, units: [...player.map(place('player')), ...enemy.map(place('enemy'))] };
 }
 

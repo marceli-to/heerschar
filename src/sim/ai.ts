@@ -4,7 +4,7 @@ import { angleDiff, angleTo, dist } from './math';
 import { moveDir, turnTowards } from './movement';
 import { fireStraight, lob, placeArea } from './projectiles';
 import { range } from './rng';
-import { addStatus, getStatus, hasStatus, moveFactor, speedFactor } from './statuses';
+import { addStatus, getStatus, guardAndRally, hasStatus, moveFactor, speedFactor } from './statuses';
 import { heroActionTiming } from './heroAbilities';
 import type { AbilityId, AiActionId, Battle, BattleEvent, ClassId, Unit } from './types';
 
@@ -85,7 +85,7 @@ function startAction(unit: Unit, action: AiActionId, target: Unit | null, events
   unit.action = action;
   if (target) unit.targetId = target.id;
   setState(unit, 'windup');
-  if (isAbility(action)) unit.abilityCooldowns[action] = ACTIONS[action].cooldown;
+  if (isAbility(action)) unit.abilityCooldowns[action] = ACTIONS[action].cooldown * unit.mods.cooldown;
   if (action === 'strike') events.push({ type: 'attackStart', unitId: unit.id, chain: 0 });
   else events.push({ type: 'action', unitId: unit.id, action });
 }
@@ -143,9 +143,10 @@ function release(battle: Battle, unit: Unit, events: BattleEvent[]): void {
       const t = ACTIONS.taunt;
       for (const f of livingFoes(battle, unit)) {
         if (f.isHero || dist(f.pos, unit.pos) > t.radius) continue;
-        addStatus(f, 'taunted', t.duration, events, 0, unit.id);
+        addStatus(f, 'taunted', t.duration + unit.mods.control, events, 0, unit.id);
         f.targetId = unit.id;
       }
+      guardAndRally(unit, events);
       return;
     }
     case 'shot':
@@ -193,7 +194,7 @@ function release(battle: Battle, unit: Unit, events: BattleEvent[]): void {
     }
     case 'ward': {
       const w = ACTIONS.ward;
-      if (live && live.team === unit.team) addStatus(live, 'shielded', w.duration, events, unit.stats.power * w.shield, unit.id);
+      if (live && live.team === unit.team) addStatus(live, 'shielded', w.duration, events, unit.stats.power * w.shield * unit.mods.healing, unit.id);
       return;
     }
   }

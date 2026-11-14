@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ENCOUNTERS, encounterById } from '../../src/data/encounters';
 import { newSquad } from '../../src/data/roster';
-import { battleSetupFor, canPlace, characterStats, enemyViewCol, HERO_ID, swapIn, isFielded, MAX_FIELDED, occupantOf, placeCharacter, setFielded, slotKey } from '../../src/meta/squad';
+import { characterStats } from '../../src/meta/progression';
+import { battleSetupFor, canPlace, enemyViewCol, HERO_ID, swapIn, isFielded, MAX_FIELDED, occupantOf, placeCharacter, setFielded, slotKey } from '../../src/meta/squad';
 import { slotPosition } from '../../src/sim/battle';
 
 describe('squad rules', () => {
