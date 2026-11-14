@@ -1,0 +1,20 @@
+/** Colours of the "sunny meadow" look (approved 2026-11-14). View only. */
+export const MEADOW = {
+  skyZenith: '#4f9be0',
+  skyHorizon: '#d9eefc',
+  fog: '#cfe6f7',
+  sun: '#fff1d8',
+  hemiSky: '#cfe8ff',
+  hemiGround: '#5f7d34',
+  grass: '#6fa63f',
+  grassDark: '#5a9035',
+  grassLight: '#82b84a',
+  arenaGround: '#9fb860',
+  arenaGroundWorn: '#b7b77a',
+  stone: '#9a978f',
+  stoneDark: '#7c7a74',
+  hill: '#6a9d3c',
+  trunk: '#6b4a2f',
+  leaves: '#3f7a32',
+  leavesLight: '#4f8d3a',
+} as const;
