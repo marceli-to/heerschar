@@ -18,7 +18,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| 5 Campaign | **in progress**: 5a, 5b done; next 5c map screen (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
+| 5 Campaign | **in progress**: 5a, 5b, 5c done (5c waiting for Marcel's look at the screenshots); next 5d camp screen (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
 | 6–7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -36,11 +36,31 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 1. ~~**5a Campaign rules and data.**~~ Done. `src/data/campaign.ts`: `REGIONS`, `NODES` (24: per region a first battle that forks, upper road with the elite, lower road with the camps, both meet at the boss; x/y 0..100 for the map sheet), `nodeById`, `regionNodes`, `regionStart`, `regionBoss`, `FINAL_BOSS`, `isCampId`. Fight nodes use their encounter id as node id. `ENCOUNTERS` = the 18 campaign battles (5 new: raiders, farmstead, graveWatch, boneLegion, cryptRoad; 3 bosses with escort only, boss units come in 5b), levels follow the expected squad level. XP pools = per-character target × expected fielded count; the walk test (`tests/meta/campaign.test.ts`, every node in map order) gives hero level 6 / 12 / 18 at the bosses. `src/meta/game.ts`: `GameState.camps` (`CampState` = offers + done), `GAME_VERSION` 2, `isNodeDone`, `isRegionOpen`, `isNodeOpen` (region open and start node or a done node leads here; done nodes stay open for replays), `isUnlocked` = `isNodeOpen`, `campaignWon`, `recruitLevel`, `campOffers` (lazy, seeded, kept), `recruit`, `passCamp`. `ROSTER_LIMIT` 9 in `squad.ts`. Save: migration 1 → 2 adds `camps: {}`; camps and roster size validated. `newSquad(hero, name, companions = START_COMPANIONS)`; dev shortcut games (`startDevGame`) get `SANDBOX_COMPANIONS`. Tests that relied on the 7-companion roster pass `SANDBOX_COMPANIONS`; `prepMatters` plays skirmish / shieldWall at their Stage 3 levels. Interim: the orders screen lists all 18 battles; camps have no screen yet, so a new game stalls after the first battle's roads until 5c/5d.
 2. ~~**5b Bosses.**~~ Done (see "5b as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/bosses-5b/`.
-3. **5c Map screen** (replaces the orders): one parchment sheet per region, region tabs, wax-seal nodes with pictograms, dotted roads. Show Marcel a screenshot; ask about details first.
+3. ~~**5c Map screen**~~ Done (see "5c as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/map-5c/`.
 4. **5d Camp screen**: two recruit cards, pick one (must pick; decided).
 5. **5e Ending summary** (time, battles lost, squad with levels) → title; the save can continue. Needs play time tracking.
 6. **5f Balance**: suite per PLAN section 13 (each encounter at the expected squad level, standard 70–90 %, elite 45–70 %, boss 35–60 %, length 45–150 s, hero share 20–30 %, solo < 5 %), tune strength; update `tests/balance/chain.test.ts` to walk the map.
 7. **Gate:** campaign playable start to finish, balance targets hold.
+
+## 5c decisions (Marcel, 2026-11-14)
+
+- Seals coloured by kind: battle = red wax, crossed swords; elite = black wax, sword under a star; camp = green wax, tent; boss = larger red wax, crown. Open-but-not-done seals glow softly.
+- Node detail = hover note (name, LEVEL n, enemy medallions, intro); clicking an open seal goes straight to the squad step.
+- Region tabs = cloth bookmark ribbons hanging over the sheet's top edge; locked regions greyed with a small lock, not clickable.
+- Terrain = light ink sketches between the roads, faint wash per region, region name in a cartouche, small compass rose.
+
+## 5c as built
+
+- `src/ui/screens/MapScreen.vue` replaces `OrdersScreen.vue` (deleted); session screen `'orders'` is now `'map'` (`AfterSpoils` too). The sheet shown first: the last fought node's region while its boss stands, else the furthest open region (`lastNode` prop = `session.encounterId`).
+- `src/ui/screens/mapSketch.ts`: 1000 × 600 sheet, `regionRoads` (quadratic curve per road, seeded bend), `regionMarks` (seeded jittered grid of ink glyphs, kept clear of seals, roads, cartouche, compass and the ribbons), `GLYPHS` (field, tuft, tree, pine, hill, cottage, mound, cross, stone, deadTree; weights per region).
+- `WaxSeal.vue` gained `wax` (`red` / `black` / `green`) and `icon` (`swords` / `elite` / `tent` / `crown`), unique gradient ids. `HoverNote` gained `below` (seals in the top 40 % show their note underneath).
+- Camps: clicking an open camp emits `camp`; App does nothing with it until 5d. Done camps are not clickable.
+- Screenshot recipe (no UI path to a mid-campaign save): `/tmp`-style script that `import('/src/ui/session.ts')` in the page, calls `startNewGame`, pushes wins / marks camps done (this writes the save), then reload and click Continue.
+
+## Made in 5c without asking (Marcel may veto)
+
+- Copy (draft): "Choose your road", "Camp", camp note "Travellers by the fire offer their swords. One may join the company.", "Visited", "Not yet reached", "· Elite" / "· Boss" after the level, locked ribbon note "Defeat the boss of the region before: <region>". The old orders strings are gone.
+- Walked roads (leaving a done node) dark dots, others faint; unreachable seals washed out toward the parchment (opaque); done seals get a round gold tick badge. Hover notes also show for unreachable seals (planning ahead). Region washes: soft green (Greenmarch), olive (Darkwood), grey (Barrowlands). Seal sizes 54 / elite 56 / boss 74 px.
 
 ## 5b as built
 

@@ -118,6 +118,17 @@ export const STRINGS = {
     darkwood: 'The Darkwood',
     barrowlands: 'The Barrowlands',
   },
+  /** Campaign map (5c). Draft copy, not yet approved by Marcel. */
+  map: {
+    hint: 'Choose your road',
+    elite: 'Elite',
+    boss: 'Boss',
+    camp: 'Camp',
+    campIntro: 'Travellers by the fire offer their swords. One may join the company.',
+    campDone: 'Visited',
+    notReached: 'Not yet reached',
+    regionLocked: 'Defeat the boss of the region before',
+  },
   /** Stage 3 screens. Draft copy (button labels, headings), not yet approved by Marcel. */
   prep: {
     newGame: 'New Game',
@@ -128,12 +139,9 @@ export const STRINGS = {
     chooseHero: 'Choose your hero',
     name: 'Name',
     choose: 'Take the field',
-    orders: 'Orders',
-    ordersHint: 'Choose a battle',
     won: 'Won',
-    /** Ten-battle chain on the orders (approved 4e). */
+    /** Battle notes (approved 4e): level line and the replay note. */
     level: 'Level',
-    sealed: 'Sealed',
     replay: 'Replay: no spoils',
     leave: 'Return to the war table',
     back: 'Back',

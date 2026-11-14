@@ -5,10 +5,10 @@ import { newGame, recordBattle, type GameState } from '../meta/game';
 import { clearSave, loadGame, saveGame, type SaveStorage } from '../meta/save';
 import type { PlayableClassId } from '../sim/types';
 
-export type Screen = 'title' | 'classSelect' | 'orders' | 'squad' | 'formation' | 'battle' | 'spoils';
+export type Screen = 'title' | 'classSelect' | 'map' | 'squad' | 'formation' | 'battle' | 'spoils';
 
 /** Where the player goes once the spoils are settled. */
-export type AfterSpoils = 'orders' | 'squad';
+export type AfterSpoils = 'map' | 'squad';
 
 /** The state between battles. `game` is what the save holds; the rest is navigation. */
 export interface Session {
@@ -36,7 +36,7 @@ function storage(): SaveStorage | null {
 
 const store = storage();
 
-export const session: Session = reactive({ screen: 'title', game: null, encounterId: 'skirmish', battleRun: 0, afterSpoils: 'orders', persist: false, hasSave: store ? loadGame(store) !== null : false });
+export const session: Session = reactive({ screen: 'title', game: null, encounterId: 'skirmish', battleRun: 0, afterSpoils: 'map', persist: false, hasSave: store ? loadGame(store) !== null : false });
 
 /**
  * Autosave (PLAN section 12): every change to the game state is written. The game state only
@@ -61,12 +61,12 @@ export function goTo(screen: Screen): void {
   session.screen = screen;
 }
 
-/** Starts a new company (replacing any save) and opens the orders. */
+/** Starts a new company (replacing any save) and opens the map. */
 export function startNewGame(heroClass: PlayableClassId, heroName: string): void {
   if (store) clearSave(store);
   session.persist = true;
   session.game = newGame(heroClass, heroName, (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
-  session.screen = 'orders';
+  session.screen = 'map';
 }
 
 /** Loads the save; a save that cannot be used leaves the player on the title. */
@@ -78,8 +78,8 @@ export function continueGame(): void {
   }
   session.persist = true;
   session.game = g;
-  session.screen = 'orders';
-  if (g.rewards) openSpoils('orders');
+  session.screen = 'map';
+  if (g.rewards) openSpoils('map');
 }
 
 /** Dev shortcuts (`?bot`, `?hero=` …): a game that is never saved, with the full sandbox roster. */
@@ -89,7 +89,7 @@ export function startDevGame(heroClass: PlayableClassId, heroName: string): void
   session.game.squad = newSquad(heroClass, heroName, SANDBOX_COMPANIONS);
 }
 
-/** Opens the preparation steps (squad, then formation) for a battle from the orders. */
+/** Opens the preparation steps (squad, then formation) for a battle from the map. */
 export function prepare(encounterId: EncounterId): void {
   session.encounterId = encounterId;
   session.screen = 'squad';
@@ -112,7 +112,7 @@ function openSpoils(then: AfterSpoils): void {
   session.screen = 'spoils';
 }
 
-/** Leaves a battle for the orders or the squad step, through the spoils page when a first win paid out. */
+/** Leaves a battle for the map or the squad step, through the spoils page when a first win paid out. */
 export function leaveBattle(to: AfterSpoils): void {
   if (session.game?.rewards) openSpoils(to);
   else spoilsDone(to);
@@ -121,5 +121,5 @@ export function leaveBattle(to: AfterSpoils): void {
 /** The spoils are settled (or there were none): on to where the player was heading. */
 export function spoilsDone(to: AfterSpoils = session.afterSpoils): void {
   if (to === 'squad') prepare(session.encounterId);
-  else goTo('orders');
+  else goTo('map');
 }

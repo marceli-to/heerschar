@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ENCOUNTERS, type EncounterId } from '../data/encounters';
+import type { CampId } from '../data/campaign';
 import { STRINGS } from '../data/strings';
 import { encounterSpec, trialSpec } from '../game/specs';
 import { heroOfSquad } from '../meta/squad';
@@ -9,7 +10,7 @@ import type { PlayableClassId } from '../sim/types';
 import BattleView from './BattleView.vue';
 import ClassSelect from './screens/ClassSelect.vue';
 import FormationScreen from './screens/FormationScreen.vue';
-import OrdersScreen from './screens/OrdersScreen.vue';
+import MapScreen from './screens/MapScreen.vue';
 import SquadScreen from './screens/SquadScreen.vue';
 import SpoilsScreen from './screens/SpoilsScreen.vue';
 import TitleScreen from './screens/TitleScreen.vue';
@@ -53,6 +54,9 @@ function ended(won: boolean): void {
   if (!trial) battleEnded(won);
 }
 
+/** Camps get their screen in 5d; until then a camp seal does nothing. */
+function camp(_id: CampId): void {}
+
 function fight(id: EncounterId): void {
   if (session.game && isUnlocked(session.game, id)) prepare(id);
 }
@@ -62,14 +66,14 @@ function fight(id: EncounterId): void {
   <div class="fixed inset-0 overflow-hidden bg-black select-none">
     <TitleScreen v-if="session.screen === 'title'" :has-save="session.hasSave" @continue="continueGame" @new-game="goTo('classSelect')" />
     <ClassSelect v-else-if="session.screen === 'classSelect'" @choose="startNewGame" @back="goTo('title')" />
-    <OrdersScreen v-else-if="session.screen === 'orders' && session.game" :game="session.game" @fight="fight" @back="goTo('title')" />
+    <MapScreen v-else-if="session.screen === 'map' && session.game" :game="session.game" :last-node="session.encounterId" @fight="fight" @camp="camp" @back="goTo('title')" />
     <SquadScreen
       v-else-if="session.screen === 'squad' && session.game"
       :game="session.game"
       :squad="session.game.squad"
       :encounter-id="session.encounterId"
       @next="goTo('formation')"
-      @back="goTo('orders')"
+      @back="goTo('map')"
     />
     <FormationScreen
       v-else-if="session.screen === 'formation' && session.game"
@@ -87,7 +91,7 @@ function fight(id: EncounterId): void {
       v-bind="flags"
       :can-leave="!trial"
       @ended="ended"
-      @leave="leaveBattle('orders')"
+      @leave="leaveBattle('map')"
       @change-squad="leaveBattle('squad')"
     />
     <SpoilsScreen v-else-if="session.screen === 'spoils' && session.game" :game="session.game" @done="spoilsDone()" />
