@@ -40,6 +40,10 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 - Enemy melee windup 0.6 s; at most 2 enemies attack the same target at once, the rest circle at 4.5 m.
 - Trial raiders: 170 HP, power 18, armor 30 (`src/data/encounters.ts`).
 
+## Playtest notes after 2b
+
+- Marcel: "hard to tell what works" in the trial: enemies killed him in ~10 s, so `?peaceful` was added. Most ability effects stay invisible until 2d (projectiles, area discs, heal glow, frozen/slowed looks, lock ring, mark banner); the Heiler kit needs the squad battle on screen. Offered (not built): a debug flag for unlimited energy.
+
 ## Feel decisions made in 2b (made without asking, tunable; Marcel may veto)
 
 - Ability energy and cooldown are paid when the windup completes, so a cast interrupted by a stun, freeze or dodge costs nothing. A press is buffered 0.3 s (fires when energy/cooldown allow within that window). Abilities can cancel the recover of a basic attack (after `chainOpen`).
@@ -62,7 +66,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 
 ## Verify
 
-- `npm test` (98 tests; per-class behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
+- `npm test` (99 tests; per-class behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
 - URL params: `?seed=`, `?zoom=0..1`, `?debug` (overlay + `window.__game`; shows energy, Q/E/R cooldowns, lock and mark until the 2e HUD), `?bot` (bot plays the hero), `?hero=krieger|bogenschuetze|heiler|magier` (hero class in the trial), `?peaceful` (enemies stand still and never act, for trying abilities). Keys: Q/E abilities, R Sammeln, Tab / Shift+Tab lock, F mark. The game still runs the Stage 1 trial (squad battle arrives with the 2d figures); ability visuals are placeholders (melee abilities reuse the swing arc).
 - Driving the real game headless: with `?debug`, set `__game.hud.phase = 'playing'` and override `__game.heroInput.sample = (yaw) => ({...})` to inject presses.
 - Headless checks (Chrome, needs the dev server): `node tools/shot.mjs "<url>" out.png '[{"wait":4500,"shot":"a.png"}]'` for screenshots (combat: `?bot&seed=5&zoom=0.2`), `node tools/perf.mjs "<url>"` for fps and the background-tab test. The T3 preview pane runs no animation frames, so use these instead.
@@ -73,7 +77,7 @@ PLAN sections: 5 (rules, statuses), 6 (classes, enemy types, companion behaviour
 
 1. ~~**2a Sim: squad and classes.**~~ Done. Notes: Krieger taunt fires when ≥ 2 non-hero foes are within 6 m (the hero is never taunted); Bogenschuetze uses its piercing shot whenever it is off cooldown; Heiler casts a weak magic bolt (0.5 × power) when nobody needs healing; frost nova also deals a little damage (0.4 ×). First numbers on `squadSetup` (30 seeds): Stage 1 bot hero wins 29/30, ~27 s per battle, hero ≈ 45 % of player damage (target 20–30 %, tune in 2f); an idle hero loses all. Original 2a brief: Generalise `ai.ts` per class (Krieger intercepts and taunts, Bogenschuetze kites and shoots lowest HP, Heiler heals lowest fraction (hero first on ties), Magier casts at clusters + frost nova). Projectiles (straight and arcing, aim at the current position), area effects (telegraphed circles 0.8–1.5 s), heals, statuses (frozen, stunned, marked, rallied, shielded). Formation setup: 3 × 2 slots per side, about 24 m apart. Companion abilities. Tests for each.
 2. ~~**2b Sim: hero kit.**~~ Done (see "Feel decisions made in 2b"). Original brief: Energy (start 30, +4/s, +5 per landed basic attack), Warrior abilities Schildstoss / Wirbel (and the other three classes' sets), leader ability Sammeln (rallied 6 s), lock-on (Tab / cycle / Shift+Tab), mark (F). Extend `HeroInput`. The hero has no self-heal unless Heiler (reduced).
-3. **2c Enemy types:** Schildtraeger, Berserker, Schamane.
+3. **2c Enemy types:** Schildtraeger, Berserker, Schamane. **← next session starts here.** PLAN section 6 (enemy types) only; no stat lines exist yet, so propose numbers in `CLASS_STATS` (engineering/tuning, no need to ask). Hints: widen `ClassId` and `BRAINS` in `ai.ts`; Schildtraeger = very high armor, low resist, slow, melee; Berserker = fast, targets the back row (healer first), ignores the 2-attacker cap?; Schamane = heals + shields enemies (reuse `heal`/`shielded`), stays back. Add them to an enemy formation in `encounters.ts` and per-type tests in `squad.test.ts`. Their look is 2d (ask Marcel about silhouettes then).
 4. **2d View:** figures for Archer (hood, bow), Healer (robe, glowing orb), Mage (pointed hat, staff), plus the three enemy types (silhouettes: ask Marcel if unclear). Projectiles with trails, filling-disc area warnings, heal glow, frozen = blue, lock ring under the target, banner icon over the marked one, damage numbers.
 5. **2e HUD:** energy bar, ability icons with cost and cooldown, squad panel (bottom row), edge markers, enemy count.
 6. **2f Bot and headless test:** bot uses abilities, marks Schamane/healer first; 5-vs-6 battle test; determinism test with the full kit; bot alone (no companions) must not win.
