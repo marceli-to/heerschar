@@ -18,8 +18,15 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| Next | **Stage 5** (PLAN section 14). The Stage 4 gate playtest can still happen any time alongside. |
-| 5–7 | not started |
+| 5 Campaign | **in progress** (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
+| 6–7 | not started |
+
+## Stage 5 decisions (Marcel, 2026-11-14)
+
+- Map = **one parchment map sheet per region** on the war table: inked terrain, dotted roads between nodes, nodes as wax seals with a small pictogram (battle, elite, camp, boss). Won nodes get the gold tick, unreachable ones faded. Region tabs to switch.
+- Regions: **The Greenmarch** (meadows, farms) → **The Darkwood** (forest) → **The Barrowlands** (graves, the undead rise).
+- Start: hero + **Bran (Warrior) and Maren (Healer)**. Each camp offers **two companions of different classes**, drawn seeded from a name pool; pick one. Early battles are smaller (3 vs 3–4).
+- Bosses: R1 **the Iron Warlord** (giant armoured brute: axe sweep, charge, slam, calls raiders); R2 **the Fen Witch** (slam = poison circles, summons wolves/shamans, heals her escort); R3 **the Bone King** (skeletal giant, raises fallen enemies).
 
 ## Stage 4 decisions (Marcel, 2026-11-14)
 
