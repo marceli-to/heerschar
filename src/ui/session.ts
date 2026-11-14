@@ -1,11 +1,12 @@
 import { reactive, toRaw, watch } from 'vue';
+import type { CampId } from '../data/campaign';
 import type { EncounterId } from '../data/encounters';
 import { SANDBOX_COMPANIONS, newSquad } from '../data/roster';
 import { newGame, recordBattle, type GameState } from '../meta/game';
 import { clearSave, loadGame, saveGame, type SaveStorage } from '../meta/save';
 import type { PlayableClassId } from '../sim/types';
 
-export type Screen = 'title' | 'classSelect' | 'map' | 'squad' | 'formation' | 'battle' | 'spoils';
+export type Screen = 'title' | 'classSelect' | 'map' | 'camp' | 'squad' | 'formation' | 'battle' | 'spoils';
 
 /** Where the player goes once the spoils are settled. */
 export type AfterSpoils = 'map' | 'squad';
@@ -15,6 +16,8 @@ export interface Session {
   screen: Screen;
   game: GameState | null;
   encounterId: EncounterId;
+  /** The camp open on the camp screen. */
+  campId: CampId;
   /** Bumped per battle so the battle view remounts fresh. */
   battleRun: number;
   /** Where the spoils page leads when it is done. */
@@ -36,7 +39,7 @@ function storage(): SaveStorage | null {
 
 const store = storage();
 
-export const session: Session = reactive({ screen: 'title', game: null, encounterId: 'skirmish', battleRun: 0, afterSpoils: 'map', persist: false, hasSave: store ? loadGame(store) !== null : false });
+export const session: Session = reactive({ screen: 'title', game: null, encounterId: 'skirmish', campId: 'campGreen1', battleRun: 0, afterSpoils: 'map', persist: false, hasSave: store ? loadGame(store) !== null : false });
 
 /**
  * Autosave (PLAN section 12): every change to the game state is written. The game state only
@@ -93,6 +96,12 @@ export function startDevGame(heroClass: PlayableClassId, heroName: string): void
 export function prepare(encounterId: EncounterId): void {
   session.encounterId = encounterId;
   session.screen = 'squad';
+}
+
+/** Opens a camp's recruit screen from the map. */
+export function openCamp(campId: CampId): void {
+  session.campId = campId;
+  session.screen = 'camp';
 }
 
 export function startBattle(encounterId: EncounterId): void {

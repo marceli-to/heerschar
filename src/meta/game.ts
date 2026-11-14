@@ -168,7 +168,8 @@ export function recruit(state: GameState, campId: CampId, index: number): boolea
   const camp = state.camps[campId]!;
   const chosen = offers[index];
   if (camp.done || !chosen || state.squad.roster.length >= ROSTER_LIMIT) return false;
-  const c: Character = { ...structuredClone(chosen), id: Math.max(...state.squad.roster.map((x) => x.id)) + 1 };
+  // A plain copy (the state may be a Vue proxy, which structuredClone refuses).
+  const c: Character = { ...chosen, upgrades: [...chosen.upgrades], id: Math.max(...state.squad.roster.map((x) => x.id)) + 1 };
   state.squad.roster.push(c);
   setFielded(state.squad, c.id, true);
   camp.done = true;

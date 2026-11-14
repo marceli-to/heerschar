@@ -5,16 +5,17 @@ import type { CampId } from '../data/campaign';
 import { STRINGS } from '../data/strings';
 import { encounterSpec, trialSpec } from '../game/specs';
 import { heroOfSquad } from '../meta/squad';
-import { isUnlocked } from '../meta/game';
+import { isNodeOpen, isUnlocked } from '../meta/game';
 import type { PlayableClassId } from '../sim/types';
 import BattleView from './BattleView.vue';
+import CampScreen from './screens/CampScreen.vue';
 import ClassSelect from './screens/ClassSelect.vue';
 import FormationScreen from './screens/FormationScreen.vue';
 import MapScreen from './screens/MapScreen.vue';
 import SquadScreen from './screens/SquadScreen.vue';
 import SpoilsScreen from './screens/SpoilsScreen.vue';
 import TitleScreen from './screens/TitleScreen.vue';
-import { battleEnded, continueGame, goTo, leaveBattle, prepare, session, spoilsDone, startBattle, startDevGame, startNewGame } from './session';
+import { battleEnded, continueGame, goTo, leaveBattle, openCamp, prepare, session, spoilsDone, startBattle, startDevGame, startNewGame } from './session';
 
 const HERO_CLASSES: readonly PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
 
@@ -54,8 +55,10 @@ function ended(won: boolean): void {
   if (!trial) battleEnded(won);
 }
 
-/** Camps get their screen in 5d; until then a camp seal does nothing. */
-function camp(_id: CampId): void {}
+function camp(id: CampId): void {
+  const g = session.game;
+  if (g && isNodeOpen(g, id) && !g.camps[id]?.done) openCamp(id);
+}
 
 function fight(id: EncounterId): void {
   if (session.game && isUnlocked(session.game, id)) prepare(id);
@@ -67,6 +70,7 @@ function fight(id: EncounterId): void {
     <TitleScreen v-if="session.screen === 'title'" :has-save="session.hasSave" @continue="continueGame" @new-game="goTo('classSelect')" />
     <ClassSelect v-else-if="session.screen === 'classSelect'" @choose="startNewGame" @back="goTo('title')" />
     <MapScreen v-else-if="session.screen === 'map' && session.game" :game="session.game" :last-node="session.encounterId" @fight="fight" @camp="camp" @back="goTo('title')" />
+    <CampScreen v-else-if="session.screen === 'camp' && session.game" :key="session.campId" :game="session.game" :camp-id="session.campId" @done="goTo('map')" @back="goTo('map')" />
     <SquadScreen
       v-else-if="session.screen === 'squad' && session.game"
       :game="session.game"

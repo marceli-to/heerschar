@@ -352,4 +352,14 @@ export const STRINGS = {
     trinket: 'Trinket, for anyone',
     next: 'Next',
   },
+  /** 5d camp screen (layout approved). Draft copy, not yet approved by Marcel. */
+  camp: {
+    title: 'Camp',
+    hint: 'Travellers by the fire offer their swords. Choose one to join the company.',
+    take: 'Take into the company',
+    chooseFirst: 'Choose a recruit',
+    company: 'Your company',
+    full: 'The company is full. No one more can join.',
+    moveOn: 'Move on',
+  },
 } as const;

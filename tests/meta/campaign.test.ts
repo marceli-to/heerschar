@@ -1,3 +1,4 @@
+import { reactive } from 'vue';
 import { describe, expect, it } from 'vitest';
 import { NODES, REGIONS, nodeById, regionBoss, regionNodes, regionStart, type CampId, type CampaignNode } from '../../src/data/campaign';
 import { ENCOUNTERS, encounterById, type EncounterId } from '../../src/data/encounters';
@@ -151,6 +152,16 @@ describe('camps', () => {
     expect(isNodeDone(s, nodeById('campGreen1'))).toBe(true);
     expect(recruit(s, 'campGreen1', 0)).toBe(false);
     expect(s.squad.roster).toHaveLength(4);
+  });
+
+  it('recruiting works on the reactive state the screens hold, and the recruit is its own copy', () => {
+    const s = reactive(newGame('krieger', 'Hero', 2)) as GameState;
+    const offer = campOffers(s, 'campGreen1')[0]!;
+    expect(recruit(s, 'campGreen1', 0)).toBe(true);
+    const joined = s.squad.roster[s.squad.roster.length - 1]!;
+    expect(joined.upgrades).toEqual(offer.upgrades);
+    joined.upgrades.push('x');
+    expect(offer.upgrades).not.toContain('x');
   });
 
   it('a full roster takes no one; passing the camp still opens its roads', () => {
