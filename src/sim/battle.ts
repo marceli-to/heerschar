@@ -1,4 +1,4 @@
-import { ARENA, COUNTDOWN, ENERGY, FORMATION } from './balance';
+import { ARENA, COUNTDOWN, FORMATION } from './balance';
 import { updateAi } from './ai';
 import { isAlive } from './combat';
 import { bufferHeroInput, updateHero } from './heroControl';
@@ -7,59 +7,18 @@ import { applyKnockback, keepInBounds, separate } from './movement';
 import { updateAreas, updateProjectiles } from './projectiles';
 import { seedState } from './rng';
 import { hasStatus, tickStatuses } from './statuses';
-import { NEUTRAL_MODS, type Battle, type BattleEvent, type ClassId, type HeroInput, type Stats, type Team, type Unit, type UnitMods } from './types';
+import { createUnit, type UnitSetup } from './units';
+import type { Battle, BattleEvent, ClassId, HeroInput, Stats, Team, Unit, UnitMods } from './types';
 
-export interface UnitSetup {
-  team: Team;
-  classId: ClassId;
-  isHero: boolean;
-  stats: Stats;
-  /** Defaults to `NEUTRAL_MODS`. */
-  mods?: Partial<UnitMods>;
-  x: number;
-  z: number;
-}
+export type { UnitSetup } from './units';
 
 export interface BattleSetup {
   seed: number;
   units: UnitSetup[];
   /** Debug: enemies stand still and never act (they can still be hit). */
   passiveEnemies?: boolean;
-}
-
-function createUnit(id: number, s: UnitSetup): Unit {
-  return {
-    id,
-    team: s.team,
-    classId: s.classId,
-    isHero: s.isHero,
-    stats: { ...s.stats },
-    mods: { ...NEUTRAL_MODS, ...s.mods },
-    hp: s.stats.maxHp,
-    pos: { x: s.x, z: s.z },
-    vel: { x: 0, z: 0 },
-    // Each side faces the other across the arena (player side on -x).
-    facing: s.team === 'player' ? Math.PI / 2 : -Math.PI / 2,
-    state: 'idle',
-    stateTime: 0,
-    stunDuration: 0,
-    staggerImmunity: 0,
-    targetId: null,
-    attackCooldown: 0,
-    chain: 0,
-    chainQueued: false,
-    dodgeCooldown: 0,
-    dodgeAngle: 0,
-    hitstop: 0,
-    attackBuffer: 0,
-    dodgeBuffer: 0,
-    statuses: [],
-    abilityCooldowns: {},
-    action: null,
-    energy: s.isHero ? ENERGY.start : 0,
-    queuedAbility: null,
-    abilityBuffer: 0,
-  };
+  /** Stats of the units bosses may summon, by class. */
+  reserves?: Partial<Record<ClassId, Stats>>;
 }
 
 export interface FormationSlot {
@@ -102,6 +61,7 @@ export function createBattle(setup: BattleSetup): Battle {
     countdown: COUNTDOWN,
     outcome: 'running',
     passiveEnemies: setup.passiveEnemies ?? false,
+    reserves: { ...setup.reserves },
   };
 }
 

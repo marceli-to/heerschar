@@ -1,4 +1,4 @@
-import { enemySlots, type Encounter } from '../data/encounters';
+import { enemyReserves, enemySlots, type Encounter } from '../data/encounters';
 import type { PathId } from '../data/upgrades';
 import { formationSetup, type BattleSetup, type FormationSlot } from '../sim/battle';
 import type { PlayableClassId } from '../sim/types';
@@ -151,7 +151,7 @@ export function battleSetupFor(state: SquadState, encounter: Encounter, seed: nu
     if (!slot) throw new Error(`fielded character ${c.id} has no slot`);
     return { classId: c.classId, col: slot.col, row: slot.row, isHero: c.isHero, stats: characterStats(c), mods: characterMods(c) };
   });
-  return formationSetup(seed, player, enemySlots(encounter));
+  return { ...formationSetup(seed, player, enemySlots(encounter)), reserves: enemyReserves(encounter) };
 }
 
 /**

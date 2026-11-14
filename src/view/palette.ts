@@ -92,4 +92,34 @@ export const FX = {
   banner: '#b8281e',
   bannerTrim: '#e0bf6a',
   rally: '#ffd36b',
+  /** Fen Witch: sickly green poison (approved) and her staff's glow. */
+  poison: '#9ccc2e',
+  poisonCore: '#e2ff8a',
+  poisonRim: '#d4f25a',
+  /** Bone King: the glow of his eyes and of the raised. */
+  boneGlow: '#7fc8ff',
+} as const;
+
+/**
+ * Boss and wolf colours (Stage 5 decisions: Iron Warlord dark iron plate and horned helm; Fen
+ * Witch hooded robe of rags; Bone King pale bone, rusty crown, glowing blue eyes; wolves grey).
+ * Bosses always fight on the enemy side, so they have their own colours instead of team tints.
+ */
+export const BOSS_COLORS = {
+  iron: '#3d4149',
+  ironDark: '#25272c',
+  ironEdge: '#6d727c',
+  horn: '#d8ccb0',
+  rag: '#4f5538',
+  ragDark: '#363a28',
+  ragLight: '#6a6a48',
+  hag: '#9aa58a',
+  bone: '#e2dbc4',
+  boneShadow: '#b5aa8e',
+  rust: '#9a5a2a',
+  rustDark: '#6e3c1c',
+  steel: '#a9adb3',
+  wolf: '#7d7a76',
+  wolfDark: '#55524e',
+  wolfLight: '#a8a49c',
 } as const;

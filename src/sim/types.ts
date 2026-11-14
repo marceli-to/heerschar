@@ -2,9 +2,11 @@ import type { Vec2 } from './math';
 
 /** The four playable classes. */
 export type PlayableClassId = 'krieger' | 'bogenschuetze' | 'heiler' | 'magier';
-/** Enemy-only types (PLAN section 6). */
-export type EnemyTypeId = 'schildtraeger' | 'berserker' | 'schamane';
-export type ClassId = PlayableClassId | EnemyTypeId;
+/** Enemy-only types (PLAN section 6). Wolves only come when the Fen Witch summons them. */
+export type EnemyTypeId = 'schildtraeger' | 'berserker' | 'schamane' | 'wolf';
+/** Region bosses (Stage 5): the Iron Warlord, the Fen Witch, the Bone King. */
+export type BossId = 'kriegsherr' | 'sumpfhexe' | 'knochenkoenig';
+export type ClassId = PlayableClassId | EnemyTypeId | BossId;
 export type Team = 'player' | 'enemy';
 export type Outcome = 'running' | 'won' | 'lost';
 export type DamageType = 'physical' | 'magic';
@@ -71,7 +73,26 @@ export const NEUTRAL_MODS: Readonly<UnitMods> = {
 export type UnitState = 'idle' | 'moving' | 'windup' | 'recover' | 'dodging' | 'stunned' | 'dead';
 
 /** What an AI unit is winding up or recovering from. See `ACTIONS` in balance.ts. */
-export type AiActionId = 'strike' | 'taunt' | 'shot' | 'pierce' | 'heal' | 'groupHeal' | 'bolt' | 'fireball' | 'frostNova' | 'ward';
+export type AiActionId =
+  | 'strike'
+  | 'taunt'
+  | 'shot'
+  | 'pierce'
+  | 'heal'
+  | 'groupHeal'
+  | 'bolt'
+  | 'fireball'
+  | 'frostNova'
+  | 'ward'
+  // Boss actions (see `BOSS_ACTIONS`).
+  | 'sweep'
+  | 'charge'
+  | 'slam'
+  | 'poison'
+  | 'hex'
+  | 'summon'
+  | 'mend'
+  | 'raise';
 /** Hero abilities: two per class plus the leader ability. See `HERO_ABILITIES` in balance.ts. */
 export type HeroAbilityId =
   | 'schildstoss'
@@ -86,7 +107,7 @@ export type HeroAbilityId =
 /** What a unit is winding up or recovering from. `null` on the hero means its basic attack chain. */
 export type ActionId = AiActionId | HeroAbilityId;
 /** Actions with a cooldown. */
-export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova' | 'ward' | HeroAbilityId;
+export type AbilityId = 'taunt' | 'pierce' | 'groupHeal' | 'frostNova' | 'ward' | 'sweep' | 'charge' | 'slam' | 'poison' | 'summon' | 'mend' | 'raise' | HeroAbilityId;
 
 /**
  * Timed conditions on a unit. `stunned` is a unit state (it shares the stagger timer) and
@@ -153,9 +174,15 @@ export interface Unit {
   /** Hero: the ability pressed most recently, remembered while `abilityBuffer` > 0. */
   queuedAbility: HeroAbilityId | null;
   abilityBuffer: number;
+  /** Boss charge: the foes already hit by the current dash. */
+  hitIds: number[];
+  /** The boss that summoned this unit (`null` = it began the battle). */
+  summonerId: number | null;
+  /** Raised from the dead by the Bone King (each fallen unit only once). */
+  raised: boolean;
 }
 
-export type ProjectileKind = 'arrow' | 'piercing' | 'bolt' | 'fireball';
+export type ProjectileKind = 'arrow' | 'piercing' | 'bolt' | 'fireball' | 'hex';
 
 /**
  * Straight projectiles fly along `dir` and hit the first foe in their radius (piercing ones
@@ -190,12 +217,19 @@ export interface Projectile {
   basic: boolean;
 }
 
-export type AreaKind = 'fireball' | 'frostNova' | 'heilkreis' | 'frostring';
+export type AreaKind = 'fireball' | 'frostNova' | 'heilkreis' | 'frostring' | 'sweep' | 'charge' | 'slam' | 'poison';
 
 /**
- * A telegraphed ground circle: resolves on every foe inside once `time` reaches `delay`.
+ * The ground shape of an area: a circle of `radius` around `pos`; an arc (a pie slice of
+ * `radius` and full angle `arc`, centred on `angle`); a lane from `pos` along `angle`, `length`
+ * long and `radius` wide to either side.
+ */
+export type AreaShape = 'circle' | 'arc' | 'lane';
+
+/**
+ * A telegraphed ground shape: resolves on every foe inside once `time` reaches `delay`.
  * Healing areas resolve on allies instead, and areas with `pulses` > 1 resolve again every
- * `interval` seconds.
+ * `interval` seconds. An area with neither damage nor freeze is only a warning (the boss charge).
  */
 export interface AreaEffect {
   id: number;
@@ -203,7 +237,16 @@ export interface AreaEffect {
   team: Team;
   ownerId: number;
   pos: Vec2;
+  shape: AreaShape;
+  /** Arc and lane: the direction they point (a facing). */
+  angle: number;
+  /** Arc: full angle, radians. */
+  arc: number;
+  /** Lane: metres from `pos`. */
+  length: number;
   radius: number;
+  /** Knockback speed given to those hit, away from `pos` (lane: sideways). */
+  knockback: number;
   delay: number;
   time: number;
   power: number;
@@ -236,6 +279,8 @@ export interface Battle {
   outcome: Outcome;
   /** Debug (`?peaceful`): enemies stand still and never act. */
   passiveEnemies: boolean;
+  /** Stats of the units a boss may summon, by class (set up from the encounter). */
+  reserves: Partial<Record<ClassId, Stats>>;
 }
 
 /** Hero input for one tick. Movement is already camera-relative (world space), length <= 1. */
@@ -274,11 +319,15 @@ export type BattleEvent =
   | { type: 'release'; unitId: number; action: HeroAbilityId }
   | { type: 'shoot'; projectileId: number; kind: ProjectileKind }
   | { type: 'areaStart'; areaId: number; kind: AreaKind }
-  | { type: 'areaResolve'; areaId: number; kind: AreaKind; x: number; z: number; radius: number }
+  | { type: 'areaResolve'; areaId: number; kind: AreaKind; x: number; z: number; radius: number; angle: number }
   | { type: 'status'; unitId: number; kind: StatusKind; on: boolean }
   | { type: 'lock'; targetId: number | null }
   | { type: 'mark'; targetId: number | null }
   | { type: 'evade'; unitId: number }
   | { type: 'dodge'; unitId: number }
   | { type: 'death'; unitId: number }
+  /** A unit joined the battle (summoned); it is the last in `battle.units`. */
+  | { type: 'spawn'; unitId: number; summonerId: number }
+  /** A fallen unit got back up (the Bone King's raise). */
+  | { type: 'raise'; unitId: number; sourceId: number }
   | { type: 'outcome'; outcome: Exclude<Outcome, 'running'> };

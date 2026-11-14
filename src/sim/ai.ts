@@ -1,24 +1,37 @@
-import { ACTIONS, BEHAVIOUR, ENEMY, HERO, heroAttack, type MeleeAttack } from './balance';
-import { applyHeal, isAlive, resolveMelee } from './combat';
-import { angleDiff, angleTo, dist } from './math';
+import { ACTIONS, BEHAVIOUR, BOSS_ACTIONS, BOSS_STRIKE, ENEMY, HERO, heroAttack, SUMMONS, type MeleeAttack } from './balance';
+import { bodyRadius, isBoss } from './body';
+import { applyDamage, applyHeal, computeDamage, isAlive, isInvulnerable, push, resolveMelee, stun } from './combat';
+import { angleDiff, angleTo, clamp, dist } from './math';
 import { moveDir, turnTowards } from './movement';
 import { fireStraight, lob, placeArea } from './projectiles';
 import { range } from './rng';
 import { addStatus, getStatus, guardAndRally, hasStatus, moveFactor, speedFactor } from './statuses';
 import { heroActionTiming } from './heroAbilities';
+import { createUnit } from './units';
 import type { AbilityId, AiActionId, Battle, BattleEvent, ClassId, Unit } from './types';
 
 const OPTS = { invulnerableTime: HERO.dodge.invulnerable };
+type BossActionId = keyof typeof BOSS_ACTIONS;
+/** Boss actions whose warning is fixed at the start: the boss does not turn while winding up. */
+const FIXED_AIM: readonly AiActionId[] = ['sweep', 'charge', 'slam'];
 /** Units must face their target within this angle before they start an attack. */
 const AIM_TOLERANCE = 0.5;
 const BACK_ROW: readonly ClassId[] = ['bogenschuetze', 'heiler', 'magier', 'schamane'];
 /** Healers: what a Berserker goes for first. */
 const HEALERS: readonly ClassId[] = ['heiler', 'schamane'];
 type AiAbilityId = Extract<AbilityId, AiActionId>;
-const ABILITIES: readonly AiAbilityId[] = ['taunt', 'pierce', 'groupHeal', 'frostNova', 'ward'];
+const ABILITIES: readonly AiAbilityId[] = ['taunt', 'pierce', 'groupHeal', 'frostNova', 'ward', 'sweep', 'charge', 'slam', 'poison', 'summon', 'mend', 'raise'];
 
 function isAbility(action: AiActionId): action is AiAbilityId {
   return (ABILITIES as readonly string[]).includes(action);
+}
+
+function isBossAction(action: AiActionId): action is BossActionId {
+  return action in BOSS_ACTIONS;
+}
+
+function cooldownOf(action: AiAbilityId): number {
+  return isBossAction(action) ? (BOSS_ACTIONS[action] as { cooldown: number }).cooldown : (ACTIONS[action] as { cooldown: number }).cooldown;
 }
 
 /** The AI action of a non-hero unit (`null` = none or a basic strike). */
@@ -30,13 +43,14 @@ function aiAction(unit: Unit): AiActionId | null {
 export function actionTiming(unit: Unit): { windup: number; recover: number } {
   if (unit.isHero) return heroActionTiming(unit);
   const action = aiAction(unit);
-  if (action === null || action === 'strike') return ENEMY.attack;
-  return ACTIONS[action];
+  if (action === null || action === 'strike') return meleeAttackOf(unit);
+  return isBossAction(action) ? BOSS_ACTIONS[action] : ACTIONS[action];
 }
 
-/** The melee attack a unit swings (hero chain step or the AI strike). */
+/** The melee attack a unit swings (hero chain step, a boss's swing or the AI strike). */
 export function meleeAttackOf(unit: Unit): MeleeAttack {
-  return unit.isHero ? heroAttack(unit.chain) : ENEMY.attack;
+  if (unit.isHero) return heroAttack(unit.chain);
+  return isBoss(unit) ? BOSS_STRIKE : ENEMY.attack;
 }
 
 function byId(battle: Battle, id: number | null): Unit | null {
@@ -85,7 +99,7 @@ function startAction(unit: Unit, action: AiActionId, target: Unit | null, events
   unit.action = action;
   if (target) unit.targetId = target.id;
   setState(unit, 'windup');
-  if (isAbility(action)) unit.abilityCooldowns[action] = ACTIONS[action].cooldown * unit.mods.cooldown;
+  if (isAbility(action)) unit.abilityCooldowns[action] = cooldownOf(action) * unit.mods.cooldown;
   if (action === 'strike') events.push({ type: 'attackStart', unitId: unit.id, chain: 0 });
   else events.push({ type: 'action', unitId: unit.id, action });
 }
@@ -137,7 +151,7 @@ function release(battle: Battle, unit: Unit, events: BattleEvent[]): void {
     case null:
     case 'strike':
       events.push({ type: 'swing', unitId: unit.id, chain: 0 });
-      resolveMelee(battle, unit, ENEMY.attack, OPTS, events);
+      resolveMelee(battle, unit, meleeAttackOf(unit), OPTS, events);
       return;
     case 'taunt': {
       const t = ACTIONS.taunt;
@@ -197,6 +211,39 @@ function release(battle: Battle, unit: Unit, events: BattleEvent[]): void {
       if (live && live.team === unit.team) addStatus(live, 'shielded', w.duration, events, unit.stats.power * w.shield * unit.mods.healing, unit.id);
       return;
     }
+    // Sweep, slam and poison are their ground warnings, which resolve on their own.
+    case 'sweep':
+    case 'slam':
+    case 'poison':
+      return;
+    case 'charge':
+      unit.hitIds = [];
+      return;
+    case 'hex': {
+      if (!live) return;
+      const h = BOSS_ACTIONS.hex;
+      fireStraight(battle, unit, { kind: 'hex', at: live.pos, speed: h.speed, radius: h.radius, range: shotRange, multiplier: h.multiplier, damageType: 'magic', pierce: false }, events);
+      return;
+    }
+    case 'summon':
+      summon(battle, unit, events);
+      return;
+    case 'mend':
+      for (const a of mendTargets(battle, unit)) applyHeal(unit, a, healAmount(battle, unit, BOSS_ACTIONS.mend.multiplier), events);
+      return;
+    case 'raise':
+      for (const c of raisable(battle, unit).slice(0, BOSS_ACTIONS.raise.count)) {
+        c.state = 'idle';
+        c.stateTime = 0;
+        c.hp = c.stats.maxHp * BOSS_ACTIONS.raise.hp;
+        c.raised = true;
+        c.targetId = null;
+        c.attackCooldown = 1;
+        c.hitstop = 0;
+        c.vel = { x: 0, z: 0 };
+        events.push({ type: 'raise', unitId: c.id, sourceId: unit.id });
+      }
+      return;
   }
 }
 
@@ -247,7 +294,8 @@ function meleeEngage(battle: Battle, unit: Unit, target: Unit | null, dt: number
   turnTowards(unit, toTarget, ENEMY.turnRate, dt);
   const dir = { x: Math.sin(toTarget), z: -Math.cos(toTarget) };
   const speed = speedOf(unit);
-  const engage = ENEMY.attack.reach * ENEMY.engageFactor;
+  // The swing reaches the target's body, so big targets (bosses) can be hit from farther away.
+  const engage = (meleeAttackOf(unit).reach + bodyRadius(target) - bodyRadius(unit)) * ENEMY.engageFactor;
 
   if (ignoreCap || strikersOn(battle, unit, target.id) < ENEMY.maxAttackers) {
     if (d > engage) {
@@ -480,6 +528,180 @@ function healerAnchor(unit: Unit, allies: Unit[], foes: Unit[]): Unit['pos'] | n
   return { x: mine.x + Math.sin(away) * BEHAVIOUR.healerBehind, z: mine.z - Math.cos(away) * BEHAVIOUR.healerBehind };
 }
 
+/** Wolf: a fast pack hunter that bites the nearest foe and does not wait its turn. */
+function wolfBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  meleeEngage(battle, unit, forcedTarget(battle, unit, Infinity) ?? nearest(unit, livingFoes(battle, unit)), dt, events, true);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Bosses: one telegraphed action per beat (their attack interval), else the basic attack.
+
+/**
+ * Starts a boss action and places its ground warning, which resolves when the windup ends.
+ * Sweep and charge face the target at once, so the warning shows where the blow goes.
+ */
+function startBossAction(battle: Battle, unit: Unit, action: BossActionId, target: Unit | null, events: BattleEvent[]): void {
+  if (target && (action === 'sweep' || action === 'charge')) unit.facing = angleTo(unit.pos, target.pos);
+  startAction(unit, action, target, events);
+  switch (action) {
+    case 'sweep': {
+      const a = BOSS_ACTIONS.sweep;
+      placeArea(battle, unit, { kind: 'sweep', shape: 'arc', at: unit.pos, angle: unit.facing, arc: a.arc, radius: a.radius, delay: a.windup, multiplier: a.multiplier, damageType: 'physical', freeze: 0, knockback: a.knockback }, events);
+      return;
+    }
+    case 'charge': {
+      const a = BOSS_ACTIONS.charge;
+      placeArea(battle, unit, { kind: 'charge', shape: 'lane', at: unit.pos, angle: unit.facing, length: a.maxLength, radius: a.halfWidth, delay: a.windup, multiplier: 0, damageType: 'physical', freeze: 0 }, events);
+      return;
+    }
+    case 'slam': {
+      const a = BOSS_ACTIONS.slam;
+      const spec = { kind: 'slam' as const, delay: a.windup, multiplier: a.multiplier, damageType: 'physical' as const, freeze: 0, knockback: a.knockback };
+      placeArea(battle, unit, { ...spec, at: unit.pos, radius: a.radius }, events);
+      const outside = byDistance(unit, livingFoes(battle, unit)).filter((f) => dist(f.pos, unit.pos) > a.radius && dist(f.pos, unit.pos) <= a.range);
+      for (const f of outside.slice(0, a.targets)) placeArea(battle, unit, { ...spec, at: f.pos, radius: a.targetRadius }, events);
+      return;
+    }
+    case 'poison': {
+      const a = BOSS_ACTIONS.poison;
+      const near = byDistance(unit, livingFoes(battle, unit)).filter((f) => dist(f.pos, unit.pos) <= a.range);
+      for (const f of near.slice(0, a.targets)) placeArea(battle, unit, { kind: 'poison', at: f.pos, radius: a.radius, delay: a.windup, multiplier: a.multiplier, damageType: 'magic', freeze: 0 }, events);
+      return;
+    }
+    case 'hex':
+    case 'summon':
+    case 'mend':
+    case 'raise':
+      return;
+  }
+}
+
+/** Nearest first (stable, so ties keep id order). */
+function byDistance(unit: Unit, list: Unit[]): Unit[] {
+  return [...list].sort((a, b) => dist(unit.pos, a.pos) - dist(unit.pos, b.pos));
+}
+
+/** The charge's run: the boss crosses the lane fast and hits every foe it passes once. */
+function dash(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  const c = BOSS_ACTIONS.charge;
+  moveDir(unit, Math.sin(unit.facing), -Math.cos(unit.facing), c.maxLength / c.dash, dt);
+  for (const f of battle.units) {
+    if (f.team === unit.team || !isAlive(f) || unit.hitIds.includes(f.id)) continue;
+    if (dist(f.pos, unit.pos) > c.halfWidth + bodyRadius(f)) continue;
+    unit.hitIds.push(f.id);
+    if (isInvulnerable(f, HERO.dodge.invulnerable)) {
+      events.push({ type: 'evade', unitId: f.id });
+      continue;
+    }
+    const side = (f.pos.x - unit.pos.x) * Math.cos(unit.facing) + (f.pos.z - unit.pos.z) * Math.sin(unit.facing);
+    push(f, unit.facing + (side >= 0 ? 1 : -1) * (Math.PI / 3), c.knockback);
+    if (!applyDamage(unit, f, computeDamage(battle, unit.stats.power, c.multiplier, f, 'physical', unit), true, events)) stun(f, BOSS_STRIKE.stagger);
+  }
+}
+
+/** Living units this boss summoned. */
+function livingSummons(battle: Battle, unit: Unit): number {
+  return battle.units.filter((u) => u.summonerId === unit.id && isAlive(u)).length;
+}
+
+function canSummon(battle: Battle, unit: Unit): boolean {
+  const s = BOSS_ACTIONS.summon;
+  if (!SUMMONS[unit.classId] || !abilityReady(unit, 'summon')) return false;
+  if (livingSummons(battle, unit) >= s.maxAlive) return false;
+  const any = battle.units.some((u) => u.summonerId === unit.id);
+  return any || unit.hp / unit.stats.maxHp < s.firstBelow;
+}
+
+/** Calls the next group in the boss's `SUMMONS` cycle; they come in from its side's edge. */
+function summon(battle: Battle, boss: Unit, events: BattleEvent[]): void {
+  const groups = SUMMONS[boss.classId];
+  if (!groups || groups.length === 0) return;
+  // Every cast brings a whole group, so the count so far tells which group is next.
+  let made = battle.units.filter((u) => u.summonerId === boss.id).length;
+  let i = 0;
+  while (made > 0) made -= groups[i++ % groups.length]!.length;
+  const group = groups[i % groups.length]!;
+  const side = boss.team === 'enemy' ? 1 : -1;
+  group.forEach((classId, k) => {
+    const stats = battle.reserves[classId];
+    if (!stats) return;
+    const z = clamp(boss.pos.z + (k - (group.length - 1) / 2) * 2.5, -5, 5);
+    const u = createUnit(battle.units.length + 1, { team: boss.team, classId, isHero: false, stats, x: side * BOSS_ACTIONS.summon.edgeX, z, summonerId: boss.id });
+    battle.units.push(u);
+    events.push({ type: 'spawn', unitId: u.id, summonerId: boss.id });
+  });
+}
+
+/** Allies of the Fen Witch inside her mend, when one of them is hurt enough. */
+function mendTargets(battle: Battle, unit: Unit): Unit[] {
+  const m = BOSS_ACTIONS.mend;
+  return livingAllies(battle, unit).filter((a) => a !== unit && dist(a.pos, unit.pos) <= m.radius);
+}
+
+/** Fallen allies the Bone King can raise: not bosses, each only once, nearest first. */
+function raisable(battle: Battle, unit: Unit): Unit[] {
+  return byDistance(unit, battle.units.filter((u) => u.team === unit.team && u !== unit && !isAlive(u) && !u.raised && !isBoss(u)));
+}
+
+/** A foe worth charging: the farthest back-row foe within the lane's reach, else any far foe. */
+function chargeTarget(unit: Unit, foes: Unit[]): Unit | null {
+  const c = BOSS_ACTIONS.charge;
+  const far = foes.filter((f) => {
+    const d = dist(unit.pos, f.pos);
+    return d >= c.minRange && d <= c.maxLength - 2;
+  });
+  const back = far.filter((f) => BACK_ROW.includes(f.classId));
+  const pick = back.length > 0 ? back : far;
+  return pick.reduce<Unit | null>((best, f) => (!best || dist(unit.pos, f.pos) > dist(unit.pos, best.pos) ? f : best), null);
+}
+
+/**
+ * Iron Warlord and Bone King: call raiders (Warlord) or raise the fallen (Bone King), charge a
+ * far foe, slam when several foes are about, sweep when the target stands in front; between
+ * those, the heavy swing.
+ */
+function bruteBossBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  const foes = livingFoes(battle, unit);
+  const forced = forcedTarget(battle, unit, Infinity);
+  const target = forced ?? nearest(unit, foes);
+  if (target && unit.attackCooldown <= 0) {
+    if (canSummon(battle, unit)) return startBossAction(battle, unit, 'summon', null, events);
+    if (unit.classId === 'knochenkoenig' && abilityReady(unit, 'raise') && raisable(battle, unit).length > 0) return startBossAction(battle, unit, 'raise', null, events);
+    if (abilityReady(unit, 'charge')) {
+      // A taunt holds the charge on the taunter (only if it stands far enough away to run at).
+      const charge = forced ? (dist(forced.pos, unit.pos) >= BOSS_ACTIONS.charge.minRange ? forced : null) : chargeTarget(unit, foes);
+      if (charge) return startBossAction(battle, unit, 'charge', charge, events);
+    }
+    const s = BOSS_ACTIONS.slam;
+    if (abilityReady(unit, 'slam') && foes.filter((f) => dist(f.pos, unit.pos) <= s.range).length >= 3) return startBossAction(battle, unit, 'slam', null, events);
+    const w = BOSS_ACTIONS.sweep;
+    if (abilityReady(unit, 'sweep') && dist(target.pos, unit.pos) <= w.radius) return startBossAction(battle, unit, 'sweep', target, events);
+  }
+  meleeEngage(battle, unit, target, dt, events, true);
+}
+
+/**
+ * Fen Witch: mends her escort, calls wolves and shamans, poisons the ground under the squad,
+ * and hexes from range between those, keeping her distance like a caster.
+ */
+function witchBrain(battle: Battle, unit: Unit, dt: number, events: BattleEvent[]): void {
+  const foes = livingFoes(battle, unit);
+  const closest = nearest(unit, foes);
+  if (!closest) {
+    setState(unit, 'idle');
+    return;
+  }
+  if (unit.attackCooldown <= 0) {
+    const m = BOSS_ACTIONS.mend;
+    if (abilityReady(unit, 'mend') && mendTargets(battle, unit).some((a) => a.hp / a.stats.maxHp < m.below)) return startBossAction(battle, unit, 'mend', null, events);
+    if (canSummon(battle, unit)) return startBossAction(battle, unit, 'summon', null, events);
+    if (abilityReady(unit, 'poison') && dist(closest.pos, unit.pos) <= BOSS_ACTIONS.poison.range) return startBossAction(battle, unit, 'poison', null, events);
+  }
+  const target = forcedTarget(battle, unit, unit.stats.range) ?? closest;
+  unit.targetId = target.id;
+  if (rangedFootwork(unit, target, closest, dt) && unit.attackCooldown <= 0) startAction(unit, 'hex', target, events);
+}
+
 const BRAINS: Record<ClassId, (battle: Battle, unit: Unit, dt: number, events: BattleEvent[]) => void> = {
   krieger: kriegerBrain,
   bogenschuetze: archerBrain,
@@ -488,6 +710,10 @@ const BRAINS: Record<ClassId, (battle: Battle, unit: Unit, dt: number, events: B
   schildtraeger: schildtraegerBrain,
   berserker: berserkerBrain,
   schamane: schamaneBrain,
+  wolf: wolfBrain,
+  kriegsherr: bruteBossBrain,
+  sumpfhexe: witchBrain,
+  knochenkoenig: bruteBossBrain,
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -509,15 +735,17 @@ export function updateAi(battle: Battle, unit: Unit, dt: number, events: BattleE
       return;
     case 'windup': {
       const target = byId(battle, unit.targetId);
-      if (target && isAlive(target) && target !== unit) turnTowards(unit, angleTo(unit.pos, target.pos), ENEMY.windupTurnRate, dt);
+      const fixed = unit.action !== null && FIXED_AIM.includes(unit.action as AiActionId);
+      if (!fixed && target && isAlive(target) && target !== unit) turnTowards(unit, angleTo(unit.pos, target.pos), ENEMY.windupTurnRate, dt);
       if (unit.action === 'strike') {
-        const lunge = ENEMY.attack.lunge / ENEMY.attack.windup;
-        moveDir(unit, Math.sin(unit.facing), -Math.cos(unit.facing), lunge, dt);
+        const a = meleeAttackOf(unit);
+        moveDir(unit, Math.sin(unit.facing), -Math.cos(unit.facing), a.lunge / a.windup, dt);
       }
       if (unit.stateTime >= actionTiming(unit).windup) {
         release(battle, unit, events);
         const action = aiAction(unit);
-        if (action === null || !isAbility(action)) {
+        // Bosses wait their attack interval after every action, specials included.
+        if (action === null || !isAbility(action) || isBoss(unit)) {
           unit.attackCooldown = unit.stats.attackInterval + range(battle, 0, ENEMY.cooldownJitter);
         }
         setState(unit, 'recover');
@@ -525,6 +753,7 @@ export function updateAi(battle: Battle, unit: Unit, dt: number, events: BattleE
       return;
     }
     case 'recover':
+      if (unit.action === 'charge' && unit.stateTime <= BOSS_ACTIONS.charge.dash) dash(battle, unit, dt, events);
       if (unit.stateTime >= actionTiming(unit).recover) {
         setState(unit, 'idle');
         unit.action = null;

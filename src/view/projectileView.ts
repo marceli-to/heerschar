@@ -7,7 +7,7 @@ import { FX } from './palette';
 const SHOT_Y = 1.35;
 const ARC = { fromY: 1.9, toY: 0.25, apex: 2.4 } as const;
 
-type Look = 'arrow' | 'piercing' | 'fire' | 'holy' | 'fireball';
+type Look = 'arrow' | 'piercing' | 'fire' | 'holy' | 'fireball' | 'hex';
 
 interface Item {
   obj: THREE.Group;
@@ -19,7 +19,8 @@ interface Item {
 
 /**
  * Projectiles on screen: wooden arrows with a pale streak, glowing bolts (fire for the Magier,
- * golden-white light for Heiler and Schamane) and arcing fireballs, all leaving trails.
+ * golden-white light for Heiler and Schamane, sickly green for the Fen Witch's hex) and arcing
+ * fireballs, all leaving trails.
  * Synced to `battle.projectiles` by id and interpolated between ticks.
  */
 export class ProjectileLayer {
@@ -96,6 +97,10 @@ export class ProjectileLayer {
         it.trailTimer = 0.016;
         this.effects.trail(x, y, z, Math.random() < 0.5 ? FX.holy : FX.holyCore, 0.06, 0.25, 0.3);
         return;
+      case 'hex':
+        it.trailTimer = 0.016;
+        this.effects.trail(x, y, z, Math.random() < 0.6 ? FX.poison : FX.poisonCore, 0.08, 0.3, 0.4);
+        return;
       case 'fireball':
         it.trailTimer = 0.012;
         this.effects.trail(x, y, z, Math.random() < 0.35 ? FX.fireCore : Math.random() < 0.6 ? FX.fire : FX.ember, 0.13, 0.4, 0.8);
@@ -131,8 +136,8 @@ export class ProjectileLayer {
       g.scale.setScalar(scale);
       return g;
     }
-    const size = look === 'fireball' ? 0.24 : 0.13;
-    const [halo, core] = look === 'holy' ? [FX.holy, FX.holyCore] : [FX.fire, FX.fireCore];
+    const size = look === 'fireball' ? 0.24 : look === 'hex' ? 0.16 : 0.13;
+    const [halo, core] = look === 'holy' ? [FX.holy, FX.holyCore] : look === 'hex' ? [FX.poison, FX.poisonCore] : [FX.fire, FX.fireCore];
     const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 1), new THREE.MeshBasicMaterial({ color: core }));
     const outer = new THREE.Mesh(
       new THREE.IcosahedronGeometry(size * 1.8, 1),
@@ -167,6 +172,8 @@ function lookOf(p: Projectile, mage: boolean): Look {
       return 'fireball';
     case 'bolt':
       return mage ? 'fire' : 'holy';
+    case 'hex':
+      return 'hex';
   }
 }
 

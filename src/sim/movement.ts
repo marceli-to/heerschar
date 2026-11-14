@@ -1,4 +1,5 @@
-import { BOUNDS_STRENGTH, KNOCKBACK_FRICTION, SEPARATION_STRENGTH, UNIT_RADIUS } from './balance';
+import { BOUNDS_STRENGTH, KNOCKBACK_FRICTION, SEPARATION_STRENGTH } from './balance';
+import { bodyMass, bodyRadius } from './body';
 import { angleDiff, clamp } from './math';
 import type { Battle, Unit } from './types';
 
@@ -30,20 +31,25 @@ export function applyKnockback(unit: Unit, dt: number): void {
 }
 
 function solid(u: Unit): boolean {
-  // Dodging units slip through others: rolling past an enemy is part of the move.
+  // Dodging units slip through others: rolling past an enemy is part of the move. So does a
+  // charging boss (it hits whoever it passes instead).
+  if (u.state === 'recover' && u.action === 'charge') return false;
   return u.state !== 'dead' && u.state !== 'dodging';
 }
 
-/** Pushes overlapping units apart. Iterates in id order so the result is deterministic. */
+/**
+ * Pushes overlapping units apart, the heavier one (bosses) moving less. Iterates in id order so
+ * the result is deterministic.
+ */
 export function separate(battle: Battle): void {
   const units = battle.units;
-  const minDist = UNIT_RADIUS * 2;
   for (let i = 0; i < units.length; i++) {
     const a = units[i]!;
     if (!solid(a)) continue;
     for (let j = i + 1; j < units.length; j++) {
       const b = units[j]!;
       if (!solid(b)) continue;
+      const minDist = bodyRadius(a) + bodyRadius(b);
       let dx = b.pos.x - a.pos.x;
       let dz = b.pos.z - a.pos.z;
       const d2 = dx * dx + dz * dz;
@@ -55,21 +61,26 @@ export function separate(battle: Battle): void {
         dz = 0;
         d = 1;
       }
-      const push = ((minDist - Math.min(d, minDist)) * SEPARATION_STRENGTH) / 2;
+      const push = (minDist - Math.min(d, minDist)) * SEPARATION_STRENGTH;
+      const ma = bodyMass(a);
+      const mb = bodyMass(b);
+      // Equal masses split the push in half, as before.
+      const pa = (push * mb) / (ma + mb);
+      const pb = (push * ma) / (ma + mb);
       const nx = dx / d;
       const nz = dz / d;
-      a.pos.x -= nx * push;
-      a.pos.z -= nz * push;
-      b.pos.x += nx * push;
-      b.pos.z += nz * push;
+      a.pos.x -= nx * pa;
+      a.pos.z -= nz * pa;
+      b.pos.x += nx * pb;
+      b.pos.z += nz * pb;
     }
   }
 }
 
 /** Soft elliptical bounds: units past the edge are pushed back in a little each tick. */
 export function keepInBounds(battle: Battle, unit: Unit): void {
-  const rx = battle.arena.width / 2 - UNIT_RADIUS;
-  const rz = battle.arena.depth / 2 - UNIT_RADIUS;
+  const rx = battle.arena.width / 2 - bodyRadius(unit);
+  const rz = battle.arena.depth / 2 - bodyRadius(unit);
   const e = Math.hypot(unit.pos.x / rx, unit.pos.z / rz);
   if (e <= 1) return;
   const k = 1 - ((e - 1) / e) * BOUNDS_STRENGTH;

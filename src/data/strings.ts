@@ -9,6 +9,10 @@ export const STRINGS = {
     schildtraeger: 'Shieldbearer',
     berserker: 'Berserker',
     schamane: 'Shaman',
+    wolf: 'Wolf',
+    kriegsherr: 'Iron Warlord',
+    sumpfhexe: 'Fen Witch',
+    knochenkoenig: 'Bone King',
   },
   /** Hero ability names (approved 2e). */
   abilities: {
@@ -31,6 +35,10 @@ export const STRINGS = {
     schildtraeger: 'S',
     berserker: 'B',
     schamane: 'Sh',
+    wolf: 'Wo',
+    kriegsherr: 'IW',
+    sumpfhexe: 'FW',
+    knochenkoenig: 'BK',
   },
   /** Hero name suggestions on the class select (approved 3b). */
   heroNames: {
@@ -196,6 +204,10 @@ export const STRINGS = {
       schildtraeger: 'Heavy plate; steel barely scratches it. Bring magic.',
       berserker: 'Fast and frail. Goes for your healers first.',
       schamane: 'Heals and shields its allies. Mark it first.',
+      wolf: 'Fast and frail; hunts in packs.',
+      kriegsherr: 'Sweeps, charges and slams; watch the ground. Calls raiders when hurt.',
+      sumpfhexe: 'Poisons the ground, mends her escort and calls wolves. Keep moving.',
+      knochenkoenig: 'Sweeps, charges and slams. Raises the fallen; finish him before they rise again.',
     },
   },
   paused: 'Paused',

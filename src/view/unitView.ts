@@ -3,7 +3,7 @@ import { HERO } from '../sim/balance';
 import { clamp, lerp } from '../sim/math';
 import type { ActionId, UnitState } from '../sim/types';
 import type { ClassId, Team } from '../sim/types';
-import { ARM, buildFigure, type FigureRig } from './figures';
+import { ARM, BOSS_SCALE, buildFigure, type FigureRig } from './figures';
 import { reach, orient } from './ik';
 import { FX, type FigureColors } from './palette';
 
@@ -54,13 +54,23 @@ function easeIn(t: number): number {
   return c * c;
 }
 
-type ActionPose = 'swing' | 'spin' | 'bash' | 'roar' | 'draw' | 'cast' | 'slam' | 'hop';
+type ActionPose = 'swing' | 'spin' | 'bash' | 'roar' | 'draw' | 'cast' | 'slam' | 'hop' | 'chop';
 
 /** Which pose an action uses for a given figure style. */
 function actionPose(style: FigureRig['style'], action: ActionId | null): ActionPose {
   if (action === 'wirbel') return 'spin';
   if (action === 'schildstoss') return 'bash';
   if (action === 'rueckzug') return 'hop';
+  // Boss actions: the sweep is a heavy swing, the slam an overhead chop (casters slam the staff),
+  // the charge a lowered shoulder, calling and raising a roar.
+  if (action === 'charge') return 'bash';
+  if (action === 'mend') return 'slam';
+  if (style === 'melee') {
+    if (action === 'slam') return 'chop';
+    if (action === 'summon' || action === 'raise') return 'roar';
+  } else if (action === 'summon' || action === 'raise') {
+    return 'slam';
+  }
   switch (style) {
     case 'melee':
       return action === 'taunt' || action === 'sammeln' ? 'roar' : 'swing';
@@ -127,8 +137,12 @@ export class PrimitiveFigureView implements UnitView {
   private frost = 0;
   private bubbleLevel = 0;
 
+  /** Bosses swing everything as the heavy chain step. */
+  private readonly heavy: boolean;
+
   constructor(classId: ClassId, colors: FigureColors, team: Team, hero: boolean) {
     this.rig = buildFigure(classId, colors, hero);
+    this.heavy = BOSS_SCALE[classId] !== undefined;
     this.root = this.rig.root;
     this.barY = this.rig.barY;
     this.baseColors = this.rig.materials.map((m) => m.color.clone());
@@ -159,7 +173,7 @@ export class PrimitiveFigureView implements UnitView {
     this.resetPose();
     const pose = actionPose(this.rig.style, a.action);
     // Hero melee: basic chain step, abilities other than spin/bash use the heavy swing.
-    const chain = a.isHero ? (a.action === null ? a.chain : 1) : -1;
+    const chain = a.isHero ? (a.action === null ? a.chain : 1) : this.heavy ? 1 : -1;
 
     switch (a.state) {
       case 'idle':
@@ -207,6 +221,10 @@ export class PrimitiveFigureView implements UnitView {
         return this.poseCast(windup, p, t, dur);
       case 'slam':
         return this.poseSlam(windup, p, t, dur);
+      case 'chop':
+        // Weapon raised overhead, then brought down like the heavy swing.
+        if (windup) return this.poseRoar(true, p, t, dur);
+        return this.poseRecover(t, dur, 1);
     }
   }
 

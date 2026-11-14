@@ -1,6 +1,7 @@
 import { HERO_ABILITIES, heroAttack } from './balance';
 import { actionTiming, meleeAttackOf } from './ai';
 import { isAlive } from './combat';
+import { insideArea } from './projectiles';
 import { abilityReady } from './heroControl';
 import { heroKit, isRangedHero } from './heroAbilities';
 import { lockTarget } from './heroTargeting';
@@ -60,13 +61,21 @@ function swingThreat(battle: Battle, hero: Unit): Unit | null {
   return null;
 }
 
-/** The centre of an enemy area warning about to go off under the hero. */
-function areaThreat(battle: Battle, hero: Unit): { x: number; z: number } | null {
+/**
+ * Which way to dodge out of an enemy ground warning about to go off under the hero: away from
+ * a circle's or arc's centre, sideways out of a charge lane. `null` = no threat.
+ */
+function areaThreat(battle: Battle, hero: Unit, fallback: number): number | null {
   for (const a of battle.areas) {
     if (a.team === hero.team || a.heal) continue;
     if (a.delay - a.time > 0.35) continue;
-    if (dist(a.pos, hero.pos) > a.radius + 0.6) continue;
-    return a.pos;
+    // 0.6 m of margin around the hero's centre.
+    if (!insideArea(a, hero.pos, 0.6)) continue;
+    if (a.shape === 'lane') {
+      const side = (hero.pos.x - a.pos.x) * Math.cos(a.angle) + (hero.pos.z - a.pos.z) * Math.sin(a.angle);
+      return a.angle + (side >= 0 ? Math.PI / 2 : -Math.PI / 2);
+    }
+    return dist(a.pos, hero.pos) > 0.01 ? angleTo(a.pos, hero.pos) : fallback;
   }
   return null;
 }
@@ -169,10 +178,10 @@ export function botInput(battle: Battle, bot: BotState): HeroInput {
   input.aimAngle = toTarget;
 
   const swing = swingThreat(battle, hero);
-  const area = areaThreat(battle, hero);
-  if ((swing || area) && hero.dodgeCooldown <= 0) {
+  const area = areaThreat(battle, hero, toTarget + Math.PI);
+  if ((swing || area !== null) && hero.dodgeCooldown <= 0) {
     if (swing) moveTowards(input, angleTo(swing.pos, hero.pos) + Math.PI / 2); // sidestep
-    else if (area) moveTowards(input, dist(area, hero.pos) > 0.01 ? angleTo(area, hero.pos) : toTarget + Math.PI);
+    else if (area !== null) moveTowards(input, area);
     input.dodge = true;
     return input;
   }

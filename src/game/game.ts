@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { reactive } from 'vue';
 import { createBattle, heroOf, step, type BattleSetup } from '../sim/battle';
-import { COUNTDOWN, DT, ENEMY, ENERGY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
-import { actionTiming } from '../sim/ai';
+import { BOSS_ACTIONS, COUNTDOWN, DT, ENERGY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
+import { actionTiming, meleeAttackOf } from '../sim/ai';
 import { heroKit } from '../sim/heroAbilities';
 import { angleTo, lerp, lerpAngle } from '../sim/math';
 import type { AreaKind, Battle, BattleEvent, ClassId, HeroAbilityId, Unit } from '../sim/types';
@@ -17,8 +17,9 @@ import { createArena } from '../view/arena';
 import { CameraRig } from '../view/camera';
 import { Effects } from '../view/effects';
 import { HealthBar } from '../view/markers';
-import { ENEMY_COLORS, FX, PLAYER_COLORS } from '../view/palette';
-import { PrimitiveFigureView, type UnitView } from '../view/unitView';
+import { FX } from '../view/palette';
+import type { UnitView } from '../view/unitView';
+import { createUnitView } from '../view/createView';
 import { ProjectileLayer } from '../view/projectileView';
 import { AreaLayer } from '../view/areaView';
 import { LockRing, MarkBanner } from '../view/targetMarkers';
@@ -259,17 +260,20 @@ export class Game {
   private buildUnits(): void {
     for (const slot of this.units.values()) this.disposeSlot(slot);
     this.units.clear();
-    for (const u of this.battle.units) {
-      const view = new PrimitiveFigureView(u.classId, u.team === 'player' ? PLAYER_COLORS : ENEMY_COLORS, u.team, u.isHero);
-      const bar = u.isHero ? null : new HealthBar(u.team === 'player' ? '#d9a33a' : '#b8382a');
-      this.unitLayer.add(view.root);
-      if (bar) this.unitLayer.add(bar.group);
-      this.units.set(u.id, { view, bar, prev: { x: u.pos.x, z: u.pos.z, facing: u.facing }, speed: 0 });
-    }
+    for (const u of this.battle.units) this.addUnit(u);
     // Start behind the hero, looking across the field at the enemy.
     const hero = heroOf(this.battle);
     if (hero) this.rig.yaw = hero.facing;
     this.buildHudLists();
+  }
+
+  /** A view and health bar for a unit (at the start, or when a boss summons it). */
+  private addUnit(u: Unit): void {
+    const view = createUnitView(u.classId, u.team, u.isHero);
+    const bar = u.isHero ? null : new HealthBar(u.team === 'player' ? '#d9a33a' : '#b8382a');
+    this.unitLayer.add(view.root);
+    if (bar) this.unitLayer.add(bar.group);
+    this.units.set(u.id, { view, bar, prev: { x: u.pos.x, z: u.pos.z, facing: u.facing }, speed: 0 });
   }
 
   /** Fixed lists for the HUD; `updateHud` only changes their values. */
@@ -379,8 +383,23 @@ export class Game {
         break;
       }
       case 'areaResolve':
-        this.areaBurst(e.kind, e.x, e.z, e.radius);
+        this.areaBurst(e.kind, e.x, e.z, e.radius, e.angle);
         break;
+      case 'spawn': {
+        const u = this.unit(e.unitId);
+        if (!u) break;
+        this.addUnit(u);
+        this.effects.dust(u.pos.x, u.pos.z, 10);
+        break;
+      }
+      case 'raise': {
+        const u = this.unit(e.unitId);
+        if (!u) break;
+        this.effects.burst(u.pos.x, 0.4, u.pos.z, [FX.boneGlow, '#e8f6ff'], 18, 2.5, 0.08, 0.7, -2);
+        this.effects.ring(u.pos.x, u.pos.z, 0.2, 1.4, FX.boneGlow, 0.6);
+        this.effects.dust(u.pos.x, u.pos.z, 8);
+        break;
+      }
       case 'status': {
         const u = this.unit(e.unitId);
         if (!u || !e.on) break;
@@ -392,13 +411,17 @@ export class Game {
       case 'action': {
         // Taunt: a shout ring at the start of the windup.
         const u = this.unit(e.unitId);
-        if (u && e.action === 'taunt') this.effects.ring(u.pos.x, u.pos.z, 0.5, 6, u.team === 'player' ? FX.rally : FX.shieldEnemy, 0.5, 0.6);
+        if (!u) break;
+        if (e.action === 'taunt') this.effects.ring(u.pos.x, u.pos.z, 0.5, 6, u.team === 'player' ? FX.rally : FX.shieldEnemy, 0.5, 0.6);
+        else if (e.action === 'summon') this.effects.ring(u.pos.x, u.pos.z, 0.8, 8, u.classId === 'sumpfhexe' ? FX.poison : FX.warningRim, 0.7, 0.6);
+        else if (e.action === 'mend') this.effects.ring(u.pos.x, u.pos.z, 0.5, BOSS_ACTIONS.mend.radius, FX.poison, 0.9, 0.5);
+        else if (e.action === 'raise') this.effects.ring(u.pos.x, u.pos.z, 0.8, 10, FX.boneGlow, 0.9, 0.6);
         break;
       }
       case 'swing': {
         const u = this.unit(e.unitId);
         if (!u) break;
-        const attack = u.isHero ? heroAttack(e.chain) : ENEMY.attack; // swing events are melee only
+        const attack = u.isHero ? heroAttack(e.chain) : meleeAttackOf(u); // swing events are melee only
         this.effects.swingArc(u.pos.x, u.pos.z, u.facing, attack.reach, attack.arc, attack.heavy);
         break;
       }
@@ -457,8 +480,25 @@ export class Game {
     if (absorbed > 0) this.numbers.spawn('absorbed', absorbed, target.pos.x + 0.3, y + 0.35, target.pos.z, 1);
   }
 
-  private areaBurst(kind: AreaKind, x: number, z: number, radius: number): void {
+  private areaBurst(kind: AreaKind, x: number, z: number, radius: number, angle: number): void {
     switch (kind) {
+      case 'sweep':
+        this.effects.swingArc(x, z, angle, radius, BOSS_ACTIONS.sweep.arc, true);
+        this.effects.dust(x + Math.sin(angle) * radius * 0.6, z - Math.cos(angle) * radius * 0.6, 10);
+        this.rig.shake(0.15);
+        break;
+      case 'slam':
+        this.effects.burst(x, 0.2, z, ['#8a8178', '#a39a90', '#6f6a5f'], 18, radius * 1.6, 0.14, 0.6);
+        this.effects.ring(x, z, radius * 0.3, radius, FX.warningRim, 0.4);
+        this.effects.dust(x, z, 8);
+        this.rig.shake(0.2);
+        break;
+      case 'poison':
+        this.effects.burst(x, 0.3, z, [FX.poison, FX.poisonCore, FX.poisonRim], 22, radius * 1.3, 0.1, 0.6, 2);
+        this.effects.rise(x, z, radius, [FX.poison, FX.poisonRim], 8);
+        break;
+      case 'charge':
+        break;
       case 'fireball':
         this.effects.burst(x, 0.4, z, [FX.fireCore, FX.fire, FX.ember, FX.fire], 34, 5, 0.13, 0.55);
         this.effects.burst(x, 0.6, z, ['#8a8178', '#a39a90'], 6, 1.2, 0.16, 0.6, -1);
@@ -487,6 +527,8 @@ export class Game {
       const x = lerp(slot.prev.x, u.pos.x, a);
       const z = lerp(slot.prev.z, u.pos.z, a);
       slot.view.setPose(x, z, lerpAngle(slot.prev.facing, u.facing, a));
+      // A charging boss kicks up dust along its run.
+      if (animTime > 0 && u.action === 'charge' && u.state === 'recover' && u.stateTime <= BOSS_ACTIONS.charge.dash) this.effects.dust(x, z, 2);
       slot.view.animate(
         { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded') },
         animTime,

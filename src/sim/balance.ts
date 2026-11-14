@@ -1,3 +1,5 @@
+import type { BossId, ClassId } from './types';
+
 /** Every tunable number of the simulation lives here. */
 
 /** Simulation ticks per second. The sim always advances by exactly 1 / TICK_RATE. */
@@ -226,3 +228,53 @@ export const HERO_KIT = {
 
 /** Lock-on: candidates within `range`; the first pick weighs view angle against distance. */
 export const LOCK = { range: 30, metresPerRadian: 12 } as const;
+
+// ---------------------------------------------------------------------------------------------
+// Bosses (PLAN sections 6 and 10, Stage 5 decisions)
+
+/** The region bosses: large, telegraphed, immune to stun and freeze. */
+export const BOSSES: readonly BossId[] = ['kriegsherr', 'sumpfhexe', 'knochenkoenig'];
+
+/** Body radius by class where it differs from `UNIT_RADIUS` (bosses are big, wolves small). */
+export const BODY_RADIUS: Partial<Record<ClassId, number>> = {
+  kriegsherr: 0.85,
+  sumpfhexe: 0.7,
+  knochenkoenig: 0.95,
+  wolf: 0.4,
+};
+
+/** Bosses: knockback is scaled by this, and they push others aside this many times harder. */
+export const BOSS_BODY = { knockback: 0.15, mass: 6 } as const;
+
+/** Boss basic swing (Iron Warlord, Bone King): slow, long, heavy. Reach is from the boss's centre. */
+export const BOSS_STRIKE = { windup: 0.75, recover: 0.6, multiplier: 1.2, reach: 2.9, arc: 110 * DEG, knockback: 5, stagger: 0.3, lunge: 0.4, hitstop: 0.08, heavy: true } satisfies MeleeAttack;
+
+/**
+ * Boss actions. Telegraphed ones place their warning when the windup starts and resolve when it
+ * ends (`windup` = warning time). Cooldowns in seconds; a boss also waits its attack interval
+ * between any two actions.
+ */
+export const BOSS_ACTIONS = {
+  /** A wide swing in front: a filling arc. */
+  sweep: { windup: 1.1, recover: 0.6, multiplier: 1.7, radius: 4.4, arc: 160 * DEG, knockback: 7, cooldown: 8 },
+  /** A run along a lane at a far foe: a filling lane, then the dash; everyone in the way is hit. */
+  charge: { windup: 1.2, recover: 0.8, dash: 0.4, multiplier: 1.5, halfWidth: 1.3, maxLength: 14, minRange: 6, knockback: 9, cooldown: 12 },
+  /** Ground slam: a circle around the boss and one under up to `targets` foes. */
+  slam: { windup: 1.3, recover: 0.7, multiplier: 1.3, radius: 3.4, targetRadius: 2.2, targets: 3, range: 12, knockback: 4, cooldown: 11 },
+  /** Fen Witch: poison circles under up to `targets` foes (sickly green, linger in the view). */
+  poison: { windup: 1.2, recover: 0.5, multiplier: 1.1, radius: 2.2, targets: 4, range: 16, cooldown: 8 },
+  /** Fen Witch basic attack: a magic bolt. */
+  hex: { windup: 0.6, recover: 0.4, multiplier: 0.9, speed: 16, radius: 0.4 },
+  /** Calls more units (`SUMMONS`), at most `maxAlive` of hers at once; first only below `firstBelow` health. */
+  summon: { windup: 1.1, recover: 0.6, cooldown: 16, maxAlive: 3, firstBelow: 0.85, edgeX: 19 },
+  /** Fen Witch: heals every ally within `radius` when one of them is below `below`. */
+  mend: { windup: 0.9, recover: 0.5, multiplier: 1.0, radius: 14, below: 0.7, cooldown: 10 },
+  /** Bone King: raises up to `count` fallen allies (each once) at `hp` of their health. */
+  raise: { windup: 1.4, recover: 0.6, count: 2, hp: 0.5, cooldown: 14 },
+} as const;
+
+/** What each boss calls, cycling through the groups summon by summon. */
+export const SUMMONS: Partial<Record<ClassId, readonly (readonly ClassId[])[]>> = {
+  kriegsherr: [['krieger', 'berserker']],
+  sumpfhexe: [['wolf', 'wolf', 'wolf'], ['schamane']],
+};

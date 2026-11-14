@@ -13,4 +13,13 @@ export const CLASS_STATS: Record<ClassId, Stats> = {
   berserker: { maxHp: 95, power: 15, armor: 15, resist: 5, moveSpeed: 5.4, attackInterval: 0.9, range: 1.8 },
   /** Heals and shields its allies from the back. */
   schamane: { maxHp: 80, power: 14, armor: 10, resist: 25, moveSpeed: 3.8, attackInterval: 2.0, range: 10 },
+  /** Small, fast and frail; only the Fen Witch calls them. */
+  wolf: { maxHp: 50, power: 10, armor: 5, resist: 5, moveSpeed: 6.2, attackInterval: 0.8, range: 1.6 },
+  // Bosses (first numbers, tuned in 5f). Range is the basic attack's; the swing reach is BOSS_STRIKE.
+  /** Iron Warlord: dark plate, a huge axe; sweeps, charges, slams, calls raiders. */
+  kriegsherr: { maxHp: 420, power: 13, armor: 70, resist: 25, moveSpeed: 3.6, attackInterval: 1.7, range: 2.9 },
+  /** Fen Witch: stays back, poisons the ground, heals her escort, calls wolves and shamans. */
+  sumpfhexe: { maxHp: 320, power: 12, armor: 20, resist: 60, moveSpeed: 3.6, attackInterval: 1.6, range: 12 },
+  /** Bone King: a skeletal giant with a greatsword; sweeps, charges, slams, raises the fallen. */
+  knochenkoenig: { maxHp: 460, power: 14, armor: 60, resist: 45, moveSpeed: 3.4, attackInterval: 1.7, range: 2.9 },
 };

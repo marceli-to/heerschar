@@ -34,6 +34,10 @@ export const LEVEL_GROWTH: Record<ClassId, Growth> = {
   schildtraeger: { hp: 0.07, power: 0.04, armor: 4, resist: 0.5 },
   berserker: { hp: 0.05, power: 0.06, armor: 1, resist: 0.5 },
   schamane: { hp: 0.05, power: 0.05, armor: 1, resist: 2 },
+  wolf: { hp: 0.05, power: 0.06, armor: 1, resist: 0.5 },
+  kriegsherr: { hp: 0.07, power: 0.05, armor: 3, resist: 1 },
+  sumpfhexe: { hp: 0.06, power: 0.06, armor: 1, resist: 2 },
+  knochenkoenig: { hp: 0.07, power: 0.05, armor: 3, resist: 2 },
 };
 
 /** Stats at a level: level 1 stats plus the class growth per level above 1. */

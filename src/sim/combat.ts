@@ -1,4 +1,5 @@
-import { CRIT_MULTIPLIER, DAMAGE_VARIANCE, ENERGY, STAGGER_IMMUNITY, STATUS, UNIT_RADIUS, type MeleeAttack } from './balance';
+import { CRIT_MULTIPLIER, DAMAGE_VARIANCE, ENERGY, STAGGER_IMMUNITY, STATUS, type MeleeAttack } from './balance';
+import { bodyRadius, isBoss, knockbackFactor } from './body';
 import { clamp } from './math';
 import { angleDiff, angleTo, dist } from './math';
 import { nextFloat, range } from './rng';
@@ -78,9 +79,9 @@ export function applyHeal(source: Unit, target: Unit, amount: number, events: Ba
   restore(source, target, amount * source.mods.healing, events);
 }
 
-/** Puts a unit into the stunned state; any windup in progress is lost. */
+/** Puts a unit into the stunned state; any windup in progress is lost. Bosses are immune. */
 export function stun(unit: Unit, duration: number): void {
-  if (!isAlive(unit)) return;
+  if (!isAlive(unit) || isBoss(unit)) return;
   unit.state = 'stunned';
   unit.stateTime = 0;
   unit.stunDuration = duration;
@@ -89,7 +90,7 @@ export function stun(unit: Unit, duration: number): void {
 
 /** True when `target` lies inside the attack's arc in front of `attacker`. */
 export function inArc(attacker: Unit, target: Unit, attack: MeleeAttack): boolean {
-  if (dist(attacker.pos, target.pos) > attack.reach + UNIT_RADIUS) return false;
+  if (dist(attacker.pos, target.pos) > attack.reach + bodyRadius(target)) return false;
   return Math.abs(angleDiff(attacker.facing, angleTo(attacker.pos, target.pos))) <= attack.arc / 2;
 }
 
@@ -105,6 +106,13 @@ export interface MeleeOptions {
   invulnerableTime: number;
   /** A stun ability: stuns for `attack.stagger` regardless of poise, and grants no immunity. */
   stun?: boolean;
+}
+
+/** Knockback along a facing angle (bosses barely move). */
+export function push(target: Unit, angle: number, speed: number): void {
+  const k = speed * knockbackFactor(target);
+  target.vel.x += Math.sin(angle) * k;
+  target.vel.z += -Math.cos(angle) * k;
 }
 
 /** Hero energy, kept within 0..max. */
@@ -126,9 +134,7 @@ export function resolveMelee(battle: Battle, attacker: Unit, attack: MeleeAttack
     }
     hits++;
     const amount = computeDamage(battle, attacker.stats.power, attack.multiplier, target, 'physical', attacker);
-    const away = angleTo(attacker.pos, target.pos);
-    target.vel.x += Math.sin(away) * attack.knockback;
-    target.vel.z += -Math.cos(away) * attack.knockback;
+    push(target, angleTo(attacker.pos, target.pos), attack.knockback);
     target.hitstop = Math.max(target.hitstop, attack.hitstop);
 
     if (applyDamage(attacker, target, amount, attack.heavy, events)) continue;
