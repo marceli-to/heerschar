@@ -59,12 +59,16 @@ export interface GameState {
   /** Battles fought and lost (for the ending summary). */
   battles: number;
   lost: number;
+  /** Time spent in the game past the title, in ms (for the ending summary). */
+  playMs: number;
+  /** The ending summary has been shown (it appears once, after the last boss). */
+  endingSeen: boolean;
 }
 
-export const GAME_VERSION = 2;
+export const GAME_VERSION = 3;
 
 export function newGame(heroClass: PlayableClassId, heroName: string, seed: number): GameState {
-  return { version: GAME_VERSION, seed, rngState: seedState(seed), squad: newSquad(heroClass, heroName), inventory: [], won: [], rewards: null, camps: {}, battles: 0, lost: 0 };
+  return { version: GAME_VERSION, seed, rngState: seedState(seed), squad: newSquad(heroClass, heroName), inventory: [], won: [], rewards: null, camps: {}, battles: 0, lost: 0, playMs: 0, endingSeen: false };
 }
 
 export function characterOf(state: GameState, id: number): Character {
@@ -107,6 +111,16 @@ export function isUnlocked(state: GameState, id: EncounterId): boolean {
 /** The last boss has fallen. */
 export function campaignWon(state: GameState): boolean {
   return state.won.includes(FINAL_BOSS);
+}
+
+/** The last boss has fallen, the spoils are settled and the summary has not been shown yet. */
+export function endingDue(state: GameState): boolean {
+  return campaignWon(state) && !state.endingSeen && state.rewards === null;
+}
+
+/** Adds play time (ignores negative or broken amounts). */
+export function addPlayTime(state: GameState, ms: number): void {
+  if (Number.isFinite(ms) && ms > 0) state.playMs += ms;
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -18,7 +18,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| 5 Campaign | **in progress**: 5a–5d done (5c and 5d waiting for Marcel's look at the screenshots); next 5e ending summary (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
+| 5 Campaign | **in progress**: 5a–5e done (5c, 5d, 5e waiting for Marcel's look at the screenshots); next 5f balance (see "Stage 5 breakdown"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
 | 6–7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -38,9 +38,27 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 2. ~~**5b Bosses.**~~ Done (see "5b as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/bosses-5b/`.
 3. ~~**5c Map screen**~~ Done (see "5c as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/map-5c/`.
 4. ~~**5d Camp screen**~~ Done (see "5d as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/camp-5d/`.
-5. **5e Ending summary** (time, battles lost, squad with levels) → title; the save can continue. Needs play time tracking.
+5. ~~**5e Ending summary**~~ Done (see "5e as built"). Screenshots for Marcel in `~/Downloads/heerschar-assets/ending-5e/`.
 6. **5f Balance**: suite per PLAN section 13 (each encounter at the expected squad level, standard 70–90 %, elite 45–70 %, boss 35–60 %, length 45–150 s, hero share 20–30 %, solo < 5 %), tune strength; update `tests/balance/chain.test.ts` to walk the map.
 7. **Gate:** campaign playable start to finish, balance targets hold.
+
+## 5e decisions (Marcel, 2026-11-14)
+
+- Look = **victory scroll**: one large parchment sheet on the war table, gold Cinzel heading, a line of stats, the company as rows (medallion, name, class, level), hero first, one button back to the title.
+- Heading **"The Bone King has fallen"**, subline "The march is over. Your company rests."
+- Play time = **all time past the title** (map, camps, prep, battles, spoils), paused while the tab is hidden, saved with the game.
+- Shown **once, after the Bone King's spoils**; Continue later goes to the map to finish the remaining nodes.
+
+## 5e as built
+
+- `GameState.playMs`, `endingSeen`; `GAME_VERSION` 3 (migration 2 → 3: `playMs` 0, `endingSeen` = the campaign was already won). `addPlayTime`, `endingDue` (campaign won, rewards settled, not seen) in `game.ts`; `formatPlayTime` in `describe.ts` ("42 min", "2 h 05 min").
+- Clock in `session.ts`: runs while a game is loaded, the screen is past the title / class select and the page is visible; the stretch is added on every screen change, `visibilitychange`, `pagehide`, and every 30 s outside battles (no saves mid-battle).
+- `EndingScreen.vue` (session screen `'ending'`): `spoilsDone` goes there when `endingDue` (whichever way the battle was left), `continueGame` too (reload on the ending). "Return to the title" = `endingDone` (sets `endingSeen`).
+- Screenshot recipe: seed a save from the page (`newGame`, `SANDBOX_COMPANIONS` squad, every encounter in `won`, `rewards` null), reload, click Continue.
+
+## Made in 5e without asking (Marcel may veto)
+
+- Stats: Time, Battles won (all wins incl. replays = battles − lost), Battles lost. Labels "The company", "Hero · Warrior", "Level n"; button "Return to the title". Company in two columns once it has more than five; red wax seal with the crown under the sheet.
 
 ## 5d decisions (Marcel, 2026-11-14)
 

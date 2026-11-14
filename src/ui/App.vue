@@ -10,12 +10,13 @@ import type { PlayableClassId } from '../sim/types';
 import BattleView from './BattleView.vue';
 import CampScreen from './screens/CampScreen.vue';
 import ClassSelect from './screens/ClassSelect.vue';
+import EndingScreen from './screens/EndingScreen.vue';
 import FormationScreen from './screens/FormationScreen.vue';
 import MapScreen from './screens/MapScreen.vue';
 import SquadScreen from './screens/SquadScreen.vue';
 import SpoilsScreen from './screens/SpoilsScreen.vue';
 import TitleScreen from './screens/TitleScreen.vue';
-import { battleEnded, continueGame, goTo, leaveBattle, openCamp, prepare, session, spoilsDone, startBattle, startDevGame, startNewGame } from './session';
+import { battleEnded, continueGame, endingDone, goTo, leaveBattle, openCamp, prepare, session, spoilsDone, startBattle, startDevGame, startNewGame } from './session';
 
 const HERO_CLASSES: readonly PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
 
@@ -99,5 +100,6 @@ function fight(id: EncounterId): void {
       @change-squad="leaveBattle('squad')"
     />
     <SpoilsScreen v-else-if="session.screen === 'spoils' && session.game" :game="session.game" @done="spoilsDone()" />
+    <EndingScreen v-else-if="session.screen === 'ending' && session.game" :game="session.game" @done="endingDone" />
   </div>
 </template>

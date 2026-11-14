@@ -54,11 +54,24 @@ describe('save', () => {
       (g) => (g.inventory = ['excalibur']),
       (g) => (g.rewards!.choices[0]!.options = ['nope']),
       (g) => ((g.squad as unknown as { roster: unknown }).roster = 'x'),
+      (g) => (g.playMs = -1),
+      (g) => ((g as unknown as { endingSeen: unknown }).endingSeen = 'yes'),
     ];
     for (const b of breakers) {
       const g = played();
       b(g);
       expect(parseSave(JSON.stringify(g))).toBeNull();
     }
+  });
+
+  it('migrates a version 2 save: play time starts at zero, a won campaign has had its ending', () => {
+    const v2 = (g: GameState): string => {
+      const { playMs: _t, endingSeen: _e, ...rest } = g;
+      return JSON.stringify({ ...rest, version: 2 });
+    };
+    const g = played();
+    expect(parseSave(v2(g))).toMatchObject({ version: 3, playMs: 0, endingSeen: false });
+    g.won.push('boneKing');
+    expect(parseSave(v2(g))!.endingSeen).toBe(true);
   });
 });

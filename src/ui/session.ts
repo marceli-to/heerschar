@@ -2,11 +2,11 @@ import { reactive, toRaw, watch } from 'vue';
 import type { CampId } from '../data/campaign';
 import type { EncounterId } from '../data/encounters';
 import { SANDBOX_COMPANIONS, newSquad } from '../data/roster';
-import { newGame, recordBattle, type GameState } from '../meta/game';
+import { addPlayTime, endingDue, newGame, recordBattle, type GameState } from '../meta/game';
 import { clearSave, loadGame, saveGame, type SaveStorage } from '../meta/save';
 import type { PlayableClassId } from '../sim/types';
 
-export type Screen = 'title' | 'classSelect' | 'map' | 'camp' | 'squad' | 'formation' | 'battle' | 'spoils';
+export type Screen = 'title' | 'classSelect' | 'map' | 'camp' | 'squad' | 'formation' | 'battle' | 'spoils' | 'ending';
 
 /** Where the player goes once the spoils are settled. */
 export type AfterSpoils = 'map' | 'squad';
@@ -60,6 +60,33 @@ watch(
   { deep: true },
 );
 
+/**
+ * Play time (5e): counted on every screen past the title while the page is visible. The running
+ * stretch is added to the game state on each screen change, when the page is hidden or closed,
+ * and every half minute outside battles (so a crash loses little without saving mid-battle).
+ */
+let clockFrom: number | null = null;
+
+function clockRuns(): boolean {
+  if (!session.game || session.screen === 'title' || session.screen === 'classSelect') return false;
+  return typeof document === 'undefined' || document.visibilityState !== 'hidden';
+}
+
+function tickClock(): void {
+  const now = performance.now();
+  if (clockFrom !== null && session.game) addPlayTime(session.game, now - clockFrom);
+  clockFrom = clockRuns() ? now : null;
+}
+
+watch(() => [session.screen, session.game], tickClock);
+if (typeof window !== 'undefined') {
+  document.addEventListener('visibilitychange', tickClock);
+  window.addEventListener('pagehide', tickClock);
+  setInterval(() => {
+    if (session.screen !== 'battle') tickClock();
+  }, 30_000);
+}
+
 export function goTo(screen: Screen): void {
   session.screen = screen;
 }
@@ -83,6 +110,7 @@ export function continueGame(): void {
   session.game = g;
   session.screen = 'map';
   if (g.rewards) openSpoils('map');
+  else if (endingDue(g)) session.screen = 'ending';
 }
 
 /** Dev shortcuts (`?bot`, `?hero=` …): a game that is never saved, with the full sandbox roster. */
@@ -129,6 +157,13 @@ export function leaveBattle(to: AfterSpoils): void {
 
 /** The spoils are settled (or there were none): on to where the player was heading. */
 export function spoilsDone(to: AfterSpoils = session.afterSpoils): void {
-  if (to === 'squad') prepare(session.encounterId);
+  if (session.game && endingDue(session.game)) goTo('ending');
+  else if (to === 'squad') prepare(session.encounterId);
   else goTo('map');
+}
+
+/** The ending summary was read: it is not shown again, and the title can continue the save. */
+export function endingDone(): void {
+  if (session.game) session.game.endingSeen = true;
+  goTo('title');
 }

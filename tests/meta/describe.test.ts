@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../../src/data/items';
 import { LEVEL_CAP, xpToNext } from '../../src/data/progression';
 import { PATHS, UPGRADES } from '../../src/data/upgrades';
-import { effectLines, upgradeTally, xpAt } from '../../src/meta/describe';
+import { effectLines, formatPlayTime, upgradeTally, xpAt } from '../../src/meta/describe';
 import type { XpGain } from '../../src/meta/game';
 
 describe('effect lines', () => {
@@ -52,5 +52,14 @@ describe('upgrade tally', () => {
       { id: 'bellow', count: 1 },
     ]);
     expect(upgradeTally([])).toEqual([]);
+  });
+});
+
+describe('play time', () => {
+  it('minutes, then hours with padded minutes', () => {
+    expect(formatPlayTime(0)).toBe('0 min');
+    expect(formatPlayTime(42 * 60000 + 20000)).toBe('42 min');
+    expect(formatPlayTime(60 * 60000)).toBe('1 h 00 min');
+    expect(formatPlayTime((2 * 60 + 5) * 60000)).toBe('2 h 05 min');
   });
 });

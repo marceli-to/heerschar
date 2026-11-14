@@ -1,4 +1,4 @@
-import { NODES } from '../data/campaign';
+import { FINAL_BOSS, NODES } from '../data/campaign';
 import { ENCOUNTERS } from '../data/encounters';
 import { ITEMS } from '../data/items';
 import { LEVEL_CAP } from '../data/progression';
@@ -25,6 +25,8 @@ const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string
   // 1 → 2 (Stage 5): the battle chain became the campaign map. Won battles keep their ids and
   // open the map nodes after them; no camps visited yet.
   1: (raw) => ({ ...raw, camps: {} }),
+  // 2 → 3 (5e): play time starts counting now; a campaign already won has had its ending.
+  2: (raw) => ({ ...raw, playMs: 0, endingSeen: Array.isArray(raw.won) && raw.won.includes(FINAL_BOSS) }),
 };
 
 export function saveGame(storage: SaveStorage, state: GameState): void {
@@ -104,6 +106,7 @@ function isValidSlot(s: unknown): boolean {
 /** Structural check of a current-version save: ids exist, the squad rules hold. */
 function isValidGame(g: Record<string, unknown>): g is Record<string, unknown> & GameState {
   if (!isNum(g.seed) || !isInt(g.rngState) || !isInt(g.battles) || !isInt(g.lost)) return false;
+  if (!isNum(g.playMs) || g.playMs < 0 || typeof g.endingSeen !== 'boolean') return false;
   if (!Array.isArray(g.inventory) || !g.inventory.every((i) => ITEM_IDS.has(i as string))) return false;
   if (!Array.isArray(g.won) || !g.won.every((e) => ENCOUNTER_IDS.has(e as string))) return false;
   const squad = g.squad;

@@ -5,7 +5,9 @@ import { ENCOUNTERS, encounterById, type EncounterId } from '../../src/data/enco
 import { RECRUIT_NAMES } from '../../src/data/roster';
 import { STRINGS } from '../../src/data/strings';
 import {
+  addPlayTime,
   campaignWon,
+  endingDue,
   campOffers,
   choose,
   currentChoice,
@@ -210,5 +212,27 @@ describe('save migration', () => {
     expect(parseSave(JSON.stringify(s))).not.toBeNull();
     expect(parseSave(JSON.stringify({ ...s, camps: { atlantis: { offers: [], done: true } } }))).toBeNull();
     expect(parseSave(JSON.stringify({ ...s, camps: { campGreen1: { offers: [{ name: 'x' }], done: false } } }))).toBeNull();
+  });
+});
+
+describe('ending', () => {
+  it('is due once the last boss falls and the spoils are settled, until seen', () => {
+    const s = newGame('krieger', 'Aldric', 5);
+    expect(endingDue(s)).toBe(false);
+    recordBattle(s, 'boneKing', true);
+    expect(s.rewards).not.toBeNull();
+    expect(endingDue(s)).toBe(false);
+    s.rewards = null;
+    expect(endingDue(s)).toBe(true);
+    s.endingSeen = true;
+    expect(endingDue(s)).toBe(false);
+  });
+
+  it('play time only grows', () => {
+    const s = newGame('krieger', 'Aldric', 5);
+    addPlayTime(s, 1500);
+    addPlayTime(s, -20);
+    addPlayTime(s, Number.NaN);
+    expect(s.playMs).toBe(1500);
   });
 });

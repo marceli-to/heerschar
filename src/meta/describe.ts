@@ -53,3 +53,10 @@ export function upgradeTally(upgrades: readonly string[]): { id: string; count: 
   }
   return out;
 }
+
+/** Play time for the ending summary: whole minutes, hours once past the hour ("42 min", "2 h 05 min"). */
+export function formatPlayTime(ms: number): string {
+  const minutes = Math.max(0, Math.round(ms / 60000));
+  if (minutes < 60) return `${minutes} min`;
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')} min`;
+}

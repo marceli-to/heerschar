@@ -362,4 +362,16 @@ export const STRINGS = {
     full: 'The company is full. No one more can join.',
     moveOn: 'Move on',
   },
+  /** 5e ending summary (victory scroll and heading approved). Other copy draft. */
+  ending: {
+    title: 'The Bone King has fallen',
+    subtitle: 'The march is over. Your company rests.',
+    time: 'Time',
+    won: 'Battles won',
+    lost: 'Battles lost',
+    company: 'The company',
+    hero: 'Hero',
+    level: 'Level',
+    toTitle: 'Return to the title',
+  },
 } as const;
