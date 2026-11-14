@@ -32,13 +32,20 @@ export const STRINGS = {
     berserker: 'B',
     schamane: 'Sh',
   },
-  /** Companion given names by class until the Stage 3 roster (approved 2e). */
-  companionNames: {
-    krieger: 'Bran',
-    bogenschuetze: 'Hilde',
-    heiler: 'Maren',
-    magier: 'Osric',
-  } as Partial<Record<string, string>>,
+  /** Hero name suggestions on the class select (approved 3b). */
+  heroNames: {
+    krieger: 'Aldric',
+    bogenschuetze: 'Rowan',
+    heiler: 'Isolde',
+    magier: 'Corvin',
+  },
+  /** Class role lines on the class select (approved 3b). */
+  roles: {
+    krieger: 'Holds the line and takes the blows.',
+    bogenschuetze: 'Strikes from afar and keeps foes at bay.',
+    heiler: 'Keeps the company standing.',
+    magier: 'Breaks armour with fire and frost.',
+  },
   energy: 'Energy',
   fallen: 'Fallen',
   trial: {
@@ -74,12 +81,24 @@ export const STRINGS = {
       ['Esc', 'Pause'],
     ],
   },
-  /** Stage 3 sandbox battles. Draft copy, not yet approved by Marcel. */
+  /** Stage 3 sandbox battles (approved). */
   encounters: {
     skirmish: { name: 'The Skirmish', intro: 'A mixed band holds the far side of the field.' },
     shieldWall: { name: 'The Shield Wall', intro: 'Three shieldbearers lock their shields while two shamans tend them. Steel will not break this wall easily.' },
     berserkerRush: { name: 'The Berserker Rush', intro: 'Three berserkers howl for your healers, with archers at their backs.' },
     archerLine: { name: 'The Archer Line', intro: 'A thin line of warriors guards archers and a mage. Close the distance, or outlast the arrows.' },
+  },
+  /** Stage 3 screens. Draft copy (button labels, headings), not yet approved by Marcel. */
+  prep: {
+    newGame: 'New Game',
+    chooseHero: 'Choose your hero',
+    name: 'Name',
+    choose: 'Take the field',
+    orders: 'Orders',
+    ordersHint: 'Choose a battle',
+    won: 'Won',
+    leave: 'Return to the war table',
+    back: 'Back',
   },
   paused: 'Paused',
   resume: 'Click to resume',

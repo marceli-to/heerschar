@@ -124,15 +124,21 @@ export function placeCharacter(state: SquadState, id: number, slot: Slot): boole
   return true;
 }
 
+/**
+ * The fielded characters in battle order: the hero first (unit id 1, as in every other setup),
+ * then companions in fielding order. `battleSetupFor` places the player units in this order.
+ */
+export function fieldedCharacters(state: SquadState): Character[] {
+  const list = state.fielded.map((id) => characterById(state, id));
+  return [...list.filter((c) => c.isHero), ...list.filter((c) => !c.isHero)];
+}
+
 /** Turns the squad and an encounter into a battle setup. */
 export function battleSetupFor(state: SquadState, encounter: Encounter, seed: number): BattleSetup {
-  const player: FormationSlot[] = state.fielded.map((id) => {
-    const c = characterById(state, id);
-    const slot = state.formation[id];
-    if (!slot) throw new Error(`fielded character ${id} has no slot`);
+  const player: FormationSlot[] = fieldedCharacters(state).map((c) => {
+    const slot = state.formation[c.id];
+    if (!slot) throw new Error(`fielded character ${c.id} has no slot`);
     return { classId: c.classId, col: slot.col, row: slot.row, isHero: c.isHero, stats: playerSlotStats(c.classId, c.isHero) };
   });
-  // The hero first, so it gets unit id 1 as in every other setup.
-  player.sort((a, b) => Number(b.isHero) - Number(a.isHero));
   return formationSetup(seed, player, enemySlots(encounter));
 }

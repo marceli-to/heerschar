@@ -1,12 +1,11 @@
 import * as THREE from 'three';
 import { reactive } from 'vue';
-import { createBattle, heroOf, step } from '../sim/battle';
+import { createBattle, heroOf, step, type BattleSetup } from '../sim/battle';
 import { COUNTDOWN, DT, ENEMY, ENERGY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
 import { actionTiming } from '../sim/ai';
 import { heroKit } from '../sim/heroAbilities';
 import { angleTo, lerp, lerpAngle } from '../sim/math';
 import type { AreaKind, Battle, BattleEvent, ClassId, HeroAbilityId, Unit } from '../sim/types';
-import { squadSetup, trialSetup } from '../data/encounters';
 import { STRINGS } from '../data/strings';
 import { hasStatus } from '../sim/statuses';
 import { botInput, createBot, type BotState } from '../sim/bot';
@@ -37,6 +36,18 @@ export interface DebugStats {
 }
 
 export type Phase = 'intro' | 'playing' | 'paused' | 'ended';
+
+/** What to fight: built by the app from the squad and an encounter, or the Stage 1 trial. */
+export interface BattleSpec {
+  mode: 'trial' | 'squad';
+  /** Builds the setup for a seed; called again with a new seed on restart. */
+  build: (seed: number) => BattleSetup;
+  /** Display names of the player units in setup order (index 0 = unit id 1). */
+  names: string[];
+  /** Intro panel heading and text. */
+  title: string;
+  intro: string;
+}
 
 export interface HudAbility {
   id: HeroAbilityId;
@@ -74,9 +85,13 @@ export interface HudEdgeMarker {
 
 export interface HudState {
   phase: Phase;
-  /** Which fight runs: the Stage 1 trial (`?trial`) or the squad battle. */
+  /** Which fight runs: the Stage 1 trial (`?trial`) or a squad battle. */
   mode: 'trial' | 'squad';
+  /** Intro panel heading and text. */
+  title: string;
+  intro: string;
   heroClass: ClassId;
+  heroName: string;
   /** Whole seconds left in the countdown, 0 once the fight runs. */
   countdown: number;
   heroHp: number;
@@ -121,9 +136,8 @@ export class Game {
   readonly hud: HudState;
   private battle: Battle;
   private seed: number;
-  private heroClass: ClassId;
   private peaceful: boolean;
-  private trial: boolean;
+  private spec: BattleSpec;
   private projectiles: ProjectileLayer;
   private areas = new AreaLayer();
   private lockRing = new LockRing();
@@ -143,12 +157,12 @@ export class Game {
   /** Debug: when set, the scripted bot plays the hero (`?bot`). */
   bot: BotState | null = null;
 
-  constructor(private readonly canvas: HTMLCanvasElement, opts: { seed: number; zoom?: number; debug?: boolean; heroClass?: ClassId; peaceful?: boolean; trial?: boolean }) {
+  constructor(private readonly canvas: HTMLCanvasElement, opts: { spec: BattleSpec; seed: number; zoom?: number; debug?: boolean; peaceful?: boolean }) {
     this.seed = opts.seed;
     this.peaceful = opts.peaceful ?? false;
-    this.trial = opts.trial ?? false;
-    this.heroClass = opts.heroClass ?? 'krieger';
+    this.spec = opts.spec;
     this.battle = this.newBattle();
+    const hero = heroOf(this.battle);
     this.parts = createScene(canvas);
     this.projectiles = new ProjectileLayer(this.effects);
     this.numbers = new DamageNumbers(canvas.parentElement ?? document.body);
@@ -165,7 +179,7 @@ export class Game {
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
     this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, lock: null, mark: null });
-    this.hud = reactive({ phase: 'intro', mode: this.trial ? 'trial' : 'squad', heroClass: this.heroClass, countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, energy: 0, maxEnergy: ENERGY.max, abilities: [], squad: [], edgeMarkers: [], foes: 0, outcome: 'running', time: 0 });
+    this.hud = reactive({ phase: 'intro', mode: this.spec.mode, title: this.spec.title, intro: this.spec.intro, heroClass: hero?.classId ?? 'krieger', heroName: this.spec.names[0] ?? '', countdown: 0, heroHp: 0, heroMaxHp: 1, dodgeReady: 1, energy: 0, maxEnergy: ENERGY.max, abilities: [], squad: [], edgeMarkers: [], foes: 0, outcome: 'running', time: 0 });
     this.buildUnits();
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
@@ -173,10 +187,8 @@ export class Game {
     this.resize();
   }
 
-  /** The 5-vs-6 squad battle, or with `?trial` the Stage 1 hero-alone fight. */
   private newBattle(): Battle {
-    const setup = this.trial ? trialSetup(this.seed, this.heroClass) : squadSetup(this.seed, this.heroClass);
-    return createBattle({ ...setup, passiveEnemies: this.peaceful });
+    return createBattle({ ...this.spec.build(this.seed), passiveEnemies: this.peaceful });
   }
 
   start(): void {
@@ -187,7 +199,7 @@ export class Game {
     });
   }
 
-  /** Starts a fresh trial. Called from the end screen. */
+  /** Starts the same battle again with a new seed. Called from the end screen. */
   restart(): void {
     this.seed = (this.seed * 1103515245 + 12345) >>> 0;
     this.battle = this.newBattle();
@@ -217,6 +229,7 @@ export class Game {
     this.markBanner.dispose();
     this.numbers.dispose();
     this.parts.renderer.dispose();
+    this.parts.renderer.forceContextLoss();
   }
 
   private onLockChange = (): void => {
@@ -250,7 +263,7 @@ export class Game {
       : [];
     this.hud.squad = this.battle.units
       .filter((u) => u.team === 'player' && !u.isHero)
-      .map((u) => ({ id: u.id, name: STRINGS.companionNames[u.classId] ?? STRINGS.classes[u.classId], classId: u.classId, hp: u.hp, maxHp: u.stats.maxHp, dead: false }));
+      .map((u) => ({ id: u.id, name: this.spec.names[u.id - 1] ?? STRINGS.classes[u.classId], classId: u.classId, hp: u.hp, maxHp: u.stats.maxHp, dead: false }));
     this.hud.edgeMarkers = [];
   }
 
@@ -467,7 +480,7 @@ export class Game {
     const h = this.hud;
     h.countdown = Math.ceil(b.countdown);
     h.heroHp = hero ? Math.ceil(hero.hp) : 0;
-    h.heroMaxHp = hero?.stats.maxHp ?? 1;
+    h.heroMaxHp = hero ? Math.ceil(hero.stats.maxHp) : 1;
     h.dodgeReady = hero ? 1 - hero.dodgeCooldown / HERO.dodge.cooldown : 0;
     h.foes = b.units.filter((u) => u.team === 'enemy' && u.state !== 'dead').length;
     h.time = Math.max(0, b.tick * DT - COUNTDOWN);

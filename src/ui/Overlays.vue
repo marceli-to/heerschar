@@ -4,8 +4,8 @@ import type { HudState } from '../game/game';
 import { STRINGS } from '../data/strings';
 import ParchmentPanel from './ParchmentPanel.vue';
 
-const props = defineProps<{ hud: HudState }>();
-const emit = defineEmits<{ takeControl: []; restart: [] }>();
+const props = defineProps<{ hud: HudState; canLeave?: boolean }>();
+const emit = defineEmits<{ takeControl: []; restart: []; leave: [] }>();
 
 const copy = computed(() => (props.hud.mode === 'trial' ? STRINGS.trial : STRINGS.squad));
 /** The squad controls with the hero's own ability names on the Q · E row. */
@@ -31,8 +31,8 @@ const time = computed(() => {
     v-if="hud.phase !== 'playing'"
     class="absolute inset-0 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgb(20_12_4/0.25),rgb(20_12_4/0.65))]"
   >
-    <ParchmentPanel v-if="hud.phase === 'intro'" :title="copy.name" :subtitle="STRINGS.title">
-      <p class="text-lg leading-snug italic">{{ copy.intro }}</p>
+    <ParchmentPanel v-if="hud.phase === 'intro'" :title="hud.title" :subtitle="STRINGS.title">
+      <p class="text-lg leading-snug italic">{{ hud.intro }}</p>
       <table class="mx-auto mt-5 text-left text-base">
         <tr v-for="[key, action] in controls" :key="key">
           <td class="pr-5 py-0.5 font-display text-xs tracking-[0.15em] whitespace-nowrap text-ink-soft">{{ key }}</td>
@@ -46,6 +46,7 @@ const time = computed(() => {
 
     <ParchmentPanel v-else-if="hud.phase === 'paused'" :title="STRINGS.paused">
       <button class="btn-gold rounded-sm px-7 py-2.5 text-sm" @click="emit('takeControl')">{{ STRINGS.resume }}</button>
+      <button v-if="canLeave" class="mt-4 block w-full font-display text-xs tracking-[0.15em] text-ink-soft underline-offset-4 hover:underline" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
     </ParchmentPanel>
 
     <ParchmentPanel
@@ -56,6 +57,7 @@ const time = computed(() => {
       <p class="text-lg italic">{{ endText }}</p>
       <button class="btn-gold mt-6 rounded-sm px-7 py-2.5 text-sm" @click="emit('restart')">{{ STRINGS.restart }}</button>
       <p class="mt-2 text-sm text-ink-soft italic">{{ STRINGS.restartHint }}</p>
+      <button v-if="canLeave" class="btn-gold mt-5 rounded-sm px-7 py-2.5 text-sm" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
     </ParchmentPanel>
   </div>
 </template>

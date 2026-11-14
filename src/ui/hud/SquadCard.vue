@@ -12,7 +12,7 @@ const danger = computed(() => !props.companion.dead && frac.value < 0.3);
 </script>
 
 <template>
-  <div class="hud-plate flex w-40 items-center gap-2 rounded-sm px-2 py-1.5" :class="{ 'opacity-55 grayscale': companion.dead, danger }">
+  <div class="hud-plate flex max-w-40 min-w-0 flex-1 basis-40 items-center gap-2 rounded-sm px-2 py-1.5" :class="{ 'opacity-55 grayscale': companion.dead, danger }">
     <ClassMedallion :class-id="companion.classId" :size="30" />
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline justify-between gap-1">

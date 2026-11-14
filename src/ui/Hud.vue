@@ -36,7 +36,10 @@ const time = computed(() => {
     <div class="absolute right-5 bottom-5 left-5 flex items-end gap-3">
       <div class="hud-plate w-72 shrink-0 rounded-sm px-4 pt-2 pb-3">
         <div class="flex items-baseline justify-between">
-          <span class="font-display text-sm font-bold tracking-[0.18em]">{{ STRINGS.classes[hud.heroClass] }}</span>
+          <span class="min-w-0 truncate">
+            <span class="font-display text-sm font-bold tracking-[0.18em]">{{ hud.heroName || STRINGS.classes[hud.heroClass] }}</span>
+            <span v-if="hud.heroName" class="ml-2 text-sm text-ink-soft italic">{{ STRINGS.classes[hud.heroClass] }}</span>
+          </span>
           <span class="text-base tabular-nums text-ink-soft">{{ hud.heroHp }} / {{ hud.heroMaxHp }}</span>
         </div>
         <div class="mt-1 h-3.5 overflow-hidden rounded-[2px] border border-ink/70 bg-ink/25 shadow-[inset_0_1px_3px_rgb(0_0_0/0.4)]">
@@ -67,7 +70,7 @@ const time = computed(() => {
         <AbilitySlot v-for="a in hud.abilities" :key="a.id" :ability="a" />
       </div>
 
-      <div v-if="hud.squad.length" class="ml-3 flex flex-wrap items-end gap-2">
+      <div v-if="hud.squad.length" class="ml-3 flex min-w-0 flex-1 items-end gap-2">
         <SquadCard v-for="c in hud.squad" :key="c.id" :companion="c" />
       </div>
     </div>

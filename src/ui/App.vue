@@ -1,50 +1,80 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue';
-import { Game } from '../game/game';
-import { createBot } from '../sim/bot';
-import type { ClassId } from '../sim/types';
-import DebugOverlay from './DebugOverlay.vue';
-import Hud from './Hud.vue';
-import Overlays from './Overlays.vue';
+import { computed } from 'vue';
+import { ENCOUNTERS, type EncounterId } from '../data/encounters';
+import { newSquad } from '../data/roster';
+import { STRINGS } from '../data/strings';
+import { encounterSpec, trialSpec } from '../game/specs';
+import { heroOfSquad } from '../meta/squad';
+import type { PlayableClassId } from '../sim/types';
+import BattleView from './BattleView.vue';
+import ClassSelect from './screens/ClassSelect.vue';
+import OrdersScreen from './screens/OrdersScreen.vue';
+import TitleScreen from './screens/TitleScreen.vue';
+import { goTo, markWon, session, startBattle } from './session';
 
-const canvas = ref<HTMLCanvasElement | null>(null);
-const HERO_CLASSES: readonly ClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
+const HERO_CLASSES: readonly PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
 
-function parseHeroClass(v: string | null): ClassId | undefined {
-  return HERO_CLASSES.find((c) => c === v);
+const params = new URLSearchParams(location.search);
+const heroParam = HERO_CLASSES.find((c) => c === params.get('hero'));
+const battleParam = ENCOUNTERS.find((e) => e.id === params.get('battle'))?.id;
+const trial = params.has('trial');
+const flags = {
+  debug: params.has('debug'),
+  peaceful: params.has('peaceful'),
+  bot: params.has('bot'),
+  zoom: params.has('zoom') ? Number(params.get('zoom')) : undefined,
+};
+const fixedSeed = Number(params.get('seed')) || null;
+
+// Dev shortcut: any battle parameter skips the screens and goes straight into a battle.
+if (trial || flags.bot || heroParam || battleParam || flags.peaceful) {
+  const heroClass = heroParam ?? 'krieger';
+  session.squad = newSquad(heroClass, STRINGS.heroNames[heroClass]);
+  startBattle(battleParam ?? 'skirmish');
 }
-const game = shallowRef<Game | null>(null);
 
-onMounted(() => {
-  if (!canvas.value) return;
-  const params = new URLSearchParams(location.search);
-  const g = new Game(canvas.value, {
-    seed: Number(params.get('seed')) || (Date.now() >>> 0),
-    zoom: params.has('zoom') ? Number(params.get('zoom')) : undefined,
-    debug: params.has('debug'),
-    peaceful: params.has('peaceful'),
-    trial: params.has('trial'),
-    heroClass: parseHeroClass(params.get('hero')),
-  });
-  if (params.has('bot')) {
-    g.bot = createBot();
-    g.hud.phase = 'playing';
+const spec = computed(() => {
+  const squad = session.squad;
+  if (!squad) return null;
+  if (trial) {
+    const hero = heroOfSquad(squad);
+    return trialSpec(hero.classId, hero.name);
   }
-  g.start();
-  game.value = g;
-  if (params.has('debug')) (window as unknown as { __game: Game }).__game = g;
+  return encounterSpec(squad, session.encounterId);
 });
 
-onBeforeUnmount(() => game.value?.dispose());
+/** `?seed=` fixes the first battle's seed; otherwise every battle gets a fresh one. */
+const seed = computed(() => (fixedSeed !== null && session.battleRun <= 1 ? fixedSeed : (Date.now() + session.battleRun * 7919) >>> 0));
+
+function chooseHero(heroClass: PlayableClassId, name: string): void {
+  session.squad = newSquad(heroClass, name);
+  session.won = [];
+  goTo('orders');
+}
+
+function won(): void {
+  if (!trial) markWon(session.encounterId);
+}
+
+function fight(id: EncounterId): void {
+  startBattle(id);
+}
 </script>
 
 <template>
   <div class="fixed inset-0 overflow-hidden bg-black select-none">
-    <canvas ref="canvas" class="block h-full w-full" />
-    <template v-if="game">
-      <Hud :hud="game.hud" />
-      <Overlays :hud="game.hud" @take-control="game.takeControl()" @restart="game.restart()" />
-      <DebugOverlay :stats="game.debug" />
-    </template>
+    <TitleScreen v-if="session.screen === 'title'" @new-game="goTo('classSelect')" />
+    <ClassSelect v-else-if="session.screen === 'classSelect'" @choose="chooseHero" @back="goTo('title')" />
+    <OrdersScreen v-else-if="session.screen === 'orders'" :won="session.won" @fight="fight" @back="goTo('classSelect')" />
+    <BattleView
+      v-else-if="session.screen === 'battle' && spec"
+      :key="session.battleRun"
+      :spec="spec"
+      :seed="seed"
+      v-bind="flags"
+      :can-leave="!trial"
+      @won="won"
+      @leave="goTo('orders')"
+    />
   </div>
 </template>
