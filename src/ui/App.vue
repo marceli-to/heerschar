@@ -23,6 +23,7 @@ onMounted(() => {
     zoom: params.has('zoom') ? Number(params.get('zoom')) : undefined,
     debug: params.has('debug'),
     peaceful: params.has('peaceful'),
+    trial: params.has('trial'),
     heroClass: parseHeroClass(params.get('hero')),
   });
   if (params.has('bot')) {

@@ -28,6 +28,15 @@ export interface FigureColors {
   metal: string;
   leather: string;
   shield: string;
+  /** Archer hood and cloak. */
+  hood: string;
+  /** Healer robe (light). */
+  robe: string;
+  /** Mage robe and hat (deep). */
+  mageRobe: string;
+  fur: string;
+  wood: string;
+  hair: string;
 }
 
 export const PLAYER_COLORS: FigureColors = {
@@ -38,6 +47,12 @@ export const PLAYER_COLORS: FigureColors = {
   metal: '#c4c8cf',
   leather: '#6b4528',
   shield: '#b8472f',
+  hood: '#7a3b24',
+  robe: '#efe3c8',
+  mageRobe: '#8c2f2a',
+  fur: '#8a6a48',
+  wood: '#7a5634',
+  hair: '#6b3f22',
 };
 
 export const ENEMY_COLORS: FigureColors = {
@@ -48,4 +63,33 @@ export const ENEMY_COLORS: FigureColors = {
   metal: '#8d96a3',
   leather: '#3b3530',
   shield: '#2f4a6b',
+  hood: '#2e4256',
+  robe: '#c9d3dc',
+  mageRobe: '#2b3a66',
+  fur: '#6d6a66',
+  wood: '#4f4740',
+  hair: '#2a2622',
 };
+
+/** Effect colours (approved 2026-11-14: classic elemental). */
+export const FX = {
+  fire: '#ff8a2a',
+  fireCore: '#ffd36b',
+  ember: '#ff5a1f',
+  holy: '#fff2c4',
+  holyCore: '#ffffff',
+  frost: '#7fe3ff',
+  frostCore: '#e6fbff',
+  frozenTint: '#9fd8ff',
+  heal: '#6fe08a',
+  healCore: '#d8ffd8',
+  shieldPlayer: '#ffd36b',
+  shieldEnemy: '#a9d4ff',
+  arrowStreak: '#fffaf0',
+  warning: '#ff6a2a',
+  warningRim: '#ffd27a',
+  lock: '#e0bf6a',
+  banner: '#b8281e',
+  bannerTrim: '#e0bf6a',
+  rally: '#ffd36b',
+} as const;

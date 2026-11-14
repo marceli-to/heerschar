@@ -31,7 +31,7 @@ const time = computed(() => {
     <!-- Hero plate -->
     <div class="hud-plate absolute bottom-5 left-5 w-72 rounded-sm px-4 pt-2 pb-3">
       <div class="flex items-baseline justify-between">
-        <span class="font-display text-sm font-bold tracking-[0.18em]">{{ STRINGS.classes.krieger }}</span>
+        <span class="font-display text-sm font-bold tracking-[0.18em]">{{ STRINGS.classes[hud.heroClass] }}</span>
         <span class="text-base tabular-nums text-ink-soft">{{ hud.heroHp }} / {{ hud.heroMaxHp }}</span>
       </div>
       <div class="mt-1 h-3.5 overflow-hidden rounded-[2px] border border-ink/70 bg-ink/25 shadow-[inset_0_1px_3px_rgb(0_0_0/0.4)]">

@@ -17,7 +17,17 @@ interface Arc {
   max: number;
 }
 
-const MAX_PARTICLES = 220;
+/** An expanding, fading ring flat on the ground (blasts, heals, rallies). */
+interface Ring {
+  mesh: THREE.Mesh;
+  life: number;
+  max: number;
+  from: number;
+  to: number;
+  opacity: number;
+}
+
+const MAX_PARTICLES = 700;
 
 /**
  * Hit sparks, dust and swing trails (after tin-wolf's render/effects). Purely visual:
@@ -30,6 +40,8 @@ export class Effects {
   private boxGeo = new THREE.BoxGeometry(1, 1, 1);
   private mats = new Map<string, THREE.MeshBasicMaterial>();
   private arcs: Arc[] = [];
+  private rings: Ring[] = [];
+  private ringGeo = new THREE.RingGeometry(0.86, 1, 40, 1).rotateX(-Math.PI / 2);
 
   private mat(color: string): THREE.MeshBasicMaterial {
     let m = this.mats.get(color);
@@ -85,6 +97,53 @@ export class Effects {
     a.life = a.max = heavy ? 0.16 : 0.11;
   }
 
+  /** One fading particle left behind by a projectile. `rise` lifts it (embers, sparkles). */
+  trail(x: number, y: number, z: number, color: string, size: number, life: number, rise = 0): void {
+    const j = size * 0.6;
+    this.spawn(x + (Math.random() - 0.5) * j, y + (Math.random() - 0.5) * j, z + (Math.random() - 0.5) * j, 0, rise, 0, life, size, color, 0);
+  }
+
+  /** Particles thrown out from a point in all directions (fire blasts, frost shards). */
+  burst(x: number, y: number, z: number, colors: readonly string[], count: number, speed: number, size: number, life: number, gravity = 6): void {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = speed * (0.4 + Math.random() * 0.8);
+      const up = speed * (0.2 + Math.random() * 0.9);
+      const color = colors[i % colors.length]!;
+      this.spawn(x, y, z, Math.cos(a) * sp, up, Math.sin(a) * sp, life * (0.6 + Math.random() * 0.6), size * (0.6 + Math.random() * 0.8), color, gravity);
+    }
+  }
+
+  /** Sparkles drifting up from a disc of `radius` (heals). */
+  rise(x: number, z: number, radius: number, colors: readonly string[], count: number): void {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = radius * Math.sqrt(Math.random());
+      const color = colors[i % colors.length]!;
+      this.spawn(x + Math.cos(a) * r, 0.1 + Math.random() * 0.6, z + Math.sin(a) * r, 0, 1.2 + Math.random() * 1.2, 0, 0.5 + Math.random() * 0.4, 0.05 + Math.random() * 0.04, color, -0.5);
+    }
+  }
+
+  /** A ring on the ground growing from `from` to `to` metres while it fades. */
+  ring(x: number, z: number, from: number, to: number, color: string, life: number, opacity = 0.8): void {
+    let r = this.rings.find((o) => o.life <= 0);
+    if (!r) {
+      const mat = new THREE.MeshBasicMaterial({ color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, side: THREE.DoubleSide });
+      r = { mesh: new THREE.Mesh(this.ringGeo, mat), life: 0, max: 0, from: 0, to: 0, opacity: 0 };
+      r.mesh.renderOrder = 2;
+      this.rings.push(r);
+      this.group.add(r.mesh);
+    }
+    (r.mesh.material as THREE.MeshBasicMaterial).color.set(color);
+    r.mesh.position.set(x, 0.06, z);
+    r.mesh.visible = true;
+    r.life = r.max = life;
+    r.from = from;
+    r.to = to;
+    r.opacity = opacity;
+    r.mesh.scale.setScalar(from);
+  }
+
   private spawn(x: number, y: number, z: number, vx: number, vy: number, vz: number, life: number, size: number, color: string, gravity: number): void {
     let p = this.free.pop();
     if (!p) {
@@ -105,6 +164,15 @@ export class Effects {
   }
 
   update(dt: number): void {
+    for (const r of this.rings) {
+      if (r.life <= 0) continue;
+      r.life -= dt;
+      const k = 1 - Math.max(0, r.life / r.max);
+      const grow = 1 - (1 - k) * (1 - k);
+      r.mesh.scale.setScalar(r.from + (r.to - r.from) * grow);
+      (r.mesh.material as THREE.MeshBasicMaterial).opacity = (1 - k) * r.opacity;
+      if (r.life <= 0) r.mesh.visible = false;
+    }
     for (const a of this.arcs) {
       if (a.life <= 0) continue;
       a.life -= dt;

@@ -17,15 +17,15 @@ export function trialSetup(seed: number, heroClass: ClassId = 'krieger'): Battle
 }
 
 /**
- * Stage 2 squad battle: the warrior hero and four companions against six: Schildtraeger,
+ * Stage 2 squad battle: the hero (warrior by default) and four companions against six: Schildtraeger,
  * Krieger, Berserker up front; Bogenschuetze, Schamane, Magier behind.
  */
-export function squadSetup(seed: number): BattleSetup {
+export function squadSetup(seed: number, heroClass: ClassId = 'krieger'): BattleSetup {
   const s = CLASS_STATS;
   return formationSetup(
     seed,
     [
-      { classId: 'krieger', col: 1, row: 0, isHero: true, stats: s.krieger },
+      { classId: heroClass, col: 1, row: 0, isHero: true, stats: s[heroClass] },
       { classId: 'krieger', col: 0, row: 0, stats: s.krieger },
       { classId: 'bogenschuetze', col: 0, row: 1, stats: s.bogenschuetze },
       { classId: 'heiler', col: 1, row: 1, stats: s.heiler },
