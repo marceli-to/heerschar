@@ -14,8 +14,8 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 |---|---|
 | 0 Scaffold | done, committed |
 | 1 Hero alone | done, committed. **Gate passed**: Marcel playtested, "feels quite good, hard to beat 3 opponents, I like that". Keep current feel numbers. |
-| 2 Squad battle | **2a–2f done**, committed. Done-when met in the headless tests (winnable, deterministic, bot cannot win alone); **waiting on Marcel's playtest** for "readable" |
-| 3 Preparation | **next** (after the playtest) |
+| 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
+| 3 Preparation | **next session starts here** (PLAN sections 9 and 14; expect many design questions: title, class select, squad screen, formation grid, character sheet) |
 | 4–7 | not started |
 
 ## Design decisions (all approved by Marcel)
@@ -121,4 +121,4 @@ PLAN sections: 5 (rules, statuses), 6 (classes, enemy types, companion behaviour
 4. ~~**2d View.**~~ Done (see "2d decisions" and "Made in 2d without asking"). All 7 class figures, projectiles with trails, filling-disc warnings, heal glow, frozen blue, shield bubble, lock ring, mark banner, damage numbers; the game runs the 5-vs-6 squad battle. 60 fps in the bot battle.
 5. ~~**2e HUD.**~~ Done (see "2e decisions" and "Made in 2e without asking"). `HudState` gains `energy`, `abilities`, `squad`, `edgeMarkers` (built once per battle in `buildHudLists`, values updated in `updateHud`; edge markers projected in `updateEdgeMarkers`, list only replaced when it changes). Components in `src/ui/hud/`: `ClassMedallion`, `AbilityIcon`, `AbilitySlot`, `SquadCard`, `EdgeMarker`. 60 fps in the bot battle.
 6. ~~**2f Bot and headless test.**~~ Done (see "2f decisions" and "Balance after 2f"). Also: ability cooldown labels under 1 s round up to the tenth (no more "0.0").
-7. **Done when:** a 5-against-6 battle is readable and winnable, the determinism test passes, and the bot cannot win it alone. Tests pass; **next: Marcel playtests the squad battle** (`npm run dev`, try `?hero=` for each class), then Stage 3 (PLAN sections 9 and 14).
+7. **Done when:** a 5-against-6 battle is readable and winnable, the determinism test passes, and the bot cannot win it alone. Met: tests pass and Marcel playtested it ("works great").
