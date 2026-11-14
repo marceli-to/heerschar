@@ -185,6 +185,8 @@ export interface Battle {
   /** Seconds before the fight starts. */
   countdown: number;
   outcome: Outcome;
+  /** Debug (`?peaceful`): enemies stand still and never act. */
+  passiveEnemies: boolean;
 }
 
 /** Hero input for one tick. Movement is already camera-relative (world space), length <= 1. */

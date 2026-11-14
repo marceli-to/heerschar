@@ -71,6 +71,7 @@ export class Game {
   private battle: Battle;
   private seed: number;
   private heroClass: ClassId;
+  private peaceful: boolean;
   private parts: SceneParts;
   private rig: CameraRig;
   private kbm: KeyboardMouse;
@@ -85,10 +86,11 @@ export class Game {
   /** Debug: when set, the scripted bot plays the hero (`?bot`). */
   bot: BotState | null = null;
 
-  constructor(private readonly canvas: HTMLCanvasElement, opts: { seed: number; zoom?: number; debug?: boolean; heroClass?: ClassId }) {
+  constructor(private readonly canvas: HTMLCanvasElement, opts: { seed: number; zoom?: number; debug?: boolean; heroClass?: ClassId; peaceful?: boolean }) {
     this.seed = opts.seed;
+    this.peaceful = opts.peaceful ?? false;
     this.heroClass = opts.heroClass ?? 'krieger';
-    this.battle = createBattle(trialSetup(this.seed, this.heroClass));
+    this.battle = createBattle({ ...trialSetup(this.seed, this.heroClass), passiveEnemies: this.peaceful });
     this.parts = createScene(canvas);
     this.parts.scene.add(createArena(this.battle.arena.width, this.battle.arena.depth), this.unitLayer, this.effects.group);
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
@@ -114,7 +116,7 @@ export class Game {
   /** Starts a fresh trial. Called from the end screen. */
   restart(): void {
     this.seed = (this.seed * 1103515245 + 12345) >>> 0;
-    this.battle = createBattle(trialSetup(this.seed, this.heroClass));
+    this.battle = createBattle({ ...trialSetup(this.seed, this.heroClass), passiveEnemies: this.peaceful });
     this.buildUnits();
     this.heroInput.clear();
     if (this.bot) this.bot = createBot();

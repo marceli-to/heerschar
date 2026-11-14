@@ -21,6 +21,8 @@ export interface UnitSetup {
 export interface BattleSetup {
   seed: number;
   units: UnitSetup[];
+  /** Debug: enemies stand still and never act (they can still be hit). */
+  passiveEnemies?: boolean;
 }
 
 function createUnit(id: number, s: UnitSetup): Unit {
@@ -95,6 +97,7 @@ export function createBattle(setup: BattleSetup): Battle {
     lockTargetId: null,
     countdown: COUNTDOWN,
     outcome: 'running',
+    passiveEnemies: setup.passiveEnemies ?? false,
   };
 }
 
@@ -136,7 +139,8 @@ export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[
         continue;
       }
       if (unit.isHero) updateHero(battle, unit, input, dt, events);
-      else updateAi(battle, unit, dt, events);
+      else if (!(battle.passiveEnemies && unit.team === 'enemy')) updateAi(battle, unit, dt, events);
+      else unit.stateTime += dt;
     } else {
       unit.stateTime += dt;
     }

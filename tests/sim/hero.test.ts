@@ -351,3 +351,13 @@ describe('hero kit in a full battle', () => {
     });
   }
 });
+
+describe('debug: passive enemies', () => {
+  it('enemies never act, but still take hits', () => {
+    const b = createBattle({ seed: 1, units: [hero(), enemy(1.5), enemy(3, 2)], passiveEnemies: true });
+    b.countdown = 0;
+    const events = run(b, seconds(10), { aimAngle: EAST, attack: true });
+    expect(events.some((e) => e.type === 'hit' && e.targetId === 1)).toBe(false);
+    expect(hits(events, 2).length).toBeGreaterThan(0);
+  });
+});

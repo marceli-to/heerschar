@@ -22,6 +22,7 @@ onMounted(() => {
     seed: Number(params.get('seed')) || (Date.now() >>> 0),
     zoom: params.has('zoom') ? Number(params.get('zoom')) : undefined,
     debug: params.has('debug'),
+    peaceful: params.has('peaceful'),
     heroClass: parseHeroClass(params.get('hero')),
   });
   if (params.has('bot')) {
