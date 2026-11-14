@@ -1,1 +1,86 @@
 @import 'tailwindcss';
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('/fonts/Cinzel.ttf') format('truetype');
+  font-weight: 400 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('/fonts/EBGaramond.ttf') format('truetype');
+  font-weight: 400 800;
+  font-display: block;
+}
+
+/* Parchment look (approved 2026-11-14): parchment panels, dark-brown ink, gold accents. */
+@theme {
+  --font-display: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --font-body: 'EB Garamond', Garamond, Georgia, serif;
+  --color-parchment: #f1e4c3;
+  --color-parchment-dark: #dcc79b;
+  --color-ink: #3a2717;
+  --color-ink-soft: #6b5137;
+  --color-gold: #b98a2e;
+  --color-gold-light: #e0bf6a;
+  --color-blood: #9b2d20;
+  --color-blood-light: #c9483a;
+}
+
+@layer components {
+  .parchment {
+    color: var(--color-ink);
+    background:
+      radial-gradient(ellipse at 50% 40%, rgb(255 250 232 / 0.75), transparent 70%),
+      radial-gradient(ellipse at 10% 90%, rgb(160 120 60 / 0.18), transparent 50%),
+      radial-gradient(ellipse at 95% 5%, rgb(160 120 60 / 0.15), transparent 45%),
+      linear-gradient(160deg, var(--color-parchment), var(--color-parchment-dark));
+    border: 1px solid var(--color-gold);
+    outline: 1px solid rgb(58 39 23 / 0.55);
+    outline-offset: 3px;
+    box-shadow:
+      inset 0 0 28px rgb(120 80 30 / 0.35),
+      0 10px 30px rgb(20 12 4 / 0.45);
+  }
+
+  /* Plate for HUD elements over the 3D view: darker, slightly translucent parchment. */
+  .hud-plate {
+    color: var(--color-ink);
+    background: linear-gradient(160deg, rgb(241 228 195 / 0.92), rgb(220 199 155 / 0.92));
+    border: 1px solid var(--color-gold);
+    box-shadow:
+      inset 0 0 12px rgb(120 80 30 / 0.3),
+      0 4px 14px rgb(20 12 4 / 0.35);
+  }
+
+  .btn-gold {
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    color: var(--color-parchment);
+    background: linear-gradient(var(--color-blood-light), var(--color-blood));
+    border: 1px solid var(--color-gold-light);
+    outline: 1px solid var(--color-ink);
+    box-shadow: 0 3px 0 var(--color-ink), inset 0 1px 0 rgb(255 255 255 / 0.2);
+    transition: transform 80ms, box-shadow 80ms, filter 120ms;
+  }
+  .btn-gold:hover {
+    filter: brightness(1.08);
+  }
+  .btn-gold:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--color-ink);
+  }
+
+  .rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+  }
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+}

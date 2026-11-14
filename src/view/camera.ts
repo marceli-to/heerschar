@@ -17,6 +17,8 @@ export const CAMERA = {
   followRate: 9,
   zoomRate: 10,
   fov: 55,
+  /** Max shake rotation in radians at full trauma, how fast it wobbles, how fast it fades. */
+  shake: { amount: 0.025, frequency: 38, decay: 2.2 },
 } as const;
 
 export class CameraRig {
@@ -27,6 +29,9 @@ export class CameraRig {
   private zoom: number;
   private focus = new THREE.Vector3();
   private hasFocus = false;
+  /** 0..1, decays over time; the offset grows with its square. */
+  private trauma = 0;
+  private shakeTime = 0;
 
   constructor(aspect: number, zoom = 0.6) {
     this.camera = new THREE.PerspectiveCamera(CAMERA.fov, aspect, 0.1, 600);
@@ -43,6 +48,11 @@ export class CameraRig {
 
   addYaw(pixels: number): void {
     this.yaw += pixels * CAMERA.yawSensitivity;
+  }
+
+  /** Adds screen shake; heavy hits ~0.5, light ones ~0.2. */
+  shake(amount: number): void {
+    this.trauma = Math.min(1, this.trauma + amount);
   }
 
   setAspect(aspect: number): void {
@@ -83,5 +93,18 @@ export class CameraRig {
       lookHeight,
       this.focus.z + fwd.z * lookAhead + right.z * shoulder,
     );
+    this.applyShake(frameTime);
+  }
+
+  private applyShake(frameTime: number): void {
+    if (this.trauma <= 0) return;
+    this.shakeTime += frameTime;
+    const k = this.trauma * this.trauma * CAMERA.shake.amount;
+    const t = this.shakeTime * CAMERA.shake.frequency;
+    // Sums of sines: smooth, cheap, and not the sim RNG.
+    this.camera.rotation.x += (Math.sin(t * 1.0) + Math.sin(t * 2.3 + 1.7) * 0.5) * k;
+    this.camera.rotation.y += (Math.sin(t * 1.3 + 0.5) + Math.sin(t * 2.9 + 2.1) * 0.5) * k;
+    this.camera.rotation.z += Math.sin(t * 1.7 + 3.1) * k * 0.6;
+    this.trauma = Math.max(0, this.trauma - CAMERA.shake.decay * frameTime);
   }
 }

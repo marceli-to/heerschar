@@ -13,6 +13,6 @@ defineProps<{ stats: DebugStats }>();
     <div>tick {{ stats.tick }}</div>
     <div>units {{ stats.units }}</div>
     <div>zoom {{ stats.zoom }}</div>
-    <div class="text-white/60">click: mouse look · wheel: zoom · F3: hide</div>
+    <div class="text-white/60">F3: hide</div>
   </div>
 </template>

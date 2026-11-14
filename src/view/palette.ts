@@ -18,3 +18,34 @@ export const MEADOW = {
   leaves: '#3f7a32',
   leavesLight: '#4f8d3a',
 } as const;
+
+/** Team colours for the code-built figures: player side warm, enemies cold. */
+export interface FigureColors {
+  tunic: string;
+  trim: string;
+  legs: string;
+  skin: string;
+  metal: string;
+  leather: string;
+  shield: string;
+}
+
+export const PLAYER_COLORS: FigureColors = {
+  tunic: '#a63a2a',
+  trim: '#d4a338',
+  legs: '#5a3a28',
+  skin: '#e0b48c',
+  metal: '#c4c8cf',
+  leather: '#6b4528',
+  shield: '#b8472f',
+};
+
+export const ENEMY_COLORS: FigureColors = {
+  tunic: '#35557d',
+  trim: '#9fb4c8',
+  legs: '#2c3342',
+  skin: '#c9a588',
+  metal: '#8d96a3',
+  leather: '#3b3530',
+  shield: '#2f4a6b',
+};
