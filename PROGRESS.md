@@ -17,7 +17,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
-| Look spike | **next (before Stage 5)**: see "Look spike plan". The Stage 4 gate playtest can happen any time alongside. |
+| Look spike | **built, waiting for Marcel's verdict** (see "Look spike as built"). The Stage 4 gate playtest can happen any time alongside. |
 | 5–7 | not started |
 
 ## Stage 4 decisions (Marcel, 2026-11-14)
@@ -40,6 +40,15 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 ## Visual outlook (talked through 2026-11-14)
 
 - Marcel asked how good Stage 6 can look. Answer given: the pack gives bodies and animation; the "cool" comes from code (bloom, particles, trails, decals, grading, outlines, hit feel). Watch-outs: KayKit's chunky proportions vs. the heroic proportions chosen in Stage 1 (Quaternius closer), phone budget in Stage 7, bosses / Shaman details may not exist in a pack. Marcel wants the **look spike before Stage 5**.
+
+## Look spike as built (2026-11-14)
+
+- Open `http://localhost:5190/?look`. Keys: 1 glow (bloom), 2 sparks/dust/trail, 3 warm grade + haze + soft shadows, 4 ground marks, V camera (overview, KayKit close, Quaternius close, high game view), O orbit, P pause, H hide HUD; drag to look. URL: `fx=1010` sets the four toggles, `view=1..4`, `freeze=T` pauses at T s of the 12 s loop (screenshots).
+- Code in `src/look/` (actors, fx, post, lookSpike); `src/main.ts` loads it only with `?look`, the game never imports it. Models in `public/look/` (KayKit Knight + Mage, Quaternius Warrior + Wizard; ~13 MB, also copied into `dist`; drop the folder once a pack is chosen). Each pair: melee figure hits a dummy twice, caster throws a fireball, shield bubble + hit, frost ring, walk loop, holy light, death and back up.
+- Screenshots + a 12 s WebM for Marcel in `~/Downloads/heerschar-assets/look-spike/`. Tools: `tools/shot.mjs` (stills) and new `tools/record.mjs` (CDP screencast → WebM via Playwright's ffmpeg, the Homebrew ffmpeg is broken here).
+- fps: 60 (vsync-capped) in headless Chrome and the preview with all four effects on.
+- Things noticed: both packs are chibi (big heads), Quaternius somewhat less; neither matches the heroic proportions of the code figures. KayKit has far more clips (several 1H/2H attacks, block, dodge, spellcasts, hit A/B, death A/B); Quaternius has 13–15 per character (one or two attacks, one hit, spells only on Wizard). Quaternius Warrior is a woman; KayKit Knight's swing trail reads as a wide ghost blade because the sword is huge.
+- **Next:** Marcel's verdict on pack (KayKit / Quaternius / neither), which effects to keep and how strong, theme (medieval vs. stylised fantasy) and proportions. Then Stage 5 (PLAN section 14).
 
 ## Look spike plan (Marcel, 2026-11-14)
 

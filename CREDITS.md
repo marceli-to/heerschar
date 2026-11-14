@@ -8,3 +8,8 @@ Fonts (SIL Open Font License 1.1, licence files in `public/fonts/`):
 Code adapted from tin-wolf (same author): seeded RNG, fixed-timestep loop, keyboard and mouse input.
 
 Figures, arena and effects are built in code.
+
+Look spike only (`?look`, `public/look/`, not used by the game):
+
+- KayKit Adventurers Character Pack 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Knight.glb, Mage.glb; licence in `public/look/kaykit/LICENSE.txt`.
+- RPG Character Pack by Quaternius (quaternius.com), CC0 1.0. Warrior.gltf, Wizard.gltf; note in `public/look/quaternius/LICENSE.txt`.

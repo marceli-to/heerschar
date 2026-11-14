@@ -1,0 +1,4 @@
+RPG Character Pack by Quaternius (https://quaternius.com/packs/rpgcharacters.html)
+License: CC0 1.0 Universal (public domain), as stated on the pack page.
+The downloaded archive (glTF folder only) contained no licence file; this note records the source.
+Files here: Warrior.gltf, Wizard.gltf (unmodified).
