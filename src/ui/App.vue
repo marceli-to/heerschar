@@ -4,6 +4,7 @@ import { ENCOUNTERS, type EncounterId } from '../data/encounters';
 import { STRINGS } from '../data/strings';
 import { encounterSpec, trialSpec } from '../game/specs';
 import { heroOfSquad } from '../meta/squad';
+import { isUnlocked } from '../meta/game';
 import type { PlayableClassId } from '../sim/types';
 import BattleView from './BattleView.vue';
 import ClassSelect from './screens/ClassSelect.vue';
@@ -53,7 +54,7 @@ function ended(won: boolean): void {
 }
 
 function fight(id: EncounterId): void {
-  prepare(id);
+  if (session.game && isUnlocked(session.game, id)) prepare(id);
 }
 </script>
 
@@ -61,7 +62,7 @@ function fight(id: EncounterId): void {
   <div class="fixed inset-0 overflow-hidden bg-black select-none">
     <TitleScreen v-if="session.screen === 'title'" :has-save="session.hasSave" @continue="continueGame" @new-game="goTo('classSelect')" />
     <ClassSelect v-else-if="session.screen === 'classSelect'" @choose="startNewGame" @back="goTo('title')" />
-    <OrdersScreen v-else-if="session.screen === 'orders' && session.game" :won="session.game.won" @fight="fight" @back="goTo('title')" />
+    <OrdersScreen v-else-if="session.screen === 'orders' && session.game" :game="session.game" @fight="fight" @back="goTo('title')" />
     <SquadScreen
       v-else-if="session.screen === 'squad' && session.game"
       :game="session.game"

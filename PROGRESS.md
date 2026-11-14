@@ -16,7 +16,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 1 Hero alone | done, committed. **Gate passed**: Marcel playtested, "feels quite good, hard to beat 3 opponents, I like that". Keep current feel numbers. |
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
-| 4 Progression | **in progress**: 4a–4d done; next 4e (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
+| 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
 | 5–7 | not started |
 
 ## Stage 4 decisions (Marcel, 2026-11-14)
@@ -29,6 +29,16 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 - Item pictures = **drawn SVG pictograms** like the ability tiles (gold line art on the dark-brown gold-rimmed tile).
 - Title with a save: **Continue** (main gold button) above **New Game**; New Game over a save asks "Abandon your current company?" Confirm / Back.
 - Upgrade choice = **three parchment cards** with a pictogram tile on top, name in Cinzel, one-line effect, kind (Stat / Ability / Passive) in small italics; hover lifts.
+
+## 4e decisions (Marcel, 2026-11-14)
+
+- Orders = **5 × 2 small notes** on one screen: seal on top, name, "LEVEL n" in small caps under it, small enemy medallions; the intro line shows in a hover note.
+- Locked = **folded, darker sheet, seal intact** in the middle, "Sealed", not clickable.
+- Won = gold "✓ Won" tick plus a small italic line "Replay: no spoils".
+
+## Visual outlook (talked through 2026-11-14)
+
+- Marcel asked how good Stage 6 can look. Answer given: the pack gives bodies and animation; the "cool" comes from code (bloom, particles, trails, decals, grading, outlines, hit feel). Watch-outs: KayKit's chunky proportions vs. the heroic proportions chosen in Stage 1 (Quaternius closer), phone budget in Stage 7, bosses / Shaman details may not exist in a pack. Offered: a small **look spike** (one pack figure + bloom + particles in the arena) before Stage 5 ends; Marcel has not decided yet.
 
 ## 4d decisions (Marcel, 2026-11-14)
 
@@ -201,7 +211,7 @@ PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s,
 2. ~~**4b Saving.**~~ Done. `src/meta/save.ts` (pure, storage injected: `SAVE_KEY` `heerschar.save`, `saveGame`, `loadGame` (never throws), `parseSave` (version + `MIGRATIONS` chain, newer/unknown → null, structural check of ids, squad rules and pending rewards), `clearSave`). `src/ui/session.ts`: `session.game: GameState` replaces `squad` / `won`; `persist` (off for dev-shortcut games, so `?bot` etc. never touch the save), `hasSave`; autosave = deep `watch` on `session.game` (the game state only changes on prep screens and at a battle's end); `startNewGame` (clears the save), `continueGame`, `startDevGame`, `battleEnded(won)` → `recordBattle` (losses count too; leaving mid-battle records nothing). `BattleView` emits `ended(won)`. Title: Continue + New Game with the abandon confirm (parchment card over a dark scrim, Confirm = red button, Back = text link). Orders "Back" now returns to the title. Checked in headless Chrome: new game → reload → Continue restores; corrupt save → title with New Game only; a won battle through the screens saves levels, bench half share, six pending picks and the loot offer. Pending rewards have no UI yet (4c); Continue goes to the orders.
 3. ~~**4c After-battle rewards.**~~ Done. `session.screen: 'spoils'` (`SpoilsScreen.vue`): leaving a battle ("Return to the war table" or "Change squad") goes through it via `leaveBattle(to)` when `game.rewards` is pending, then `spoilsDone()` continues to the orders or the squad step (`session.afterSpoils`); Continue on the title also opens it. Pages: XP (replayed with `xpAt(gain, t)`), one pick page per queued choice (`currentChoice` / `choose`), loot (`takeLoot`). Each pick is written to the game state at once, so a reload resumes at the open pick with the same options. Clicks are guarded by the choice the card was drawn for (a card still fading out cannot pick for the next character). Pure helpers in `src/meta/describe.ts`: `effectLines(effect)` (percent keys ×100, flat keys as is), `xpAt`. Components: `src/ui/Pictogram.vue` (all `UpgradeIcon` + `ItemIcon`), `PictogramTile.vue`, `screens/UpgradeCard.vue`, `screens/ItemCard.vue`. Checked in headless Chrome: seeded save → Continue → XP → path pick → five upgrade picks (reload in between keeps options) → loot → orders with rewards cleared and the item in the inventory; a real bot battle → Victory → Return to the war table → Spoils. Test seeding trick: in the dev server, `await import('/src/meta/game.ts')` + `/src/meta/save.ts` from `Runtime.evaluate`, build a `GameState`, `saveGame(localStorage, g)`, reload, click Continue. `tools/shot.mjs` now logs exception messages.
 4. ~~**4d Equipment and upgrades on the character sheet.**~~ Done. `CharacterSheet.vue` now takes `game` (Squad and Formation screens pass `session.game`); equip / take off via `equip` / `unequip`, saved by the autosave watch. Pure helpers: `fittingItems(state, id, slot)` (game.ts, grouped with counts), `statsWithItem(c, slot, id|null)` (progression.ts, the preview), `upgradeTally` (describe.ts). New components `screens/ItemPicker.vue`, `screens/HoverNote.vue` (CSS-hover parchment note); `PictogramTile` has an optional `rarity` rim; `ItemSlot` shows the tile. Ledger deltas compare the rounded shown numbers. `tools/shot.mjs` gained `{"mouse":[x,y]}` and `{"hover":"selector"}` (real CDP mouse move, so CSS :hover works). Checked in headless Chrome at 1280 × 800: equip, swap, take off, trinket picker, path / upgrade notes, companion sheet, formation screen; the save holds the change.
-5. **4e Chain on the orders table.** Ten sealed orders, locked ones sealed shut, unlocked in sequence; enemy level on each note. Replays marked as paying nothing.
+5. ~~**4e Chain on the orders table.**~~ Done. `OrdersScreen.vue` takes `game` and uses `isUnlocked`; `App.fight` also refuses locked ids (dev `?battle=` still skips the screens). Strings `STRINGS.prep.level / sealed / replay`. Locked look = `.folded::after` overlay with a crease (seal kept bright). Checked in headless Chrome at 1280 × 800 with a seeded save (3 won): layout fits, hover intro, locked click does nothing, won note opens the squad step.
 6. **Gate:** play the chain with levelling and loot, reload mid-way, replay a won battle (pays nothing).
 
 ## Stage 3 breakdown (done)

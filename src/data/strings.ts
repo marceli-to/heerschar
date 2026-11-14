@@ -108,6 +108,10 @@ export const STRINGS = {
     orders: 'Orders',
     ordersHint: 'Choose a battle',
     won: 'Won',
+    /** Ten-battle chain on the orders (approved 4e). */
+    level: 'Level',
+    sealed: 'Sealed',
+    replay: 'Replay: no spoils',
     leave: 'Return to the war table',
     back: 'Back',
     next: 'Next',
