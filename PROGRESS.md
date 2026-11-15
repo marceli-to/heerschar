@@ -19,7 +19,8 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6–7 | not started |
+| 6 Presentation | **started**: breakdown and figure decisions below ("Stage 6 decisions"). Next: 6a. |
+| 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
 
@@ -127,6 +128,26 @@ The rest is **matchups**, not class strength (the averages are even), and number
 Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 9, Healer 9, Mage 11 of 12 (before: 5, 5, 4, 7). Stuck runs are spread out (Archer still twice at the Iron Warlord).
 
 **Was open:** the two halves of criterion A pull apart, because **walk squads do clearly worse than `snapshots` squads at the same strength** (Fen Witch at 3.3: walk 15–33 %, snapshots 25–65 %; at 2.8: walk 50–92 %, snapshots 70–100 %). With the eased strengths the walk passes, but `campaign.test` (snapshots) now reads too easy: bosses 70–100 % (band 35–60), many standard battles > 90 %. The tuner on snapshots puts strengths back near the old values (Fen Witch ~3.3, Wolf Pack ~4.3, Bone King ~3.3), where the walk only finishes 4–7 / 12. Next: find why walk squads are weaker (lost elites skipped = less XP? camp picks? loot?) and make both measures agree, then tune once. Also: the hero guard pushed solo up (Burning Field ~21 %, Raiders 8–15 %, Ambush 6 %; target < 5 %) and the hero damage share up (often 55–95 %, target 35–50 %).
+
+## Stage 6 decisions (Marcel, 2026-11-15)
+
+- **Proportions:** KayKit chunky is the final look (replaces the Stage 1 heroic proportions).
+- **Player classes:** Krieger = Knight, Magier = Mage, Bogenschuetze = Rogue Hooded, Heiler = **recoloured Mage with a glowing orb** (light robes; colour separates it from the Magier).
+- **Enemies: mix by region.** Adventurers bodies in cold colours in Greenmarch and Darkwood, KayKit Skeletons in the Barrowlands.
+- **Missing types:** bosses = scaled KayKit bodies with the signature props from the Stage 5 decisions (Iron Warlord horned helm + two-handed axe, Fen Witch rag robe + green-glowing crooked staff, Bone King crown + greatsword + blue eyes); Schamane = Mage variant with totem / mask; wolves from another CC0 pack (verify licence, record in `CREDITS.md`).
+- **Still open (ask at 6d / 6f):** sound style (synthesised like tin-wolf vs. CC0 samples) and music (one loop per region?); scenery mood per region.
+
+## Stage 6 breakdown (do in this order, commit after each)
+
+- **6a** `ModelUnitView` behind `UnitView`: KayKit `.glb`, weapons on `handslot.r/l`, clips mapped to sim states (idle, walk, windup/attack synced to hit frames, hit, dodge, cast, death), hit flash + frozen tint; code figures stay as fallback. Move models from `public/look/` to a real asset folder, update `CREDITS.md`. Screenshots for Marcel.
+- **6b** Port the four effects from `src/look/` (bloom 1.3 / 0.6, sparks + dust + trails, grade + haze + soft shadows, ground marks 11 s). Screenshots.
+- **6c** Bosses, Schamane, wolves as decided. Screenshots.
+- **6d** Region scenery (ground, bounds, trees, hills, banners, sky, light per region). Ask mood first.
+- **6e** Camera moments: countdown orbit, slow motion on the final blow. Marcel plays.
+- **6f** Sound and music from sim events. Ask style first; licences in `CREDITS.md`.
+- **6g** Settings: volumes, key remapping, camera sensitivity, quality; saved locally. Ask about the screen's look.
+- **6h** Gate: full run-through, fps, remove the `?look` spike (`src/look/`, `public/look/`), Marcel's verdict ("presentable to a newcomer").
+- 5f balance stays parked (see "5f third session"); pick it up after 6h unless Marcel says otherwise.
 
 ## 5f third session (2026-11-15): walk vs snapshots, parked for Stage 6
 
