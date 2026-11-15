@@ -162,6 +162,8 @@ interface UnitSlot {
   prev: Pose;
   /** Ground speed over the last tick, smoothed, for the walk cycle. */
   speed: number;
+  /** Seconds to the next drag mark while slowed. */
+  dragTimer: number;
   /** Melee model bodies: the ribbon behind the blade, and where its tip was last frame. */
   trail: SwingTrail | null;
   tipPrev: THREE.Vector3;
@@ -180,6 +182,10 @@ const _edge = new THREE.Vector3();
 const SHAKE = { heroHit: 0.45, heavy: 0.32, light: 0.14 } as const;
 /** Stuns at least this long (Shield Bash) get circling stars; short staggers do not. */
 const STARS_FROM = 0.9;
+/** Volley: the crossbow kicks the archer back this far (m) and settles over `time` (s). */
+const RECOIL = { distance: 0.16, time: 0.18 } as const;
+/** A slowed foe on the move leaves a drag mark this often (s). */
+const DRAG_EVERY = 0.09;
 
 /** Glue between simulation, input and view. Owns the loop. */
 export class Game {
@@ -391,7 +397,7 @@ export class Game {
     if (bar) this.unitLayer.add(bar.group);
     const trail = view.weaponEdge?.(_base, _tip) ? new SwingTrail(TRAIL_COLOR) : null;
     if (trail) this.fx.group.add(trail.mesh);
-    this.units.set(u.id, { view, bar, prev: { x: u.pos.x, z: u.pos.z, facing: u.facing }, speed: 0, trail, tipPrev: _tip.clone() });
+    this.units.set(u.id, { view, bar, prev: { x: u.pos.x, z: u.pos.z, facing: u.facing }, speed: 0, dragTimer: 0, trail, tipPrev: _tip.clone() });
   }
 
   /** Fixed lists for the HUD; `updateHud` only changes their values. */
@@ -502,6 +508,8 @@ export class Game {
           const len = Math.hypot(dx, dz) || 1;
           _tip.set(dx / len, 0.35, dz / len);
           this.fx.hit(_base.set(e.x - (dx / len) * 0.3, 1.1, e.z - (dz / len) * 0.3), _tip, e.heavy);
+          // A Volley bolt bursts through the foe and flies on.
+          if (attacker.isHero && this.battle.projectiles.some((p) => p.pierce && p.ownerId === attacker.id)) this.fx.pierceSpark(_base.set(e.x + (dx / len) * 0.3, 1.3, e.z + (dz / len) * 0.3), dx / len, dz / len);
           // Only blows the hero lands or takes shake the camera; the squad's own fight stays calm.
           if (target.isHero) this.rig.shake(SHAKE.heroHit);
           else if (attacker.isHero) this.rig.shake(e.heavy ? SHAKE.heavy : SHAKE.light);
@@ -591,8 +599,17 @@ export class Game {
         } else if (e.action === 'wirbel') {
           this.fx.dustRing(u.pos.x, u.pos.z, HERO_ABILITIES.wirbel.reach);
           this.rig.shake(SHAKE.light);
+        } else if (e.action === 'salve') {
+          // Volley: smoke and sparks out of the crossbow, a small kick.
+          const fx = Math.sin(u.facing);
+          const fz = -Math.cos(u.facing);
+          this.fx.muzzle(_base.set(u.pos.x + fx * 0.75, 1.3, u.pos.z + fz * 0.75), fx, fz);
+          this.rig.shake(SHAKE.light);
         } else if (e.action === 'rueckzug') {
-          this.fx.dust(u.pos.x, u.pos.z, 8);
+          // Fall Back: a blast of air over the front cone as the archer leaps away.
+          const r = HERO_ABILITIES.rueckzug;
+          this.fx.gust(u.pos.x, u.pos.z, u.facing, r.reach, r.arc);
+          this.rig.shake(SHAKE.light);
         } else if (e.action === 'heilkreis') {
           this.fx.holyLight(new THREE.Vector3(u.pos.x, 0, u.pos.z));
         } else if (e.action === 'sammeln') {
@@ -701,9 +718,23 @@ export class Game {
     for (const u of this.battle.units) {
       const slot = this.units.get(u.id);
       if (!slot) continue;
-      const x = lerp(slot.prev.x, u.pos.x, a);
-      const z = lerp(slot.prev.z, u.pos.z, a);
+      let x = lerp(slot.prev.x, u.pos.x, a);
+      let z = lerp(slot.prev.z, u.pos.z, a);
+      // Volley's recoil: the body is kicked back and settles (view only, the sim does not move).
+      if (u.action === 'salve' && u.state === 'recover' && u.stateTime < RECOIL.time) {
+        const k = 1 - u.stateTime / RECOIL.time;
+        const back = RECOIL.distance * k * k;
+        x -= Math.sin(u.facing) * back;
+        z += Math.cos(u.facing) * back;
+      }
       slot.view.setPose(x, z, lerpAngle(slot.prev.facing, u.facing, a));
+      if (animTime > 0 && hasStatus(u, 'slowed') && slot.speed > 0.4) {
+        slot.dragTimer -= animTime;
+        if (slot.dragTimer <= 0) {
+          slot.dragTimer = DRAG_EVERY;
+          this.fx.drag(x, z);
+        }
+      }
       // A charging boss kicks up dust along its run.
       if (animTime > 0 && u.action === 'charge' && u.state === 'recover' && u.stateTime <= BOSS_ACTIONS.charge.dash) this.fx.dust(x, z, 2);
       // Shield Bash: a dust streak along the dash.

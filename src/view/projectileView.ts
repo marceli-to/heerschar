@@ -7,7 +7,7 @@ import { FX, hdr } from './palette';
 const SHOT_Y = 1.35;
 const ARC = { fromY: 1.9, toY: 0.25, apex: 2.4 } as const;
 
-type Look = 'arrow' | 'piercing' | 'fire' | 'holy' | 'fireball' | 'hex';
+type Look = 'arrow' | 'piercing' | 'volley' | 'fire' | 'holy' | 'fireball' | 'hex';
 
 interface Item {
   obj: THREE.Group;
@@ -15,6 +15,12 @@ interface Item {
   prevX: number;
   prevZ: number;
   trailTimer: number;
+  /** Where a straight shot started: its streak grows over the first metres, never poking out behind the shooter. */
+  startX: number;
+  startZ: number;
+  /** The arrow's streak, if it has one, and its full length. */
+  streak: THREE.Object3D | null;
+  streakLen: number;
 }
 
 /**
@@ -34,6 +40,7 @@ export class ProjectileLayer {
     fletch: new THREE.MeshBasicMaterial({ color: '#efe8d8' }),
     streak: new THREE.MeshBasicMaterial({ color: FX.arrowStreak, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
     streakStrong: new THREE.MeshBasicMaterial({ color: hdr(FX.holy, 2), transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }),
+    streakVolley: new THREE.MeshBasicMaterial({ color: hdr(FX.arrowStreak, 1.6), transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }),
   };
 
   constructor(private readonly effects: Effects) {}
@@ -58,7 +65,9 @@ export class ProjectileLayer {
         const owner = battle.units.find((u) => u.id === p.ownerId);
         const look = lookOf(p, owner?.classId === 'magier');
         const start = p.arc ? p.from : p.pos;
-        it = { obj: this.template(look).clone(), look, prevX: start.x, prevZ: start.z, trailTimer: 0 };
+        const obj = this.template(look).clone();
+        const streak = obj.getObjectByName('streak') ?? null;
+        it = { obj, look, prevX: start.x, prevZ: start.z, trailTimer: 0, startX: start.x, startZ: start.z, streak, streakLen: streak ? (streak.userData.len as number) : 0 };
         this.items.set(p.id, it);
         this.group.add(it.obj);
       }
@@ -69,6 +78,11 @@ export class ProjectileLayer {
       const ahead = p.arc ? arcAhead(p, x, z) : { x: x + p.dir.x, y, z: z + p.dir.z };
       it.obj.position.set(x, y, z);
       it.obj.lookAt(ahead.x, ahead.y, ahead.z);
+      if (it.streak) {
+        const k = Math.max(0.02, Math.min(1, Math.hypot(x - it.startX, z - it.startZ) / (it.streakLen * it.obj.scale.z)));
+        it.streak.scale.z = k;
+        it.streak.position.z = -0.3 - (it.streakLen * k) / 2;
+      }
       this.emitTrail(it, x, y, z, frameTime);
     }
     for (const [id, it] of this.items) {
@@ -88,6 +102,10 @@ export class ProjectileLayer {
       case 'piercing':
         it.trailTimer = 0.02;
         this.effects.trail(x, y, z, FX.holy, 0.05, 0.25);
+        return;
+      case 'volley':
+        it.trailTimer = 0.016;
+        this.effects.trail(x, y, z, FX.arrowStreak, 0.06, 0.22);
         return;
       case 'fire':
         it.trailTimer = 0.016;
@@ -122,16 +140,20 @@ export class ProjectileLayer {
   private build(look: Look): THREE.Group {
     const g = new THREE.Group();
     const m = this.shared;
-    if (look === 'arrow' || look === 'piercing') {
-      const scale = look === 'piercing' ? 1.3 : 1;
+    if (look === 'arrow' || look === 'piercing' || look === 'volley') {
+      const strong = look !== 'arrow';
+      const scale = strong ? 1.3 : 1;
       const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.8), m.shaft);
       const head = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.12, 4).rotateX(Math.PI / 2), m.head);
       head.position.z = 0.45;
       const fletch = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.07, 0.14), m.fletch);
       fletch.position.z = -0.33;
-      const streakLen = look === 'piercing' ? 2.4 : 1.4;
-      const streak = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, streakLen), look === 'piercing' ? m.streakStrong : m.streak);
+      const streakLen = strong ? 2.4 : 1.4;
+      const streakMat = look === 'volley' ? m.streakVolley : look === 'piercing' ? m.streakStrong : m.streak;
+      const streak = new THREE.Mesh(new THREE.BoxGeometry(strong ? 0.06 : 0.05, strong ? 0.06 : 0.05, streakLen), streakMat);
       streak.position.z = -0.3 - streakLen / 2;
+      streak.name = 'streak';
+      streak.userData.len = streakLen;
       g.add(shaft, head, fletch, streak);
       g.scale.setScalar(scale);
       return g;
@@ -165,7 +187,8 @@ export class ProjectileLayer {
 function lookOf(p: Projectile, mage: boolean): Look {
   switch (p.kind) {
     case 'arrow':
-      return 'arrow';
+      // The hero's Volley: bolts that pass through everyone, a bright white streak.
+      return p.pierce ? 'volley' : 'arrow';
     case 'piercing':
       return 'piercing';
     case 'fireball':

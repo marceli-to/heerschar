@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { FX, hdr } from './palette';
 
+/** Fall Back's gust and the drag marks of slowed foes (pale air, a cool blue-grey). */
+const GUST = '#eef6ff';
+const SLOW_DRAG = '#b9c8d8';
+
 /** Which of the four looks are on (spike keys 1–4; later a quality setting). */
 export interface Looks {
   glow: boolean;
@@ -549,6 +553,58 @@ export class FxWorld {
         mat.dispose();
       },
     });
+  }
+
+  /** A dust-like puff drifting with velocity `v` (shared by the gust, muzzle and drag marks). */
+  private blown(at: THREE.Vector3, v: THREE.Vector3, life: number, grow: number, color: string): void {
+    if (!this.looks.impact || Math.random() > this.particleShare) return;
+    const mat = new THREE.SpriteMaterial({ map: dustTex, color, transparent: true, depthWrite: false, opacity: 0 });
+    const s = new THREE.Sprite(mat);
+    s.position.copy(at);
+    s.scale.setScalar(grow * 0.35);
+    this.group.add(s);
+    this.puffs.push({ s, life, max: life, v, grow });
+  }
+
+  /**
+   * Fall Back's blast: a pale band over the front cone and puffs of air blown out across it,
+   * plus dust kicked up at the feet.
+   */
+  gust(x: number, z: number, facing: number, reach: number, arc: number): void {
+    this.shockArc(x, z, facing, reach, arc, GUST);
+    this.dust(x, z, 10);
+    const at = new THREE.Vector3();
+    const n = 12;
+    for (let i = 0; i < n; i++) {
+      const a = facing + (i / (n - 1) - 0.5) * arc + (Math.random() - 0.5) * 0.15;
+      const dx = Math.sin(a);
+      const dz = -Math.cos(a);
+      at.set(x + dx * 0.6, 0.3 + Math.random() * 0.7, z + dz * 0.6);
+      const speed = ((reach - 0.6) / 0.5) * (0.8 + Math.random() * 0.3);
+      this.blown(at, new THREE.Vector3(dx * speed, 0.1, dz * speed), 0.55, 1.1 + Math.random() * 0.5, GUST);
+    }
+  }
+
+  /** Volley leaves the crossbow: a puff of smoke out of the muzzle, pale sparks and a flash. */
+  muzzle(at: THREE.Vector3, dirX: number, dirZ: number): void {
+    for (let i = 0; i < 4; i++) {
+      const sp = 1.2 + Math.random() * 1.2;
+      this.blown(at.clone(), new THREE.Vector3(dirX * sp + (Math.random() - 0.5) * 0.6, 0.25 + Math.random() * 0.3, dirZ * sp + (Math.random() - 0.5) * 0.6), 0.6, 0.7 + Math.random() * 0.4, '#e6dccb');
+    }
+    this.sparks.burst(at, 12, hdr(FX.arrowStreak, 4), 5, new THREE.Vector3(dirX, 0.15, dirZ), 0.25);
+    this.flash(at, '#fff1d6', 2.2, 0.1);
+  }
+
+  /** A bolt bursting through a foe: a small bright spark along the flight. */
+  pierceSpark(at: THREE.Vector3, dirX: number, dirZ: number): void {
+    if (!this.looks.impact) return;
+    this.sparks.burst(at, 14, hdr(FX.arrowStreak, 5), 6.5, new THREE.Vector3(dirX, 0.2, dirZ), 0.3);
+    this.flash(at, '#fff4dc', 2, 0.1);
+  }
+
+  /** A slowed foe drags its feet: a low pale-blue smear left behind. */
+  drag(x: number, z: number): void {
+    this.blown(new THREE.Vector3(x + (Math.random() - 0.5) * 0.3, 0.08, z + (Math.random() - 0.5) * 0.3), new THREE.Vector3(0, 0.05, 0), 0.8, 0.6 + Math.random() * 0.2, SLOW_DRAG);
   }
 
   /** A short golden glint (Shield Bash: the shield face lights up as it lands). */

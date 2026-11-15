@@ -49,6 +49,13 @@ Options were asked per class; Marcel chose all four recommended directions. No n
 - Capturing: `/tmp/heer-anim/burst.mjs` + `setup-melee.js` (dev server `npx vite --port 5191`, URL `?hero=krieger&debug&peaceful&seed=3`). The setup must fake pointer lock (`Object.defineProperty(g.kbm, "locked", { get: () => true })`), or `HeroInputSampler` drops every input. Abilities aim along the camera yaw, so set `g.rig.yaw` = hero facing. Headless Chrome stalls the loop without `--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows` (in burst.mjs; `tools/shot.mjs` lacks them).
 - **Next:** anim-2 Archer.
 
+**anim-2 Archer: built, committed, waiting for Marcel's look.** Screenshots in `~/Downloads/heerschar-assets/anim/archer/` (`volley-sheet`, `volley-close`, `fall-sheet`, `fall-close`).
+- Volley: projectile look `volley` (hero's piercing `arrow`s, `projectileView.ts`) = bright pale-white streak + pale trail; streaks of all arrows now grow from the launch point (`Item.startX/Z`, child named `streak`), so they never poke out behind the shooter. Release = `fx.muzzle` (smoke puffs, pale sparks, flash) + light shake; view-only recoil (`RECOIL` in `game.ts`, body kicked back 0.16 m, settles in 0.18 s). Each foe a bolt passes through = `fx.pierceSpark` (on `hit` while the hero owns a piercing projectile).
+- Fall Back: release = `fx.gust` (pale `shockArc` over the 100 degree cone + air puffs blown out to the 4.5 m reach + dust at the feet) + light shake. Slowed foes on the move leave `fx.drag` puffs (cool blue-grey, every 0.09 s, `slot.dragTimer`).
+- Made without asking (Marcel may veto): gust colour pale `#eef6ff`, drag colour `#b9c8d8`, Volley streak pale white (not gold).
+- Capturing archers: `setup-dist.js` (DIST replaced per shot; hero HP set to 5000 so foes don't kill it without `peaceful`). Volley at 5.5 m with `peaceful`; Fall Back at 2.6 m without, so slowed foes walk.
+- **Next:** Marcel's verdict on the Archer, then anim-3 Healer.
+
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
 
 Marcel: "better but far from perfect", asked for consistency. Decisions: **labels = small Lilita, normal case** (no spaced capitals); **buttons = two sizes, one red main action per screen, yellow = other actions, Back / Leave / Cancel always a text link** (blue dropped); **no italics anywhere**.
