@@ -32,7 +32,7 @@ Agreed numbers, built, **approved by Marcel's playtest ("feels fine", 2026-11-15
 - Tests: `prepMatters` Skirmish fixture strength 1.9 → 2.5 (at 1.9 every variant won); new dodge-strike test. Campaign strengths **not** retuned: bots will now find the campaign easier; retune with the difficulty setting.
 - **Next:** step 2: better ability animations (see "Ability animations").
 
-## Ability animations (decided by Marcel 2026-11-15, building)
+## Ability animations (decided by Marcel 2026-11-15, all four built)
 
 Options were asked per class; Marcel chose all four recommended directions. No new clips packs (crossbow stays; KayKit Character Animations 1.1 and Adventurers 2.0 with a bow are on disk in `/tmp/anim-compare/dl/` but unused, rig untested).
 - **Warrior "charge + tornado":** Shield Bash = visible dash forward with a dust streak, shield flashes gold, hit = gold shockwave arc + small camera kick, stunned foes show circling stars. Whirlwind = two fast full turns, closed circular blade trail, dust ring sweeping out to the 2.6 m edge.
@@ -56,12 +56,19 @@ Options were asked per class; Marcel chose all four recommended directions. No n
 - Capturing archers: `setup-dist.js` (DIST replaced per shot; hero HP set to 5000 so foes don't kill it without `peaceful`). Volley at 5.5 m with `peaceful`; Fall Back at 2.6 m without, so slowed foes walk.
 - **Next:** anim-3 Healer.
 
-**anim-3 Healer: built, committed, waiting for Marcel's look.** Screenshots in `~/Downloads/heerschar-assets/anim/healer/` (`circle-sheet`, `circle-close`, `bless-close` = ribbon in flight, `bless-pop` = arrival).
+**anim-3 Healer: done, approved by Marcel (2026-11-15, "proceed").** Screenshots in `~/Downloads/heerschar-assets/anim/healer/` (`circle-sheet`, `circle-close`, `bless-close` = ribbon in flight, `bless-pop` = arrival).
 - Healing Circle: new `view/runeRing.ts` (`RuneRings`): golden ring of 16 angular runes between two circles (canvas texture, shader reveals it round in 0.45 s with a bright drawing tip, turns slowly, fades 0.4 s after the area ends). `AreaLayer` skips `heilkreis` (companion heals keep the green disc). Each heal tick (`areaResolve`) = ring flare + gold motes rising + a gold ring. Release = the existing column of light + dust where the staff is planted (staff anim unchanged: the `slam` chop already raises and plants).
 - Blessing: `fx.ribbon` (gold tube along a low bezier arc, tail drawn behind the head, motes off the head, 0.26 s, glint on arrival). `game.ts` pairs the `release` (sets `blessFrom`) with the following `shielded` status; the ally's bubble waits (`bubbleHold`) until the ribbon lands, then a gold ring at the feet. `ShieldBubble` now pops on with a 0.3 s overshoot (every bubble, enemy wards too).
 - Made without asking (Marcel may veto): rune shapes (simple invented strokes), ribbon gold = rally gold.
 - Capturing: `setup-healer.js` (wounded companions, `?hero=heiler&peaceful`).
-- **Next:** Marcel's verdict on the Healer, then anim-4 Mage.
+- **Next:** anim-4 Mage.
+
+**anim-4 Mage: built, committed, waiting for Marcel's look.** Screenshots in `~/Downloads/heerschar-assets/anim/mage/` (`fireball-sheet`, `fireball-charge`, `fireball-blast`, `frost-sheet`, `frost-spikes`, `frost-shatter`).
+- Fireball: `fx.charge(tip, k)` called every frame of the windup: a fire ball grows at the staff's far end (the orb knob) with 12 flame tongues spiralling in, a held light and embers; winks out (0.06 s) when the calls stop. Staff tip: `BodySpec.staff = '2H_Staff'` on the player Mage body, `UnitView.staffTip()` (measured like the blade). The hero's blast (`areaResolve` now carries `ownerId`, view-only) = `fireBlast` drawn 1.35× (`HERO_BLAST`), `fx.shockwave` (bright ground ring out to 1.3× radius + dust ring) and `SHAKE.heavy`. Enemy fireballs unchanged.
+- Frost Ring: release = frost burst + dust where the staff strikes. `fx.iceSpikes`: cold wave ring, two rings of ice spikes (18 outer 0.9–1.5 m, 10 inner) burst up from the centre outward with an overshoot, leaning outward, stand ~1.1–1.4 s, then shatter into tumbling tetra shards (gravity, bounce), sparks and glitter; frost mark. Enemy Frost Nova keeps the old melting ring.
+- Made without asking (Marcel may veto): spike count / size / lean, shard look, shockwave in fire orange.
+- Capturing: `setup-fire.js` (DIST 8, `peaceful`) / `setup-frost.js` (DIST 2.4); `burst2.mjs` = burst.mjs plus `POST` env (JS run 120 ms after the key, e.g. `__game.rig.yaw += 0.9` for a side view). The staff tip sits behind the hat from straight behind; a side view shows the charge.
+- **Next:** Marcel's verdict on the Mage; then ability animations are complete.
 
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
 

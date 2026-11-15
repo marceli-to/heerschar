@@ -43,6 +43,8 @@ export interface UnitView {
   readonly barY: number;
   /** World points along the main blade (inner edge, tip) for the swing trail; false if it has none. */
   weaponEdge?(base: THREE.Vector3, tip: THREE.Vector3): boolean;
+  /** World point at the far end of the staff (the Fireball gathers there); false if it has none. */
+  staffTip?(out: THREE.Vector3): boolean;
   dispose(): void;
 }
 

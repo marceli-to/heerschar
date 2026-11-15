@@ -319,7 +319,7 @@ export type BattleEvent =
   | { type: 'release'; unitId: number; action: HeroAbilityId }
   | { type: 'shoot'; projectileId: number; kind: ProjectileKind }
   | { type: 'areaStart'; areaId: number; kind: AreaKind }
-  | { type: 'areaResolve'; areaId: number; kind: AreaKind; x: number; z: number; radius: number; angle: number }
+  | { type: 'areaResolve'; areaId: number; kind: AreaKind; ownerId: number; x: number; z: number; radius: number; angle: number }
   | { type: 'status'; unitId: number; kind: StatusKind; on: boolean }
   | { type: 'lock'; targetId: number | null }
   | { type: 'mark'; targetId: number | null }

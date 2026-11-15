@@ -187,6 +187,8 @@ const STARS_FROM = 0.9;
 const RECOIL = { distance: 0.16, time: 0.18 } as const;
 /** A slowed foe on the move leaves a drag mark this often (s). */
 const DRAG_EVERY = 0.09;
+/** The hero's Fireball blast is drawn this much bigger than the area it hits (the enemy's stays as is). */
+const HERO_BLAST = 1.35;
 
 /** Glue between simulation, input and view. Owns the loop. */
 export class Game {
@@ -537,7 +539,7 @@ export class Game {
         break;
       }
       case 'areaResolve':
-        this.areaBurst(e.kind, e.x, e.z, e.radius, e.angle);
+        this.areaBurst(e.kind, e.x, e.z, e.radius, e.angle, this.unit(e.ownerId)?.isHero ?? false);
         break;
       case 'spawn': {
         const u = this.unit(e.unitId);
@@ -631,6 +633,12 @@ export class Game {
           // The staff is planted: light and a puff of dust where it strikes.
           this.fx.holyLight(new THREE.Vector3(u.pos.x, 0, u.pos.z));
           this.fx.dust(u.pos.x + Math.sin(u.facing) * 0.5, u.pos.z - Math.cos(u.facing) * 0.5, 8);
+        } else if (e.action === 'frostring') {
+          // The staff strikes the ground: frost bursts out of the spot.
+          const sx = u.pos.x + Math.sin(u.facing) * 0.6;
+          const sz = u.pos.z - Math.cos(u.facing) * 0.6;
+          this.effects.burst(sx, 0.2, sz, [FX.frost, FX.frostCore], 14, 3, 0.07, 0.45);
+          this.fx.dust(sx, sz, 8);
         } else if (e.action === 'segen') {
           this.blessFrom = u.id;
         } else if (e.action === 'sammeln') {
@@ -716,7 +724,7 @@ export class Game {
     if (animTime > 0) slot.trail.update(animTime, attacking && speed > TRAIL_SPEED, _base, _tip);
   }
 
-  private areaBurst(kind: AreaKind, x: number, z: number, radius: number, angle: number): void {
+  private areaBurst(kind: AreaKind, x: number, z: number, radius: number, angle: number, byHero: boolean): void {
     switch (kind) {
       case 'sweep':
         this.effects.swingArc(x, z, angle, radius, BOSS_ACTIONS.sweep.arc, true);
@@ -736,12 +744,26 @@ export class Game {
       case 'charge':
         break;
       case 'fireball':
+        if (byHero) {
+          // The hero's Fireball: a bigger blast and a shockwave over the ground.
+          this.fx.fireBlast(x, z, radius * HERO_BLAST);
+          this.fx.shockwave(x, z, radius, FX.fire);
+          this.rig.shake(SHAKE.heavy);
+          break;
+        }
         this.fx.fireBlast(x, z, radius);
         this.effects.ring(x, z, radius * 0.3, radius, FX.fire, 0.4);
         this.rig.shake(0.18);
         break;
-      case 'frostNova':
       case 'frostring':
+        if (byHero) {
+          this.fx.iceSpikes(new THREE.Vector3(x, 0, z), radius);
+          this.rig.shake(SHAKE.light);
+          break;
+        }
+        this.fx.frostRing(new THREE.Vector3(x, 0, z), radius);
+        break;
+      case 'frostNova':
         this.fx.frostRing(new THREE.Vector3(x, 0, z), radius);
         break;
       case 'heilkreis':
@@ -788,6 +810,8 @@ export class Game {
         { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded') && !this.bubbleHold.has(u.id), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2 },
         animTime,
       );
+      // Fireball: flames gather into a growing ball at the staff tip during the windup.
+      if (u.action === 'feuerball' && u.state === 'windup' && slot.view.staffTip?.(_tip)) this.fx.charge(_tip, u.stateTime / Math.max(0.01, actionTiming(u).windup));
       if (slot.trail) this.updateTrail(slot, u, animTime);
       if (u.isHero && (this.whirl || u.action === 'wirbel')) this.updateWhirl(slot, u, x, z, animTime);
       if (slot.bar) {

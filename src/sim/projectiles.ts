@@ -200,7 +200,7 @@ export function updateAreas(battle: Battle, dt: number, events: BattleEvent[]): 
       keep.push(a);
       continue;
     }
-    events.push({ type: 'areaResolve', areaId: a.id, kind: a.kind, x: a.pos.x, z: a.pos.z, radius: a.radius, angle: a.angle });
+    events.push({ type: 'areaResolve', areaId: a.id, kind: a.kind, ownerId: a.ownerId, x: a.pos.x, z: a.pos.z, radius: a.radius, angle: a.angle });
     const owner = ownerOf(battle, a.ownerId);
     if (a.pulses > 1) {
       a.pulses--;

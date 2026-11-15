@@ -4,6 +4,9 @@ import { FX, hdr } from './palette';
 /** Fall Back's gust and the drag marks of slowed foes (pale air, a cool blue-grey). */
 const GUST = '#eef6ff';
 const SLOW_DRAG = '#b9c8d8';
+/** Flame tongues spiralling into the Fireball while it gathers. */
+const CHARGE_TONGUES = 12;
+const _ax = new THREE.Vector3();
 
 /** Which of the four looks are on (spike keys 1–4; later a quality setting). */
 export interface Looks {
@@ -457,6 +460,8 @@ export class FxWorld {
   private lights: { light: THREE.PointLight; life: number; max: number; peak: number }[] = [];
   private puffs: { s: THREE.Sprite; life: number; max: number; v: THREE.Vector3; grow: number }[] = [];
   private markY = 0.05;
+  /** Fireball windup: the ball gathering at the staff tip (built on first use). */
+  private chargeBall: { core: THREE.Mesh; glow: THREE.Sprite; tongues: THREE.Sprite[]; at: THREE.Vector3; k: number; seen: boolean; fade: number; t: number } | null = null;
 
   private particleShare = 1;
 
@@ -823,6 +828,233 @@ export class FxWorld {
     this.mark(frostRingTex, center.x, center.z, radius * 2.7, 0.75, Math.random() * Math.PI * 2);
   }
 
+  /**
+   * Fireball windup: call every frame while it lasts with the staff tip and progress `k` (0..1).
+   * Flame tongues spiral in and feed a ball that grows at the tip; it winks out once the calls stop.
+   */
+  charge(at: THREE.Vector3, k: number): void {
+    if (!this.chargeBall) {
+      const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), new THREE.MeshBasicMaterial({ color: hdr(FX.fireCore, 4) }));
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: hdr(FX.fire, 1.8), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+      const tongues: THREE.Sprite[] = [];
+      for (let i = 0; i < CHARGE_TONGUES; i++) {
+        const t = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: hdr(i % 3 === 0 ? FX.fireCore : i % 3 === 1 ? FX.fire : FX.ember, 3), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+        tongues.push(t);
+      }
+      this.group.add(core, glow, ...tongues);
+      this.chargeBall = { core, glow, tongues, at: new THREE.Vector3(), k: 0, seen: false, fade: 0, t: 0 };
+    }
+    const c = this.chargeBall;
+    c.at.copy(at);
+    c.k = k;
+    c.seen = true;
+    c.fade = 1;
+  }
+
+  private updateCharge(dt: number): void {
+    const c = this.chargeBall;
+    if (!c) return;
+    if (!c.seen) c.fade = Math.max(0, c.fade - dt / 0.06);
+    c.seen = false;
+    c.t += dt;
+    const on = c.fade > 0;
+    c.core.visible = c.glow.visible = on;
+    for (const t of c.tongues) t.visible = on;
+    if (!on) return;
+    const grow = Math.sqrt(Math.min(1, c.k));
+    const r = (0.05 + grow * 0.17) * c.fade;
+    c.core.position.copy(c.at);
+    c.core.scale.setScalar(r * (1 + Math.sin(c.t * 45) * 0.08));
+    c.core.rotation.x += dt * 7;
+    c.core.rotation.y += dt * 5;
+    c.glow.position.copy(c.at);
+    c.glow.scale.setScalar(r * 7 * (1 + Math.sin(c.t * 31) * 0.1));
+    // Each tongue spirals in from ~0.7 m and starts again: a steady stream into the ball.
+    c.tongues.forEach((t, i) => {
+      const cycle = 0.32;
+      const p = ((c.t + (i / c.tongues.length) * cycle) % cycle) / cycle;
+      const d = (0.75 - grow * 0.15) * (1 - p) + r;
+      const a = i * 2.4 + p * 3.2;
+      const y = Math.sin(i * 1.7) * 0.6;
+      _ax.set(Math.cos(a), y, Math.sin(a)).normalize();
+      t.position.copy(c.at).addScaledVector(_ax, d);
+      t.scale.setScalar((0.1 + p * 0.12) * c.fade);
+      t.material.opacity = Math.min(1, p * 4) * (0.5 + grow * 0.5);
+    });
+    this.hold(c.at, FX.fire, 1.5 + grow * 4);
+    if (Math.random() < 0.5) this.motes.emit(c.at, 1, hdr(FX.ember, 3), 0.5, 0.35, r * 1.5, 0.8);
+  }
+
+  /** Keeps a flash light on `at` for this frame (glow that follows something). */
+  private hold(at: THREE.Vector3, color: string, peak: number): void {
+    const slot = this.lights.reduce((a, b) => (a.life <= b.life ? a : b));
+    slot.light.position.copy(at);
+    slot.light.color.set(color);
+    slot.life = slot.max = 0.05;
+    slot.peak = peak;
+  }
+
+  /** A bright ring racing out over the ground from a blast (the hero's Fireball). */
+  shockwave(x: number, z: number, radius: number, color: string): void {
+    const geo = new THREE.RingGeometry(0.82, 1, 64).rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: hdr(color, 2.6), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+    const ring = new THREE.Mesh(geo, mat);
+    ring.position.set(x, 0.1, z);
+    this.group.add(ring);
+    const dur = 0.38;
+    let t = 0;
+    this.transients.push({
+      update: (dt) => {
+        t += dt;
+        const k = Math.min(1, t / dur);
+        const grow = 1 - (1 - k) ** 3;
+        ring.scale.setScalar(0.3 + (radius * 1.3 - 0.3) * grow);
+        mat.opacity = (1 - k) ** 1.5;
+        return k < 1;
+      },
+      dispose: () => {
+        this.group.remove(ring);
+        geo.dispose();
+        mat.dispose();
+      },
+    });
+    this.dustRing(x, z, radius * 1.15, 18);
+  }
+
+  /**
+   * Frost Ring (hero): a cold wave runs out, ice spikes burst up in two rings, leaning outward,
+   * stand a moment and then shatter into tumbling shards and glitter.
+   */
+  iceSpikes(center: THREE.Vector3, radius: number): void {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.88, 1, 64),
+      new THREE.MeshBasicMaterial({ color: hdr(FX.frost, 2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }),
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(center.x, 0.08, center.z);
+    this.group.add(ring);
+    const spikeGeo = new THREE.ConeGeometry(1, 1, 5).translate(0, 0.5, 0);
+    const pieceGeo = new THREE.TetrahedronGeometry(1);
+    const mat = new THREE.MeshLambertMaterial({ color: '#dff6ff', emissive: hdr(FX.frost, 0.8), flatShading: true });
+    interface Spike { m: THREE.Mesh; d: number; h: number; born: number; shatter: number; broken: boolean }
+    interface Piece { m: THREE.Mesh; v: THREE.Vector3; spin: THREE.Vector3; life: number; max: number; size: number }
+    const spikes: Spike[] = [];
+    const pieces: Piece[] = [];
+    const up = new THREE.Vector3(0, 1, 0);
+    const twist = new THREE.Quaternion();
+    const rows = [
+      { n: 18, d: [0.84, 1.0], h: [0.9, 1.5], w: [0.18, 0.27], tilt: 0.42 },
+      { n: 10, d: [0.45, 0.6], h: [0.5, 0.85], w: [0.13, 0.19], tilt: 0.3 },
+    ];
+    for (const row of rows) {
+      for (let i = 0; i < row.n; i++) {
+        const a = (i / row.n) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+        const d = radius * (row.d[0]! + Math.random() * (row.d[1]! - row.d[0]!));
+        const h = row.h[0]! + Math.random() * (row.h[1]! - row.h[0]!);
+        const w = row.w[0]! + Math.random() * (row.w[1]! - row.w[0]!);
+        const m = new THREE.Mesh(spikeGeo, mat);
+        m.position.set(center.x + Math.cos(a) * d, 0, center.z + Math.sin(a) * d);
+        const tilt = row.tilt * (0.7 + Math.random() * 0.6);
+        _ax.set(Math.cos(a) * Math.sin(tilt), Math.cos(tilt), Math.sin(a) * Math.sin(tilt));
+        m.quaternion.setFromUnitVectors(up, _ax).multiply(twist.setFromAxisAngle(up, Math.random() * Math.PI));
+        m.scale.set(w, 0.001, w);
+        m.castShadow = true;
+        m.visible = false;
+        this.group.add(m);
+        const born = 0.03 + (d / radius) * 0.22;
+        spikes.push({ m, d, h, born, shatter: 1.05 + (d / radius) * 0.15 + Math.random() * 0.2, broken: false });
+      }
+    }
+    this.flash(center.clone().setY(1), FX.frost, 5, 0.5);
+    this.sparks.burst(center.clone().setY(0.3), 24, hdr(FX.frostCore, 4), 7, undefined, 0.4);
+    let t = 0;
+    let cracked = false;
+    const expand = 0.3;
+    const tip = new THREE.Vector3();
+    this.transients.push({
+      update: (dt) => {
+        t += dt;
+        ring.scale.setScalar(Math.max(0.01, radius * 1.05 * (1 - (1 - Math.min(1, t / expand)) ** 2)));
+        (ring.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - Math.max(0, t - expand * 0.6) / 0.4);
+        for (const s of spikes) {
+          const age = t - s.born;
+          if (age < 0 || s.broken) continue;
+          if (!s.m.visible) {
+            s.m.visible = true;
+            this.motes.emit(s.m.position.clone().setY(0.2), 3, hdr(FX.frostCore, 2.5), 1.4, 0.6, 0.3, 0.6);
+            this.blown(s.m.position.clone().setY(0.1), new THREE.Vector3(0, 0.3, 0), 0.6, 0.6, '#e8f6ff');
+          }
+          // Shoot up past full height, settle back.
+          const g = Math.min(1, age / 0.1);
+          const over = g < 1 ? g * 1.18 : 1 + 0.18 * Math.max(0, 1 - (age - 0.1) / 0.08);
+          s.m.scale.y = Math.max(0.001, s.h * over);
+          if (t < s.shatter) continue;
+          // Shatter: the spike breaks into shards flung out and up.
+          s.broken = true;
+          s.m.visible = false;
+          if (!cracked) {
+            cracked = true;
+            this.flash(center.clone().setY(0.8), FX.frostCore, 3, 0.25);
+          }
+          tip.set(0, 1, 0).applyQuaternion(s.m.quaternion);
+          const outX = s.m.position.x - center.x;
+          const outZ = s.m.position.z - center.z;
+          const len = Math.hypot(outX, outZ) || 1;
+          const n = 4;
+          for (let j = 0; j < n; j++) {
+            if (Math.random() > Math.max(0.5, this.particleShare)) continue;
+            const along = (j + 0.5) / n;
+            const pm = new THREE.Mesh(pieceGeo, mat);
+            pm.position.copy(s.m.position).addScaledVector(tip, s.h * along);
+            const size = s.m.scale.x * (0.9 - along * 0.4);
+            pm.scale.setScalar(size);
+            pm.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+            pm.castShadow = true;
+            this.group.add(pm);
+            const sp = 1.2 + Math.random() * 2;
+            const v = new THREE.Vector3((outX / len) * sp + (Math.random() - 0.5) * 1.5, 1.5 + Math.random() * 2.2, (outZ / len) * sp + (Math.random() - 0.5) * 1.5);
+            const life = 0.45 + Math.random() * 0.3;
+            pieces.push({ m: pm, v, spin: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(20), life, max: life, size });
+          }
+          const mid = s.m.position.clone().addScaledVector(tip, s.h * 0.5);
+          this.sparks.burst(mid, 6, hdr(FX.frostCore, 4), 4, undefined, 0.35);
+          this.motes.emit(mid, 4, hdr(FX.frost, 2.5), 1.6, 0.6, s.h * 0.5, 0.2);
+        }
+        for (let i = pieces.length - 1; i >= 0; i--) {
+          const p = pieces[i]!;
+          p.life -= dt;
+          p.v.y -= 11 * dt;
+          p.m.position.addScaledVector(p.v, dt);
+          if (p.m.position.y < 0.05) {
+            p.m.position.y = 0.05;
+            p.v.multiplyScalar(0.4);
+            p.v.y = Math.abs(p.v.y) * 0.3;
+          }
+          p.m.rotation.x += p.spin.x * dt;
+          p.m.rotation.y += p.spin.y * dt;
+          p.m.rotation.z += p.spin.z * dt;
+          p.m.scale.setScalar(p.size * Math.min(1, (p.life / p.max) * 2.5));
+          if (p.life <= 0) {
+            this.group.remove(p.m);
+            pieces.splice(i, 1);
+          }
+        }
+        return t < 0.5 || spikes.some((s) => !s.broken) || pieces.length > 0;
+      },
+      dispose: () => {
+        this.group.remove(ring);
+        ring.geometry.dispose();
+        (ring.material as THREE.Material).dispose();
+        for (const s of spikes) this.group.remove(s.m);
+        for (const p of pieces) this.group.remove(p.m);
+        spikeGeo.dispose();
+        pieceGeo.dispose();
+        mat.dispose();
+      },
+    });
+    this.mark(frostRingTex, center.x, center.z, radius * 2.7, 0.8, Math.random() * Math.PI * 2);
+  }
+
   /** Column of golden light from above with rising motes (Healing Circle / Blessing). */
   holyLight(at: THREE.Vector3): void {
     const geo = new THREE.CylinderGeometry(0.55, 0.7, 7, 32, 1, true);
@@ -970,15 +1202,25 @@ export class FxWorld {
     this.sparks.clear();
     this.motes.clear();
     for (const l of this.lights) l.life = 0;
+    if (this.chargeBall) this.chargeBall.fade = 0;
   }
 
   dispose(): void {
     this.clear();
+    if (this.chargeBall) {
+      const c = this.chargeBall;
+      this.group.remove(c.core, c.glow, ...c.tongues);
+      c.core.geometry.dispose();
+      (c.core.material as THREE.Material).dispose();
+      for (const sp of [c.glow, ...c.tongues]) sp.material.dispose();
+      this.chargeBall = null;
+    }
     this.sparks.dispose();
     this.motes.dispose();
   }
 
   update(dt: number): void {
+    this.updateCharge(dt);
     this.sparks.update(dt);
     this.motes.update(dt);
     // Effects may spawn others while updating (fireball -> explosion), so collect those separately.

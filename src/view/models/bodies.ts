@@ -104,6 +104,7 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         swaps: [{ cell: [0, 1], color: c.deep }, { cell: [1, 1], color: c.deep }, { cell: [2, 1], color: c.main }, { cell: [5, 0], color: trim }],
         style: 'staff',
         skeleton: false,
+        staff: '2H_Staff',
       };
     case 'heiler':
       // The recoloured Mage in light robes with a glowing orb (Stage 6 decisions).

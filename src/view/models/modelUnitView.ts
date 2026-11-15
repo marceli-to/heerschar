@@ -73,6 +73,9 @@ export class ModelUnitView implements UnitView {
   private readonly blade: THREE.Object3D | null = null;
   private readonly edgeBase = new THREE.Vector3();
   private readonly edgeTip = new THREE.Vector3();
+  /** The staff and its far end in the staff's own space (spells gather there). */
+  private readonly staff: THREE.Object3D | null = null;
+  private readonly staffEnd = new THREE.Vector3();
 
   private cur: Pose = { clip: 'Idle', time: 0 };
   private prev: Pose | null = null;
@@ -115,7 +118,9 @@ export class ModelUnitView implements UnitView {
     // KayKit and Quaternius face +z; unit views face -z.
     this.model.rotation.y = Math.PI;
     if (body.blade && !this.blade) this.blade = this.model.getObjectByName(nodeName(body.blade)) ?? null;
-    if (this.blade) this.measureBlade(this.blade);
+    if (this.blade) this.measureBlade(this.blade, this.edgeBase, this.edgeTip);
+    this.staff = staff;
+    if (staff) this.measureBlade(staff, new THREE.Vector3(), this.staffEnd);
     if (body.style === 'orb') {
       this.orb = new THREE.Mesh(
         new THREE.IcosahedronGeometry(0.16, 2),
@@ -139,7 +144,7 @@ export class ModelUnitView implements UnitView {
    * The edge runs along the blade's longest axis: the tip at its far end, the trail's inner edge
    * a third of the way back towards the grip (the grip sits near the hand slot's origin).
    */
-  private measureBlade(blade: THREE.Object3D): void {
+  private measureBlade(blade: THREE.Object3D, baseOut: THREE.Vector3, tipOut: THREE.Vector3): void {
     blade.updateMatrixWorld(true);
     const inv = blade.matrixWorld.clone().invert();
     const box = new THREE.Box3();
@@ -153,8 +158,15 @@ export class ModelUnitView implements UnitView {
     const size = box.getSize(new THREE.Vector3());
     const axis = size.x > size.y ? (size.x > size.z ? 'x' : 'z') : size.y > size.z ? 'y' : 'z';
     const far = Math.abs(box.max[axis]) > Math.abs(box.min[axis]) ? box.max[axis] : box.min[axis];
-    this.edgeTip.set(0, 0, 0)[axis] = far;
-    this.edgeBase.set(0, 0, 0)[axis] = far * 0.65;
+    tipOut.set(0, 0, 0)[axis] = far;
+    baseOut.set(0, 0, 0)[axis] = far * 0.65;
+  }
+
+  staffTip(out: THREE.Vector3): boolean {
+    if (!this.staff) return false;
+    this.root.updateMatrixWorld(true);
+    this.staff.localToWorld(out.copy(this.staffEnd));
+    return true;
   }
 
   weaponEdge(base: THREE.Vector3, tip: THREE.Vector3): boolean {
