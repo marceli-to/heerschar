@@ -2,8 +2,8 @@ import { regionNodes, type CampaignNode, type RegionId } from '../../data/campai
 import { nextFloat, seedState, type RngHolder } from '../../sim/rng';
 
 /**
- * Light ink sketches for the region map sheets (approved 5c): sparse hand-drawn marks in the gaps
- * between the roads. Everything is drawn on a 1000 × 600 sheet; node x / y (0..100) scale onto it.
+ * Marks for the region map sheets (approved 5c, painted in 6i): sparse filled shapes with an ink
+ * outline in the gaps between the roads, on region-coloured land with a few flat patches. Everything is drawn on a 1000 × 600 sheet; node x / y (0..100) scale onto it.
  * Placement is seeded per region, so a sheet always looks the same.
  */
 export const SHEET_W = 1000;
@@ -114,39 +114,67 @@ export function regionMarks(region: RegionId): Mark[] {
   return marks.sort((a, b) => a.y - b.y);
 }
 
-/**
- * Glyph outlines, anchored at their foot (0, 0), roughly 30 units across. `ink` = stroked lines,
- * `shade` = thinner hatching on the shadow side.
- */
-export const GLYPHS: Record<Glyph, { ink: string; shade?: string }> = {
-  field: {
-    ink: 'M-20 0 L-12 -16 L22 -16 L16 0 Z',
-    shade: 'M-16 -4 L18 -4 M-14 -8 L19 -8 M-12 -12 L21 -12',
-  },
-  tuft: { ink: 'M-4 0 L-6 -6 M0 0 L0 -8 M4 0 L6 -6 M10 0 L11 -4' },
-  tree: {
-    ink: 'M0 0 L0 -7 M-7 -12 C-10 -20 -2 -26 2 -22 C8 -25 11 -16 7 -11 C6 -6 -5 -6 -7 -12 Z',
-    shade: 'M4 -18 L6 -15 M3 -14 L5 -11 M6 -13 L8 -10',
-  },
-  pine: {
-    ink: 'M0 2 L0 -2 M0 -24 L-8 -2 L8 -2 Z',
-    shade: 'M1 -18 L4 -14 M1 -12 L5 -7 M1 -6 L6 -3',
-  },
-  hill: {
-    ink: 'M-26 0 C-16 -16 -6 -20 4 -18 C14 -16 20 -8 26 0',
-    shade: 'M8 -14 L4 -8 M14 -11 L10 -5 M19 -7 L16 -2',
-  },
-  cottage: {
-    ink: 'M-8 0 L-8 -10 L8 -10 L8 0 Z M-11 -9 L0 -19 L11 -9 M4 -16 L4 -20 L7 -20 L7 -13 M-2 0 L-2 -5 L2 -5 L2 0',
-  },
-  mound: {
-    ink: 'M-20 0 C-14 -14 14 -14 20 0 M-24 0 L24 0',
-    shade: 'M6 -8 L10 -2 M11 -7 L14 -2 M1 -9 L5 -2',
-  },
-  cross: { ink: 'M0 0 L0 -15 M-5 -11 L5 -11 M-4 0 L4 0' },
-  stone: {
-    ink: 'M-5 0 L-6 -14 C-5 -18 4 -18 5 -14 L5 0 Z',
-    shade: 'M2 -12 L4 -10 M2 -7 L4 -5',
-  },
-  deadTree: { ink: 'M0 0 L0 -18 M0 -10 L-6 -16 L-8 -15 M0 -14 L5 -20 M0 -7 L5 -10 L8 -9 M-6 -16 L-6 -20' },
+/** One part of a glyph: a path, its fill (none = line only; 'hill' = the region's hill colour) and a thinner stroke. */
+export interface GlyphPart {
+  d: string;
+  fill?: string;
+  thin?: boolean;
+}
+
+/** Glyphs anchored at their foot (0, 0), roughly 30 units across: filled shapes with an ink outline. */
+export const GLYPHS: Record<Glyph, GlyphPart[]> = {
+  field: [
+    { d: 'M-20 0 L-12 -16 L22 -16 L16 0 Z', fill: '#f2cf5b' },
+    { d: 'M-15 -5 L18 -5 M-12 -10 L20 -10', thin: true },
+  ],
+  tuft: [{ d: 'M-4 0 L-6 -7 M0 0 L0 -9 M4 0 L6 -7' }],
+  tree: [
+    { d: 'M0 0 L0 -8' },
+    { d: 'M-8 -12 C-11 -21 -2 -27 2 -23 C9 -26 12 -16 8 -11 C6 -6 -6 -6 -8 -12 Z', fill: '#6fbf4a' },
+  ],
+  pine: [
+    { d: 'M0 2 L0 -2' },
+    { d: 'M0 -26 L-9 -2 L9 -2 Z', fill: '#3f8f46' },
+  ],
+  hill: [{ d: 'M-26 0 C-16 -16 -6 -20 4 -18 C14 -16 20 -8 26 0 Z', fill: 'hill' }],
+  cottage: [
+    { d: 'M-8 0 L-8 -10 L8 -10 L8 0 Z', fill: '#fff1d0' },
+    { d: 'M-11 -9 L0 -20 L11 -9 Z', fill: '#e0392a' },
+    { d: 'M-2 0 L-2 -5 L2 -5 L2 0', fill: '#7a4a28' },
+  ],
+  mound: [{ d: 'M-20 0 C-14 -15 14 -15 20 0 Z', fill: '#a3a88a' }],
+  cross: [{ d: 'M0 0 L0 -16 M-5 -11 L5 -11' }],
+  stone: [{ d: 'M-5 0 L-6 -14 C-5 -18 4 -18 5 -14 L5 0 Z', fill: '#9e978f' }],
+  deadTree: [{ d: 'M0 0 L0 -18 M0 -10 L-6 -16 L-8 -15 M0 -14 L5 -20 M0 -7 L5 -10 L8 -9 M-6 -16 L-6 -20' }],
 };
+
+/** Region land colours: base and the lighter / darker patch tones. */
+export const LAND: Record<RegionId, { base: string; light: string; dark: string; hill: string }> = {
+  greenmarch: { base: '#cfe39a', light: '#e2efb4', dark: '#b6d47e', hill: '#9fcf63' },
+  darkwood: { base: '#a9c98a', light: '#bdd8a0', dark: '#8fb672', hill: '#7fb35a' },
+  barrowlands: { base: '#cdc8c2', light: '#dcd8d0', dark: '#b6b0b4', hill: '#a29a8e' },
+};
+
+export interface Patch {
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
+  tone: 'light' | 'dark';
+}
+
+/** A few flat patches of lighter and darker land, seeded per region. */
+export function regionPatches(region: RegionId): Patch[] {
+  const rng = { rngState: seedState(SEED[region] * 13) };
+  const patches: Patch[] = [];
+  for (let i = 0; i < 9; i++) {
+    patches.push({
+      x: nextFloat(rng) * SHEET_W,
+      y: nextFloat(rng) * SHEET_H,
+      rx: 80 + nextFloat(rng) * 140,
+      ry: 40 + nextFloat(rng) * 70,
+      tone: i % 2 === 0 ? 'light' : 'dark',
+    });
+  }
+  return patches;
+}
