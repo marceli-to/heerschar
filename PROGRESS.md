@@ -20,7 +20,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | Look spike | **done, code removed in 6h**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
 | 6 Presentation | **gate pending**: 6a–6g done and approved (6g approved 2026-11-15); **6h built** (credits sheet, look spike removed, fps and run-through checked, see "6h as built"). Waiting for **Marcel's full playtest and verdict** ("presentable to a newcomer"). Battles still feel hard to him; difficulty levels wanted later. |
-| 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done and committed; screenshots in `~/Downloads/heerschar-assets/ui-restyle/built/`. See "6i as built". |
+| 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look; open question whether the in-world lock ring and mark banner should get the chunky style too. Then the Stage 6 gate (his full playtest). |
 | 7 | not started |
 
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
