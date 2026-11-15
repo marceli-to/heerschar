@@ -136,6 +136,14 @@ export const BOSS_COLORS = {
   wolf: '#7d7a76',
   wolfDark: '#55524e',
   wolfLight: '#a8a49c',
+  /** 6c model props: the Bone King's crown, the Shaman's antlers and totem feathers. */
+  crown: '#a8823a',
+  antler: '#c9b48c',
+  feather: '#6b3a2a',
+  paint: '#9a2a20',
+  /** The wolf model's fur, cold grey on the enemy side (6c decision). */
+  wolfFur: '#8a929c',
+  wolfFurLight: '#bcc3ca',
 } as const;
 
 /**

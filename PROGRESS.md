@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); screenshots of 6a and 6b await Marcel's verdict. Next: 6c. |
+| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); screenshots of 6a, 6b and 6c await Marcel's verdict. Next: 6d (ask scenery mood first). |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -144,6 +144,33 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Enemy bodies:** Greenmarch + Darkwood: Shieldbearer = Knight with rectangle shield + 1H sword, Berserker = Barbarian (bear hat, beard) with two 1H axes and the dual-wield attacks. Barrowlands: Shieldbearer = Skeleton Warrior + large shield + blade, Berserker = Skeleton Minion + two skeleton axes.
 - **Hero mark:** gold trim swatch on the hero; companions keep the plain team trim.
 
+## 6c decisions (Marcel, 2026-11-15)
+
+- **Wolf:** Quaternius low-poly Wolf (CC0, poly.pizza/m/P1gU3Qkr9r): attack / death / hit / gallop / walk / idle clips, recoloured to the enemy side.
+- **Iron Warlord:** Knight body + helmet in dark iron, code-made horns on the helmet, the Barbarian's two-handed axe.
+- **Fen Witch** keeps the Mage hat (dark, ragged green); **Shaman** drops the hat, gets a code-made bone mask with antlers and a totem staff.
+- **Barrowlands Shaman** = Skeleton Mage with the same mask / antlers / totem.
+- Props the packs lack (horns, crown, rags, mask, antlers) are built in code and fixed to the head bone.
+
+## 6c as built (2026-11-15)
+
+- Every unit is a model now; the code figures (`figures.ts`, `WolfView`) remain only as the fallback while / if models fail to load.
+- `bodies.ts`: `bossBody()` (Iron Warlord = Knight in iron swatches + `axe_2handed`; Fen Witch = Mage in rag greens with hag skin; Bone King = Skeleton Warrior without helmet + `sword_2handed`, glowing eyes), Shaman (Mage without hat / Skeleton Mage in the Barrowlands), wolf. New `BodySpec` fields: `scale` (bosses, `BOSS_SCALE`), `extras` + `staff`, `tints` (plain-coloured models), `glowEyes`.
+- `props.ts`: code-built extras, made in the bind pose in rig units and re-parented to the `head` / `hips` bone or the staff tip (`farEnd`): horns, crown, rags (skirt of strips), mask (curved plate, eye holes, red war paint) + antlers, witch glow (green orb), totem (bone skull, holy crystal, feathers).
+- `modelUnitView.ts`: per-pack `RIGS` (scale, bar height, clip ground speeds) and `BASE_CLIPS[pack]`; stride and bar height scale with the body. **Fix:** recolour cache keyed by source texture, and body swaps skip weapons from the other pack (the Warlord's axe went black).
+- `clips.ts`: `2h` style (bosses): sweep = `2H_Melee_Attack_Slice` (hit 0.38 s), strike / slam = `2H_Melee_Attack_Chop` (hit 0.72 s), charge = shield-bash barge, summon = roar, raise = `Spellcast_Raise`; `bite` (wolf `Attack`, hit 0.95 s); Witch `poison` = staff slam.
+- Assets: `public/models/kaykit/{axe,sword}_2handed.*` + their textures (via `tools/kaykit.mjs`), `public/models/quaternius/Wolf.glb` (0.4 MB, 7 clips, `tools/wolf.mjs`); shared GLB helpers in `tools/glb.mjs`.
+- `?lineup`: new `row=boss` (three bosses + wolf) and `only=<ClassId>` for close-ups.
+- Checked: typecheck, 210 tests, 60 fps (`perf.mjs`, Fen Witch fight). Screenshots in `~/Downloads/heerschar-assets/models-6c/` (`bosses.png`, `boss-sweep.png`, `boss-slam.png`, `enemy.png`, `game-*.png`).
+
+## Made in 6c without asking (Marcel may veto)
+
+- Warlord: plates in light iron, cape in the enemy deep blue, small trims dark iron; horns pale horn colour.
+- Witch: hag-green skin, hat band and staff wood dull rust; green glow orb on the staff tip.
+- Bone King: cloak in the enemy deep blue; crown rusty gold with a dull red stone.
+- Shaman: robe in the enemy blues; totem crystal glows holy white (its heals are golden-white).
+- Wolf: cold grey fur (`wolfFur`), ~1.1 m tall; walks / gallops by speed, both hit reacts as staggers.
+
 ## 6a as built (2026-11-15)
 
 - `src/view/models/`: `assets.ts` loads every model once (`loadModels()`, started in `main.ts`; `BattleView` waits for it, `FigurePreview` swaps the code figure for the model when it arrives; a failed load leaves the code figures). `bodies.ts` = `bodyFor(classId, team, hero, { region })`: model, visible props, attached weapons, swatch swaps, fighting style. `recolor.ts` repaints KayKit swatch cells (8 x 4 grid) keeping the gradient; colours in `MODEL_COLORS` (`palette.ts`). `clips.ts` maps sim actions to clip segments split at the **hit frame** (peak hand speed, measured): windup plays start → hit, recover hit → end, so blows land when the sim resolves them. `modelUnitView.ts` sets clip times from the sim state every frame (hit-stop / pause / frost freeze for free), own cross-fade, light-hit nudge (a little `Hit_A`), hit flash + frost tint on cloned materials, shield bubble (now shared `shieldBubble.ts`).
@@ -151,7 +178,6 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - Assets in `public/models/kaykit{,-skeletons}/` (5.4 MB), made by `node tools/kaykit.mjs <adventurers repo> <skeletons repo>`: keeps 27–32 clips and only in one file per pack (Knight, Skeleton_Minion; all bodies of a pack share the rig and clips). `public/look/` stays for the `?look` spike until 6h.
 - One scale for all bodies (0.82: rig head top ~2.2 → 1.8 m), so hats do not shrink their wearers. Walk / run clip ground speeds measured from the planted foot (0.72 / 3.7 m/s); rate follows unit speed, clamped 0.6–1.8.
 - Dev scene `?lineup` (`view/models/lineup.ts`): all bodies in rows (`row=player|enemy|barrow`), any state at a phase fraction (`state=windup&p=1&action=wirbel&still`), `cam=side|game`.
-- Still code figures: bosses, Shaman, wolves (6c). They now look tall next to the chibi bodies.
 - Checked: typecheck, 210 tests, 60 fps on `boneLegion` with the bot, screenshots + 12 s WebM in `~/Downloads/heerschar-assets/models-6a/`.
 
 ## Made in 6a without asking (Marcel may veto)
@@ -204,6 +230,10 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 **Open for Marcel (when balance comes back, after or during Stage 6):**
 1. Is it fine that camp picks can make a boss near-impossible (a "wrong" company is walled), or should the game soften it (more recruits / a bench before the bosses, bosses less dependent on composition, offers that fill gaps)?
 2. With that settled, retune once (`tune.test` with `MIN=1`) and run the 5f gate. Still off target too: solo wins (Burning Field ~20 %, Raiders ~15 %), hero damage share 55–95 % (target 35–50 %), Shield Wall / boss timeouts.
+
+**Marcel's playtest feel (2026-11-15), take into the retune:**
+- Either player damage is too low or enemy health too high: **the first battle is already hard to beat**. (Bots say the walk is easy; a human finds the opening hard, so the tuner's bot hero is probably stronger than a player. Look at the first battles' numbers, not just the bosses.)
+- The cooldown abilities ("extras" like Whirlwind, Shield Bash / shield) should **hit much harder**: they only come every cooldown, so each use should feel big.
 
 ## 5e decisions (Marcel, 2026-11-14)
 

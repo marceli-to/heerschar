@@ -10,9 +10,10 @@ import { loadModels } from './assets';
 
 /**
  * Dev scene (`?lineup`): every unit body in a row on the meadow, for screenshots and for checking
- * clips at exact sim moments. URL: `row=player|enemy|barrow` (default all three rows),
+ * clips at exact sim moments. URL: `row=player|enemy|barrow|boss` (default all four rows),
  * `state=idle|moving|windup|recover|stunned|dead|dodging`, `p=0..1` (fraction of the phase),
- * `action=<ActionId>`, `chain=0|1`, `speed=m/s`, `cam=front|side|game`, `frozen`, `shielded`.
+ * `action=<ActionId>`, `chain=0|1`, `speed=m/s`, `cam=front|side|game`, `frozen`, `shielded`,
+ * `only=<ClassId>` (one body, close up).
  */
 export async function startLineup(host: HTMLElement): Promise<void> {
   const q = new URLSearchParams(location.search);
@@ -30,16 +31,21 @@ export async function startLineup(host: HTMLElement): Promise<void> {
     player: { team: 'player', region: 'greenmarch', z: 0, units: playable },
     enemy: { team: 'enemy', region: 'greenmarch', z: -4, units: enemies },
     barrow: { team: 'enemy', region: 'barrowlands', z: -8, units: enemies },
+    boss: { team: 'enemy', region: 'darkwood', z: -13, units: [['kriegsherr', false], ['sumpfhexe', false], ['knochenkoenig', false], ['wolf', false]] },
   };
   const pick = q.get('row');
   const chosen = pick ? [rows[pick]!] : Object.values(rows);
+  // `only=<ClassId>` keeps one body of the chosen rows, for close-ups.
+  const only = q.get('only');
+  if (only) for (const r of chosen) r.units = r.units.filter(([c]) => c === only);
   if (pick) chosen[0]!.z = 0;
 
   const views: UnitView[] = [];
   for (const row of chosen) {
     row.units.forEach(([classId, hero], i) => {
       const v = createUnitView(classId, row.team, hero, { region: row.region });
-      v.setPose((i - (row.units.length - 1) / 2) * 1.9, row.z, Math.PI);
+      const gap = row === rows.boss ? 3.4 : 1.9;
+      v.setPose((i - (row.units.length - 1) / 2) * gap, row.z, Math.PI);
       parts.scene.add(v.root);
       views.push(v);
     });
@@ -67,10 +73,10 @@ export async function startLineup(host: HTMLElement): Promise<void> {
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
   const post = new Post(parts.renderer, parts.scene, camera);
   const cam = q.get('cam') ?? 'front';
-  const depth = chosen.length > 1 ? -4 : 0;
+  const depth = chosen.length > 1 ? -6 : 0;
   if (cam === 'side') camera.position.set(9, 2.2, depth + 2);
   else if (cam === 'game') camera.position.set(0, 9, depth + 16);
-  else camera.position.set(0, 2.4, depth + (chosen.length > 1 ? 21 : 13));
+  else camera.position.set(0, pick === 'boss' ? 3 : 2.4, depth + (chosen.length > 1 ? 25 : only ? 7 : pick === 'boss' ? 16 : 13));
   camera.lookAt(0, cam === 'game' ? 0 : 0.9, depth);
   const resize = (): void => {
     parts.renderer.setSize(window.innerWidth, window.innerHeight, false);

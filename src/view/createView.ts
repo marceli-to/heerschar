@@ -7,12 +7,12 @@ import { PrimitiveFigureView, type UnitView } from './unitView';
 import { WolfView } from './wolfView';
 
 /**
- * The view for a unit: a KayKit model once they are loaded (Stage 6), else the code figure in
- * its team's colours; wolves, bosses and the Shaman keep their code figures until 6c.
+ * The view for a unit: its model once the models are loaded (Stage 6), else the code figure in
+ * its team's colours (the code wolf for wolves).
  */
 export function createUnitView(classId: ClassId, team: Team, hero: boolean, look: ViewLook): UnitView {
-  if (classId === 'wolf') return new WolfView();
   const body = modelsReady() ? bodyFor(classId, team, hero, look) : null;
   if (body) return new ModelUnitView(body, team);
+  if (classId === 'wolf') return new WolfView();
   return new PrimitiveFigureView(classId, team === 'player' ? PLAYER_COLORS : ENEMY_COLORS, team, hero);
 }

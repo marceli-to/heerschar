@@ -1,4 +1,5 @@
 import type { ActionId } from '../../sim/types';
+import type { Pack } from './assets';
 import type { BodyStyle } from './bodies';
 
 /**
@@ -37,10 +38,27 @@ const ANIMS = {
   slam: split('2H_Melee_Attack_Chop', 0.1, 0.8, 1.63),
   raise: split('Spellcast_Raise', 0, 0.5, 2.1),
   hopBack: split('Dodge_Backward', 0, 0.1, 0.4),
+  // Bosses with two-handed weapons (hit frames measured like the others).
+  greatSweep: split('2H_Melee_Attack_Slice', 0, 0.38, 1.1),
+  greatChop: split('2H_Melee_Attack_Chop', 0.1, 0.72, 1.63),
+  // The wolf (Quaternius): crouch and lunge, the head peaks at the bite.
+  bite: split('Attack', 0.35, 0.95, 1.33),
 } satisfies Record<string, ActionAnim>;
 
 /** Clips for the non-action states. */
-export const BASE_CLIPS = {
+export interface BaseClips {
+  idle: string;
+  walk: string;
+  run: string;
+  dodge: string;
+  dodgeBack: string;
+  staggerLight: string;
+  staggerHeavy: string;
+  death: string;
+  deathSkeleton: string;
+}
+
+const KAYKIT_BASE: BaseClips = {
   idle: 'Idle',
   walk: 'Walking_A',
   run: 'Running_A',
@@ -50,7 +68,24 @@ export const BASE_CLIPS = {
   staggerHeavy: 'Hit_B',
   death: 'Death_A',
   deathSkeleton: 'Death_C_Skeletons',
-} as const;
+};
+
+export const BASE_CLIPS: Record<Pack, BaseClips> = {
+  adventurers: KAYKIT_BASE,
+  skeletons: KAYKIT_BASE,
+  // Wolves never dodge; the gallop stands in.
+  quaternius: {
+    idle: 'Idle',
+    walk: 'Walk',
+    run: 'Gallop',
+    dodge: 'Gallop',
+    dodgeBack: 'Gallop',
+    staggerLight: 'Idle_HitReact_Left',
+    staggerHeavy: 'Idle_HitReact_Right',
+    death: 'Death',
+    deathSkeleton: 'Death',
+  },
+};
 
 /**
  * The animation of an action for a body. `action` null is the basic attack (the hero's chain
@@ -58,6 +93,13 @@ export const BASE_CLIPS = {
  */
 export function actionAnim(style: BodyStyle, action: ActionId | null, chain: number, hero: boolean, skeleton: boolean): ActionAnim {
   const roar = skeleton ? ANIMS.taunt : ANIMS.cheer;
+  if (style === 'bite') return ANIMS.bite;
+  if (style === '2h') {
+    if (action === 'sweep') return ANIMS.greatSweep;
+    if (action === 'summon') return roar;
+    if (action === 'raise') return ANIMS.raise;
+    if (action !== 'charge') return ANIMS.greatChop;
+  }
   switch (action) {
     case 'wirbel':
       return ANIMS.spin;
@@ -77,6 +119,7 @@ export function actionAnim(style: BodyStyle, action: ActionId | null, chain: num
     case 'frostring':
     case 'heilkreis':
     case 'mend':
+    case 'poison':
     case 'slam':
       return style === 'staff' || style === 'orb' ? ANIMS.slam : ANIMS.chop;
     default:
@@ -93,5 +136,7 @@ export function actionAnim(style: BodyStyle, action: ActionId | null, chain: num
     case 'staff':
     case 'orb':
       return ANIMS.cast;
+    case '2h':
+      return ANIMS.greatChop;
   }
 }

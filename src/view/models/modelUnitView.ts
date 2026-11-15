@@ -3,24 +3,36 @@ import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { HERO } from '../../sim/balance';
 import { clamp, lerp } from '../../sim/math';
 import type { Team } from '../../sim/types';
-import { FX, MODEL_COLORS } from '../palette';
+import { FX, hdr, MODEL_COLORS } from '../palette';
 import { ShieldBubble } from '../shieldBubble';
 import type { AnimInput, UnitView } from '../unitView';
-import { MODEL_PACK, modelTemplate, nodeName, packClips, weaponTemplate } from './assets';
+import { MODEL_PACK, modelTemplate, nodeName, packClips, WEAPON_PACK, weaponTemplate, type Pack } from './assets';
 import type { BodySpec } from './bodies';
-import { actionAnim, BASE_CLIPS, type Segment } from './clips';
+import { actionAnim, BASE_CLIPS, type BaseClips, type Segment } from './clips';
+import { addExtra } from './props';
 import { recolored } from './recolor';
+
+interface RigInfo {
+  /** Model scale for a normal-sized unit (bosses multiply it by `BodySpec.scale`). */
+  scale: number;
+  barY: number;
+  /** Ground speed (m/s) of the walk and run clips at normal rate, after scaling (planted-foot speed). */
+  walkSpeed: number;
+  runSpeed: number;
+  runFrom: number;
+}
 
 /**
  * Every KayKit body shares one rig whose head tops out at ~2.2 units; one scale for all keeps
- * hats and helmets on top instead of shrinking their wearers.
+ * hats and helmets on top instead of shrinking their wearers. The wolf (2.7 units nose to tail
+ * tip in height) is brought to ~1.1 m; its speeds are estimated from the clips.
  */
-const MODEL_SCALE = 0.82;
-const BAR_Y = 2.15;
-/** Ground speed (m/s) of the walk and run clips at normal rate, after scaling (planted-foot speed, measured). */
-const WALK_SPEED = 0.72;
-const RUN_SPEED = 3.7;
-const RUN_FROM = 1.3;
+const KAYKIT_RIG: RigInfo = { scale: 0.82, barY: 2.15, walkSpeed: 0.72, runSpeed: 3.7, runFrom: 1.3 };
+const RIGS: Record<Pack, RigInfo> = {
+  adventurers: KAYKIT_RIG,
+  skeletons: KAYKIT_RIG,
+  quaternius: { scale: 0.48, barY: 1.35, walkSpeed: 1.1, runSpeed: 5, runFrom: 2 },
+};
 const IDLE_BELOW = 0.35;
 /** Cross-fade between animations, seconds (shorter into an attack so the tell starts at once). */
 const FADE = 0.14;
@@ -43,7 +55,9 @@ interface Pose {
  */
 export class ModelUnitView implements UnitView {
   readonly root = new THREE.Group();
-  readonly barY = BAR_Y;
+  readonly barY: number;
+  private readonly rig: RigInfo;
+  private readonly base: BaseClips;
   private readonly model: THREE.Object3D;
   private readonly mixer: THREE.AnimationMixer;
   private readonly clips: Map<string, THREE.AnimationClip>;
@@ -53,12 +67,14 @@ export class ModelUnitView implements UnitView {
   private readonly baseEmissive: THREE.Color[] = [];
   private readonly bubble: ShieldBubble;
   private readonly orb: THREE.Mesh | null = null;
+  /** Code-built props (their geometry is this unit's own, unlike the shared model meshes). */
+  private readonly extras: THREE.Object3D[] = [];
   /** The swinging blade and its edge (base, tip) in the blade's own space, for the swing trail. */
   private readonly blade: THREE.Object3D | null = null;
   private readonly edgeBase = new THREE.Vector3();
   private readonly edgeTip = new THREE.Vector3();
 
-  private cur: Pose = { clip: BASE_CLIPS.idle, time: 0 };
+  private cur: Pose = { clip: 'Idle', time: 0 };
   private prev: Pose | null = null;
   private fade = 0;
   private fadeLen = FADE;
@@ -72,16 +88,32 @@ export class ModelUnitView implements UnitView {
   private frost = 0;
 
   constructor(private readonly body: BodySpec, team: Team) {
+    const pack = MODEL_PACK[body.model];
+    const size = body.scale ?? 1;
+    this.rig = RIGS[pack];
+    this.base = BASE_CLIPS[pack];
+    this.barY = this.rig.barY * size;
     this.model = cloneSkinned(modelTemplate(body.model));
-    this.model.scale.setScalar(MODEL_SCALE);
-    // KayKit faces +z; unit views face -z.
-    this.model.rotation.y = Math.PI;
+    let staff: THREE.Object3D | null = null;
+    // Weapons from the other pack sample their own atlas: the body's swaps do not apply to them.
+    const foreign = new Set<THREE.Object3D>();
     for (const a of body.attach) {
       const bone = this.model.getObjectByName(nodeName(a.bone));
       const weapon = weaponTemplate(a.weapon).clone();
+      if (WEAPON_PACK[a.weapon] !== pack) weapon.traverse((o) => foreign.add(o));
       bone?.add(weapon);
       if (a.weapon === body.blade && a.bone === 'handslot.r') this.blade = weapon;
+      if (a.weapon === body.staff) staff = weapon;
     }
+    // Code props are placed at the bind pose, before the model is scaled and turned.
+    staff ??= body.staff ? (this.model.getObjectByName(nodeName(body.staff)) ?? null) : null;
+    for (const e of body.extras ?? []) {
+      const prop = addExtra(this.model, e, staff);
+      if (prop) this.extras.push(prop);
+    }
+    this.model.scale.setScalar(this.rig.scale * size);
+    // KayKit and Quaternius face +z; unit views face -z.
+    this.model.rotation.y = Math.PI;
     if (body.blade && !this.blade) this.blade = this.model.getObjectByName(nodeName(body.blade)) ?? null;
     if (this.blade) this.measureBlade(this.blade);
     if (body.style === 'orb') {
@@ -92,13 +124,13 @@ export class ModelUnitView implements UnitView {
       this.orb.position.set(0, 0.12, 0);
       this.model.getObjectByName(nodeName('handslot.r'))?.add(this.orb);
     }
-    this.prepareMeshes(body);
+    this.prepareMeshes(body, foreign);
     this.root.add(this.model);
 
     this.clips = packClips(MODEL_PACK[body.model]);
     this.mixer = new THREE.AnimationMixer(this.model);
 
-    this.bubble = new ShieldBubble(team, { x: 0.8, y: 1.05, z: 0.8 }, 0.95);
+    this.bubble = new ShieldBubble(team, { x: 0.8 * size, y: 1.05 * size, z: 0.8 * size }, 0.95 * size);
     this.root.add(this.bubble.mesh);
     this.applyPose(1, 0);
   }
@@ -134,10 +166,10 @@ export class ModelUnitView implements UnitView {
   }
 
   /** Hides unused props, turns on shadows, gives the unit its own (recoloured) materials. */
-  private prepareMeshes(body: BodySpec): void {
+  private prepareMeshes(body: BodySpec, foreign: ReadonlySet<THREE.Object3D>): void {
     const hidden = new Set(body.hide.map(nodeName));
     const own = new Map<THREE.Material, THREE.MeshStandardMaterial>();
-    const swapKey = `${body.model}:${body.swaps.map((s) => `${s.cell.join('.')}=${s.color}`).join(',')}`;
+    const swapKey = body.swaps.map((s) => `${s.cell.join('.')}=${s.color}`).join(',');
     this.model.traverse((o) => {
       if (hidden.has(o.name)) {
         o.visible = false;
@@ -150,13 +182,28 @@ export class ModelUnitView implements UnitView {
       // Skinned bounds follow the bind pose; animated limbs would pop out of view.
       mesh.frustumCulled = false;
       const src = mesh.material as THREE.MeshStandardMaterial;
-      if (mesh === this.orb) return;
-      let mat = own.get(src);
+      if (mesh === this.orb || !src.isMeshStandardMaterial) return;
+      // Glowing eyes need their own material: they share the atlas material with the body.
+      const eyes = body.glowEyes !== undefined && mesh.name.endsWith('_Eyes');
+      const swaps = foreign.has(mesh) ? [] : body.swaps;
+      let mat = eyes ? undefined : own.get(src);
       if (!mat) {
         mat = src.clone();
         // Body, bundled props and the Skeletons' weapons all sample the pack's one swatch atlas.
-        if (src.map) mat.map = recolored(src.map, body.swaps, swapKey);
-        own.set(src, mat);
+        if (src.map) mat.map = recolored(src.map, swaps, `${src.map.uuid}:${swapKey}`);
+        const tint = body.tints?.[src.name];
+        if (tint) {
+          mat.color.set(tint);
+          // Plain-coloured models come in metallic; fur is not.
+          mat.metalness = 0;
+          mat.roughness = 1;
+        }
+        if (eyes) {
+          mat.map = null;
+          mat.color.set(body.glowEyes!);
+          mat.emissive.copy(hdr(body.glowEyes!, 2.2));
+        }
+        if (!eyes) own.set(src, mat);
         this.materials.push(mat);
         this.baseColors.push(mat.color.clone());
         this.baseEmissive.push(mat.emissive.clone());
@@ -208,9 +255,13 @@ export class ModelUnitView implements UnitView {
     switch (a.state) {
       case 'idle':
       case 'moving': {
-        const clip = a.speed < IDLE_BELOW ? BASE_CLIPS.idle : a.speed < RUN_FROM ? BASE_CLIPS.walk : BASE_CLIPS.run;
+        const base = this.base;
+        const size = this.body.scale ?? 1;
+        const clip = a.speed < IDLE_BELOW ? base.idle : a.speed < this.rig.runFrom * size ? base.walk : base.run;
         const len = this.clipLength(clip);
-        const rate = clip === BASE_CLIPS.idle ? 1 : clamp(a.speed / (clip === BASE_CLIPS.walk ? WALK_SPEED : RUN_SPEED), 0.6, 1.8);
+        // Bigger bodies take longer strides.
+        const stride = (clip === base.walk ? this.rig.walkSpeed : this.rig.runSpeed) * size;
+        const rate = clip === base.idle ? 1 : clamp(a.speed / stride, 0.6, 1.8);
         this.loopPhase = (this.loopPhase + (frameTime * rate) / len) % 1;
         return { pose: { clip, time: this.loopPhase * len }, key: `loop|${clip}`, fade: FADE };
       }
@@ -223,15 +274,15 @@ export class ModelUnitView implements UnitView {
         return { pose: segmentPose(seg, a.stateTime / Math.max(0.01, dur)), key: `${windup ? 'w' : 'r'}|${a.action ?? 'basic'}|${a.chain}`, fade: windup ? FADE_ACTION : FADE };
       }
       case 'dodging': {
-        const clip = a.dodgeBack ? BASE_CLIPS.dodgeBack : BASE_CLIPS.dodge;
+        const clip = a.dodgeBack ? this.base.dodgeBack : this.base.dodge;
         return { pose: { clip, time: clamp(a.stateTime / HERO.dodge.duration, 0, 1) * this.clipLength(clip) }, key: `dodge|${clip}`, fade: FADE_ACTION };
       }
       case 'stunned': {
-        const clip = a.stunDuration <= 0.6 ? BASE_CLIPS.staggerLight : BASE_CLIPS.staggerHeavy;
+        const clip = a.stunDuration <= 0.6 ? this.base.staggerLight : this.base.staggerHeavy;
         return { pose: { clip, time: clamp(a.stateTime / Math.max(0.05, a.stunDuration), 0, 1) * this.clipLength(clip) }, key: `stun|${clip}`, fade: FADE_ACTION };
       }
       case 'dead': {
-        const clip = b.skeleton ? BASE_CLIPS.deathSkeleton : BASE_CLIPS.death;
+        const clip = b.skeleton ? this.base.deathSkeleton : this.base.death;
         return { pose: { clip, time: Math.min(a.stateTime, this.clipLength(clip)) }, key: 'dead', fade: FADE };
       }
     }
@@ -259,7 +310,7 @@ export class ModelUnitView implements UnitView {
   private applyPose(w: number, nudge: number): void {
     const layers: [Pose, number][] = [[this.cur, w * (1 - nudge)]];
     if (this.prev && w < 1) layers.push([this.prev, (1 - w) * (1 - nudge)]);
-    if (nudge > 0) layers.push([{ clip: BASE_CLIPS.staggerLight, time: (1 - this.nudge / NUDGE_TIME) * 0.3 }, nudge]);
+    if (nudge > 0) layers.push([{ clip: this.base.staggerLight, time: (1 - this.nudge / NUDGE_TIME) * 0.3 }, nudge]);
     const weights = new Map<string, [number, number]>();
     for (const [p, weight] of layers) {
       const had = weights.get(p.clip);
@@ -299,6 +350,14 @@ export class ModelUnitView implements UnitView {
     this.mixer.uncacheRoot(this.model);
     for (const m of this.materials) m.dispose();
     this.bubble.dispose();
+    for (const e of this.extras) {
+      e.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.geometry.dispose();
+        if (m.material instanceof THREE.MeshBasicMaterial) m.material.dispose();
+      });
+    }
     if (this.orb) {
       this.orb.geometry.dispose();
       (this.orb.material as THREE.Material).dispose();

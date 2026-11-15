@@ -2,15 +2,23 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 /**
- * The KayKit models the game uses (`public/models/`, copied and trimmed by `tools/kaykit.mjs`).
- * Loaded once, then cloned per unit. Each pack shares one rig and one clip set, kept only in its
- * first file (`ANIM_SOURCE`); every body of that pack plays those clips.
+ * The models the game uses (`public/models/`, copied and trimmed by `tools/kaykit.mjs` and
+ * `tools/wolf.mjs`). Loaded once, then cloned per unit. Each pack shares one rig and one clip
+ * set, kept only in its first file (`ANIM_SOURCE`); every body of that pack plays those clips.
  */
-export type ModelId = 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage';
-export type WeaponId = 'Skeleton_Blade' | 'Skeleton_Axe' | 'Skeleton_Shield_Large_A' | 'Skeleton_Shield_Small_A' | 'Skeleton_Crossbow' | 'Skeleton_Staff';
-export type Pack = 'adventurers' | 'skeletons';
+export type ModelId = 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage' | 'Wolf';
+export type WeaponId =
+  | 'Skeleton_Blade'
+  | 'Skeleton_Axe'
+  | 'Skeleton_Shield_Large_A'
+  | 'Skeleton_Shield_Small_A'
+  | 'Skeleton_Crossbow'
+  | 'Skeleton_Staff'
+  | 'axe_2handed'
+  | 'sword_2handed';
+export type Pack = 'adventurers' | 'skeletons' | 'quaternius';
 
-const DIR: Record<Pack, string> = { adventurers: 'kaykit', skeletons: 'kaykit-skeletons' };
+const DIR: Record<Pack, string> = { adventurers: 'kaykit', skeletons: 'kaykit-skeletons', quaternius: 'quaternius' };
 export const MODEL_PACK: Record<ModelId, Pack> = {
   Knight: 'adventurers',
   Mage: 'adventurers',
@@ -20,9 +28,20 @@ export const MODEL_PACK: Record<ModelId, Pack> = {
   Skeleton_Minion: 'skeletons',
   Skeleton_Rogue: 'skeletons',
   Skeleton_Mage: 'skeletons',
+  Wolf: 'quaternius',
 };
-const ANIM_SOURCE: Record<Pack, ModelId> = { adventurers: 'Knight', skeletons: 'Skeleton_Minion' };
-const WEAPONS: WeaponId[] = ['Skeleton_Blade', 'Skeleton_Axe', 'Skeleton_Shield_Large_A', 'Skeleton_Shield_Small_A', 'Skeleton_Crossbow', 'Skeleton_Staff'];
+const ANIM_SOURCE: Record<Pack, ModelId> = { adventurers: 'Knight', skeletons: 'Skeleton_Minion', quaternius: 'Wolf' };
+export const WEAPON_PACK: Record<WeaponId, Pack> = {
+  Skeleton_Blade: 'skeletons',
+  Skeleton_Axe: 'skeletons',
+  Skeleton_Shield_Large_A: 'skeletons',
+  Skeleton_Shield_Small_A: 'skeletons',
+  Skeleton_Crossbow: 'skeletons',
+  Skeleton_Staff: 'skeletons',
+  axe_2handed: 'adventurers',
+  sword_2handed: 'adventurers',
+};
+const WEAPONS = Object.keys(WEAPON_PACK) as WeaponId[];
 
 interface Library {
   models: Map<ModelId, THREE.Group>;
@@ -42,7 +61,7 @@ export function loadModels(): Promise<void> {
     const ids = Object.keys(MODEL_PACK) as ModelId[];
     const [models, weapons] = await Promise.all([
       Promise.all(ids.map((id) => loader.loadAsync(url(MODEL_PACK[id], `${id}.glb`)))),
-      Promise.all(WEAPONS.map((id) => loader.loadAsync(url('skeletons', `${id}.gltf`)))),
+      Promise.all(WEAPONS.map((id) => loader.loadAsync(url(WEAPON_PACK[id], `${id}.gltf`)))),
     ]);
     const lib: Library = { models: new Map(), weapons: new Map(), clips: new Map() };
     ids.forEach((id, i) => {
