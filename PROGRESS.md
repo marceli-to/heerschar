@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); 6d done (region scenery, see "6d as built"); screenshots of 6a–6d await Marcel's verdict. Next: 6e (camera moments). |
+| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); 6d done (region scenery, see "6d as built"); screens of 6a–6d approved by Marcel (2026-11-15). Marcel's playtest still finds battles hard; a quick hero-damage test did not settle it (reverted, see "Marcel's playtest feel"); difficulty levels wanted later. Next: 6e (camera moments). |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -233,9 +233,9 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 
 ## Stage 6 breakdown (do in this order, commit after each)
 
-- **6a** `ModelUnitView` behind `UnitView`: KayKit `.glb`, weapons on `handslot.r/l`, clips mapped to sim states (idle, walk, windup/attack synced to hit frames, hit, dodge, cast, death), hit flash + frozen tint; code figures stay as fallback. Move models from `public/look/` to a real asset folder, update `CREDITS.md`. Screenshots for Marcel.
-- **6b** Port the four effects from `src/look/` (bloom 1.3 / 0.6, sparks + dust + trails, grade + haze + soft shadows, ground marks 11 s). Screenshots.
-- **6c** Bosses, Schamane, wolves as decided. Screenshots.
+- ~~**6a**~~ Done. `ModelUnitView` behind `UnitView`: KayKit `.glb`, weapons on `handslot.r/l`, clips mapped to sim states (idle, walk, windup/attack synced to hit frames, hit, dodge, cast, death), hit flash + frozen tint; code figures stay as fallback. Move models from `public/look/` to a real asset folder, update `CREDITS.md`. Screenshots for Marcel.
+- ~~**6b**~~ Done. Port the four effects from `src/look/` (bloom 1.3 / 0.6, sparks + dust + trails, grade + haze + soft shadows, ground marks 11 s). Screenshots.
+- ~~**6c**~~ Done. Bosses, Schamane, wolves as decided. Screenshots.
 - ~~**6d** Region scenery~~ Done (see "6d as built").
 - **6e** Camera moments: countdown orbit, slow motion on the final blow. Marcel plays.
 - **6f** Sound and music from sim events. Ask style first; licences in `CREDITS.md`.
