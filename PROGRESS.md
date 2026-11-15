@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **started**: breakdown and figure decisions below ("Stage 6 decisions"). Next: 6a. |
+| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); screenshots await Marcel's verdict. Next: 6b. |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -136,6 +136,31 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Enemies: mix by region.** Adventurers bodies in cold colours in Greenmarch and Darkwood, KayKit Skeletons in the Barrowlands.
 - **Missing types:** bosses = scaled KayKit bodies with the signature props from the Stage 5 decisions (Iron Warlord horned helm + two-handed axe, Fen Witch rag robe + green-glowing crooked staff, Bone King crown + greatsword + blue eyes); Schamane = Mage variant with totem / mask; wolves from another CC0 pack (verify licence, record in `CREDITS.md`).
 - **Still open (ask at 6d / 6f):** sound style (synthesised like tin-wolf vs. CC0 samples) and music (one loop per region?); scenery mood per region.
+
+## 6a decisions (Marcel, 2026-11-15)
+
+- **Archer carries the pack's two-handed crossbow** (KayKit has no bow); its aim / shoot / reload clips. Class name stays "Archer", projectiles unchanged.
+- **Both sides recoloured** by swapping swatches in the KayKit texture: player warm (crimson capes / hats / cloaks, gold trim), enemies cold blue / steel.
+- **Enemy bodies:** Greenmarch + Darkwood: Shieldbearer = Knight with rectangle shield + 1H sword, Berserker = Barbarian (bear hat, beard) with two 1H axes and the dual-wield attacks. Barrowlands: Shieldbearer = Skeleton Warrior + large shield + blade, Berserker = Skeleton Minion + two skeleton axes.
+- **Hero mark:** gold trim swatch on the hero; companions keep the plain team trim.
+
+## 6a as built (2026-11-15)
+
+- `src/view/models/`: `assets.ts` loads every model once (`loadModels()`, started in `main.ts`; `BattleView` waits for it, `FigurePreview` swaps the code figure for the model when it arrives; a failed load leaves the code figures). `bodies.ts` = `bodyFor(classId, team, hero, { region })`: model, visible props, attached weapons, swatch swaps, fighting style. `recolor.ts` repaints KayKit swatch cells (8 x 4 grid) keeping the gradient; colours in `MODEL_COLORS` (`palette.ts`). `clips.ts` maps sim actions to clip segments split at the **hit frame** (peak hand speed, measured): windup plays start → hit, recover hit → end, so blows land when the sim resolves them. `modelUnitView.ts` sets clip times from the sim state every frame (hit-stop / pause / frost freeze for free), own cross-fade, light-hit nudge (a little `Hit_A`), hit flash + frost tint on cloned materials, shield bubble (now shared `shieldBubble.ts`).
+- `createUnitView(classId, team, hero, look)`; `BattleSpec.region` (sandbox / trial = Greenmarch) picks skeletons for Barrowlands enemies. `AnimInput.dodgeBack` (dodge away from facing plays `Dodge_Backward`).
+- Assets in `public/models/kaykit{,-skeletons}/` (5.4 MB), made by `node tools/kaykit.mjs <adventurers repo> <skeletons repo>`: keeps 27–32 clips and only in one file per pack (Knight, Skeleton_Minion; all bodies of a pack share the rig and clips). `public/look/` stays for the `?look` spike until 6h.
+- One scale for all bodies (0.82: rig head top ~2.2 → 1.8 m), so hats do not shrink their wearers. Walk / run clip ground speeds measured from the planted foot (0.72 / 3.7 m/s); rate follows unit speed, clamped 0.6–1.8.
+- Dev scene `?lineup` (`view/models/lineup.ts`): all bodies in rows (`row=player|enemy|barrow`), any state at a phase fraction (`state=windup&p=1&action=wirbel&still`), `cam=side|game`.
+- Still code figures: bosses, Shaman, wolves (6c). They now look tall next to the chibi bodies.
+- Checked: typecheck, 210 tests, 60 fps on `boneLegion` with the bot, screenshots + 12 s WebM in `~/Downloads/heerschar-assets/models-6a/`.
+
+## Made in 6a without asking (Marcel may veto)
+
+- Player Warrior carries the **badge shield**, enemy Warrior the **round shield**, Shieldbearer the **rectangle shield**; enemy Shieldbearer cape in the deep blue, other enemies in the main blue.
+- **Barrowlands skeleton mapping** for the classes the decision did not name: enemy Warrior = Skeleton Warrior + blade + small shield, Archer = Skeleton Rogue + skeleton crossbow, Mage = Skeleton Mage + skull staff, Healer = Skeleton Mage in a pale robe with the orb.
+- Player colours: Warrior cape crimson; Archer hood/cloak crimson, tunic deep red; Mage robe + hat deep red, cape crimson; Healer robe + hat cream, cape crimson. Companions' trim stays brown leather, the hero's is gold.
+- Healer orb: a small cream sphere in the right hand (glows once bloom comes in 6b).
+- Clips: Warrior chain = diagonal slice then overhead chop; AI melee = chop; Berserker = dual-wield chop; Shield Bash = `Block_Attack`; Whirlwind = `2H_Melee_Attack_Spinning`; Taunt / Rally (melee) = `Cheer` (skeletons `Taunt`); caster shots = `Spellcast_Shoot`; novas / heal circle / frost ring = two-handed chop with the staff; Rally / summon (casters) = `Spellcast_Raise`; skeletons die with `Death_C_Skeletons` (fall apart).
 
 ## Stage 6 breakdown (do in this order, commit after each)
 

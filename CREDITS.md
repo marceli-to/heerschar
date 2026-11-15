@@ -7,7 +7,12 @@ Fonts (SIL Open Font License 1.1, licence files in `public/fonts/`):
 
 Code adapted from tin-wolf (same author): seeded RNG, fixed-timestep loop, keyboard and mouse input.
 
-Figures, arena and effects are built in code.
+Characters (CC0 1.0, licences in `public/models/*/LICENSE.txt`; copied and trimmed to the clips the game plays by `tools/kaykit.mjs`):
+
+- KayKit Adventurers Character Pack 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Knight, Mage, Rogue_Hooded, Barbarian (github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0).
+- KayKit Character Pack : Skeletons 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Skeleton Warrior, Minion, Rogue, Mage and their weapons (github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0).
+
+Bosses, the Shaman, wolves, the arena and effects are built in code.
 
 Look spike only (`?look`, `public/look/`, not used by the game):
 

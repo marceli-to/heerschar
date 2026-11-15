@@ -2,15 +2,17 @@
 import * as THREE from 'three';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { ClassId } from '../../sim/types';
-import { PLAYER_COLORS } from '../../view/palette';
-import { PrimitiveFigureView } from '../../view/unitView';
+import { createUnitView } from '../../view/createView';
+import { loadModels } from '../../view/models/assets';
+import type { UnitView } from '../../view/unitView';
 
 /** A class figure turning slowly on parchment (approved 3): its own small transparent renderer. */
 const props = withDefaults(defineProps<{ classId: ClassId; hero?: boolean }>(), { hero: true });
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 let renderer: THREE.WebGLRenderer | null = null;
-let view: PrimitiveFigureView | null = null;
+let view: UnitView | null = null;
+let unmounted = false;
 let frame = 0;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
@@ -29,7 +31,7 @@ function build(): void {
     scene.remove(view.root);
     view.dispose();
   }
-  view = new PrimitiveFigureView(props.classId, PLAYER_COLORS, 'player', props.hero);
+  view = createUnitView(props.classId, 'player', props.hero, { region: 'greenmarch' });
   scene.add(view.root);
 }
 
@@ -50,7 +52,7 @@ function loop(now: number): void {
   turn += dt * 0.5;
   if (view) {
     view.setPose(0, 0, turn);
-    view.animate({ state: 'idle', stateTime: 0, chain: 0, stunDuration: 0, isHero: props.hero, action: null, windup: 0, recover: 0, speed: 0, frozen: false, shielded: false }, dt);
+    view.animate({ state: 'idle', stateTime: 0, chain: 0, stunDuration: 0, isHero: props.hero, action: null, windup: 0, recover: 0, speed: 0, frozen: false, shielded: false, dodgeBack: false }, dt);
   }
   renderer?.render(scene, camera);
 }
@@ -63,6 +65,10 @@ onMounted(() => {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   build();
+  // The code figure shows until the models are in, then the model takes its place.
+  void loadModels().then(() => {
+    if (!unmounted) build();
+  });
   ro.observe(canvas.value);
   resize();
   frame = requestAnimationFrame(loop);
@@ -71,6 +77,7 @@ onMounted(() => {
 watch(() => [props.classId, props.hero], build);
 
 onBeforeUnmount(() => {
+  unmounted = true;
   cancelAnimationFrame(frame);
   ro.disconnect();
   view?.dispose();

@@ -1,3 +1,4 @@
+import { NODES } from '../data/campaign';
 import { encounterById, trialSetup, type EncounterId } from '../data/encounters';
 import { STRINGS } from '../data/strings';
 import { battleSetupFor, fieldedCharacters, type SquadState } from '../meta/squad';
@@ -15,10 +16,12 @@ export function encounterSpec(squad: SquadState, encounterId: EncounterId): Batt
     names: fieldedCharacters(snapshot).map((c) => c.name),
     title: STRINGS.encounters[encounterId].name,
     intro: STRINGS.encounters[encounterId].intro,
+    // Sandbox battles are not on the map; they look like Greenmarch.
+    region: NODES.find((n) => n.id === encounterId)?.region ?? 'greenmarch',
   };
 }
 
 /** The Stage 1 feel test (`?trial`). */
 export function trialSpec(heroClass: PlayableClassId, heroName: string): BattleSpec {
-  return { mode: 'trial', build: (seed) => trialSetup(seed, heroClass), names: [heroName], title: STRINGS.trial.name, intro: STRINGS.trial.intro };
+  return { mode: 'trial', build: (seed) => trialSetup(seed, heroClass), names: [heroName], title: STRINGS.trial.name, intro: STRINGS.trial.intro, region: 'greenmarch' };
 }

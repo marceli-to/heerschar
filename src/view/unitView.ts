@@ -6,6 +6,7 @@ import type { ClassId, Team } from '../sim/types';
 import { ARM, BOSS_SCALE, buildFigure, type FigureRig } from './figures';
 import { reach, orient } from './ik';
 import { FX, type FigureColors } from './palette';
+import { ShieldBubble } from './shieldBubble';
 
 /** What a figure needs from the sim each frame to pose itself. */
 export interface AnimInput {
@@ -23,6 +24,8 @@ export interface AnimInput {
   speed: number;
   frozen: boolean;
   shielded: boolean;
+  /** A dodge away from where the unit faces (a hop backwards). */
+  dodgeBack: boolean;
 }
 
 /**
@@ -81,34 +84,6 @@ function actionPose(style: FigureRig['style'], action: ActionId | null): ActionP
   }
 }
 
-/** Shield bubble: bright at the rim, nearly clear in the middle, so the figure stays readable. */
-function shieldMaterial(color: string): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    uniforms: { color: { value: new THREE.Color(color) }, opacity: { value: 0 } },
-    vertexShader: `
-      varying vec3 vNormal;
-      varying vec3 vView;
-      void main() {
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        vNormal = normalize(normalMatrix * normal);
-        vView = normalize(-mv.xyz);
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: `
-      uniform vec3 color;
-      uniform float opacity;
-      varying vec3 vNormal;
-      varying vec3 vView;
-      void main() {
-        float rim = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 2.5);
-        gl_FragColor = vec4(color, (0.04 + rim * 0.75) * opacity);
-      }`,
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
-}
-
 const v = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z);
 const _t = new THREE.Vector3();
 const _t2 = new THREE.Vector3();
@@ -129,13 +104,12 @@ export class PrimitiveFigureView implements UnitView {
   readonly barY: number;
   private readonly rig: FigureRig;
   private readonly baseColors: THREE.Color[];
-  private readonly bubble: THREE.Mesh;
+  private readonly bubble: ShieldBubble;
   private flash = 0;
   private flashStrength = 1;
   private walkPhase = 0;
   private idleTime = 0;
   private frost = 0;
-  private bubbleLevel = 0;
 
   /** Bosses swing everything as the heavy chain step. */
   private readonly heavy: boolean;
@@ -146,12 +120,8 @@ export class PrimitiveFigureView implements UnitView {
     this.root = this.rig.root;
     this.barY = this.rig.barY;
     this.baseColors = this.rig.materials.map((m) => m.color.clone());
-    const bubbleMat = shieldMaterial(team === 'player' ? FX.shieldPlayer : FX.shieldEnemy);
-    this.bubble = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), bubbleMat);
-    this.bubble.scale.set(0.75, 1.15, 0.75);
-    this.bubble.position.y = 1.0;
-    this.bubble.visible = false;
-    this.root.add(this.bubble);
+    this.bubble = new ShieldBubble(team);
+    this.root.add(this.bubble.mesh);
   }
 
   setPose(x: number, z: number, facing: number): void {
@@ -559,13 +529,7 @@ export class PrimitiveFigureView implements UnitView {
       const f = this.frost * 0.18;
       for (const m of this.rig.materials) m.emissive.setRGB(k + f * 0.3, k * 0.92 + f * 0.75, k * 0.85 + f);
     }
-    const bubbleTarget = a.shielded && a.state !== 'dead' ? 1 : 0;
-    this.bubbleLevel += (bubbleTarget - this.bubbleLevel) * Math.min(1, frameTime * 10);
-    this.bubble.visible = this.bubbleLevel > 0.02;
-    if (this.bubble.visible) {
-      const mat = this.bubble.material as THREE.ShaderMaterial;
-      mat.uniforms.opacity!.value = this.bubbleLevel * (0.85 + Math.sin(this.idleTime * 4) * 0.15);
-    }
+    this.bubble.update(a.shielded && a.state !== 'dead', frameTime, this.idleTime);
   }
 
   dispose(): void {

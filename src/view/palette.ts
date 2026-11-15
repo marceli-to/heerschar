@@ -123,3 +123,14 @@ export const BOSS_COLORS = {
   wolfDark: '#55524e',
   wolfLight: '#a8a49c',
 } as const;
+
+/**
+ * Swatch colours for the KayKit models (6a decisions: player warm with crimson capes / hats /
+ * cloaks, enemies cold blue / steel, the hero's trim gold). See `models/bodies.ts`.
+ */
+export const MODEL_COLORS = {
+  player: { main: '#a8322a', deep: '#7e2a26', trim: '#6b4528', robe: '#efe3c8' },
+  enemy: { main: '#35557d', deep: '#2b3a66', trim: '#3f4550', robe: '#c9d3dc' },
+  heroTrim: '#d4a338',
+  healerOrb: '#fff2c4',
+} as const;

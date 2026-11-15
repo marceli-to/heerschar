@@ -5,8 +5,9 @@ import { BOSS_ACTIONS, COUNTDOWN, DT, ENERGY, HERO, HERO_ABILITIES, heroAttack }
 import { actionTiming, meleeAttackOf } from '../sim/ai';
 import { isBoss } from '../sim/body';
 import { heroKit } from '../sim/heroAbilities';
-import { angleTo, lerp, lerpAngle } from '../sim/math';
+import { angleDiff, angleTo, lerp, lerpAngle } from '../sim/math';
 import type { AreaKind, Battle, BattleEvent, ClassId, HeroAbilityId, Unit } from '../sim/types';
+import type { RegionId } from '../data/campaign';
 import { STRINGS } from '../data/strings';
 import { hasStatus } from '../sim/statuses';
 import { ledgerEntry, tallyEvents, type Ledger } from '../sim/ledger';
@@ -50,6 +51,8 @@ export interface BattleSpec {
   /** Intro panel heading and text. */
   title: string;
   intro: string;
+  /** Where the battle is fought (picks the enemies' look: skeletons in the Barrowlands). */
+  region: RegionId;
 }
 
 export interface HudAbility {
@@ -280,7 +283,7 @@ export class Game {
 
   /** A view and health bar for a unit (at the start, or when a boss summons it). */
   private addUnit(u: Unit): void {
-    const view = createUnitView(u.classId, u.team, u.isHero);
+    const view = createUnitView(u.classId, u.team, u.isHero, { region: this.spec.region });
     // Bosses show their health in the big bar at the top instead.
     const bar = u.isHero || isBoss(u) ? null : new HealthBar(u.team === 'player' ? '#d9a33a' : '#b8382a');
     this.unitLayer.add(view.root);
@@ -544,7 +547,7 @@ export class Game {
       // A charging boss kicks up dust along its run.
       if (animTime > 0 && u.action === 'charge' && u.state === 'recover' && u.stateTime <= BOSS_ACTIONS.charge.dash) this.effects.dust(x, z, 2);
       slot.view.animate(
-        { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded') },
+        { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded'), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2 },
         animTime,
       );
       if (slot.bar) {

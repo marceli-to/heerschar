@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { Game, type BattleSpec } from '../game/game';
 import { createBot } from '../sim/bot';
+import { loadModels } from '../view/models/assets';
 import DebugOverlay from './DebugOverlay.vue';
 import Hud from './Hud.vue';
 import Overlays from './Overlays.vue';
@@ -13,8 +14,12 @@ const emit = defineEmits<{ ended: [won: boolean]; leave: []; changeSquad: [] }>(
 const canvas = ref<HTMLCanvasElement | null>(null);
 const game = shallowRef<Game | null>(null);
 
-onMounted(() => {
-  if (!canvas.value) return;
+let unmounted = false;
+
+onMounted(async () => {
+  // Models load at startup; a battle opened before they are in waits for them (or their failure).
+  await loadModels();
+  if (!canvas.value || unmounted) return;
   const g = new Game(canvas.value, { spec: props.spec, seed: props.seed, zoom: props.zoom, debug: props.debug, peaceful: props.peaceful });
   if (props.bot) {
     g.bot = createBot();
@@ -32,6 +37,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  unmounted = true;
   if (document.pointerLockElement) document.exitPointerLock();
   game.value?.dispose();
 });
