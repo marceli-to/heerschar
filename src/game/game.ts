@@ -374,7 +374,7 @@ export class Game {
   private addUnit(u: Unit): void {
     const view = createUnitView(u.classId, u.team, u.isHero, { region: this.spec.region });
     // Bosses show their health in the big bar at the top instead.
-    const bar = u.isHero || isBoss(u) ? null : new HealthBar(u.team === 'player' ? '#d9a33a' : '#b8382a');
+    const bar = u.isHero || isBoss(u) ? null : new HealthBar(u.team === 'player' ? 'player' : 'enemy');
     this.unitLayer.add(view.root);
     if (bar) this.unitLayer.add(bar.group);
     const trail = view.weaponEdge?.(_base, _tip) ? new SwingTrail(TRAIL_COLOR) : null;

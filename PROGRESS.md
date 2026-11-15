@@ -20,8 +20,27 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | Look spike | **done, code removed in 6h**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
 | 6 Presentation | **gate pending**: 6a–6g done and approved (6g approved 2026-11-15); **6h built** (credits sheet, look spike removed, fps and run-through checked, see "6h as built"). Waiting for **Marcel's full playtest and verdict** ("presentable to a newcomer"). Battles still feel hard to him; difficulty levels wanted later. |
-| 6i UI restyle | **in progress** (Marcel 2026-11-15: "the UI does not match the arenas / characters"). See "6i decisions" and "6i breakdown". |
+| 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done and committed; screenshots in `~/Downloads/heerschar-assets/ui-restyle/built/`. See "6i as built". |
 | 7 | not started |
+
+## 6i as built (2026-11-15)
+
+- **Theme** (`src/style.css`): fonts Lilita One + Nunito (variable, self-hosted OFL in `public/fonts/`; Cinzel / EB Garamond removed, credits updated in `CREDITS.md` and the credits sheet). Tokens: `cream`, `cream-dark`, `ink` `#3b2414`, `ink-soft`, `gold`, `blood`, `energy`, `sky`, `wood`. Shared classes: `.panel` (big sheet), `.plate` (HUD / small), `.btn` + `.btn-yellow` / `.btn-blue`, `.link` / `.link-light`, `.rule`, `.bar` + `.bar-thin` with `.fill.fill-hp|energy|gold|xp`, `.title-text`, `.title-gold`, `.table-title`, `.table-sub`, `.field` (text input), `.wood-tile`. Old names renamed everywhere: `parchment` → `panel`, `hud-plate` → `plate`, `btn-gold` → `btn`, colour `parchment` → `cream`; `ParchmentPanel.vue` → `TitledPanel.vue`. Lilita has one weight: `.font-display` sets `font-synthesis: none`.
+- **War table** (`WarTable.vue`): flat planks (seams every 120 px, alternating shade, a few flat grain strokes), warm light, soft brown vignette.
+- **HUD**: plates, fat bars, wood ability tiles with gold ring and round yellow key badge, gold-coin medallions with ink outline (`ClassMedallion`), red-pulsing edge markers, outlined countdown; squad cards hide the class word below 148 px (container query) instead of truncating names.
+- **Screens**: every screen moved to the shared classes; title = cream swallow-tail banner with an ink outline (ink copy behind), Heerschar in gold Lilita with a thick stroke, Continue red / New Game yellow / Settings + Credits blue; wax seals brighter with an ink outline and Lilita letter; formation board grassy; settings tabs and key-caps chunky caps (chosen = yellow), slider = fat outlined gold track with a coin knob; item / upgrade / recruit cards lift with a hard shadow, rarity = inner ring (none / silver / gold + glow).
+- **Map** (`MapScreen.vue`, `mapSketch.ts`): region-coloured land (`LAND`) with seeded flat patches (`regionPatches`), glyphs as filled parts with ink outline (`GLYPHS` is now `GlyphPart[]`, `fill: 'hill'` = region hill colour), walked roads = sandy path on an ink edge, unwalked = dotted, gold compass, cartouche plate, ribbons red with an ink outline (locked grey), done tick = gold coin with a check.
+- **In world**: over-head bars (`view/markers.ts`) drawn on a small canvas texture (pill with ink outline, dark track, shiny fill, pale lag), redrawn only when the shown amount changes; player gold, enemy red; `toneMapped: false`. Damage numbers Lilita with a 4 px ink stroke and hard shadow, base size 25 (absorbed 17). Pictogram strokes 1.8 → 2.6.
+- Checked: typecheck, 225 tests, build; headless screenshots of every screen and two battles, no page errors.
+
+## Made in 6i without asking (Marcel may veto)
+
+- Pause / end buttons coloured by role (red main, yellow settings / change squad, blue leave); title buttons the same way.
+- Hero name in red in the end ledger, spoils and ending lists (Lilita has no bold); ledger best values in dark gold Lilita; XP bars green; "+XP" green; level-up word in dark gold.
+- Italics dropped for flavour lines on panels (intro, end text, role line); kept for small notes (bench, replay, item "fits").
+- Formation board = light grass green with an ink outline; enemy slots tinted red.
+- Map colours per region (Greenmarch light green, Darkwood moss green, Barrowlands grey with violet-grey patches), glyph fills (fields yellow, trees green, cottages cream with red roofs, stones grey).
+- Lock ring and mark banner in the world not touched (approved 2d looks; say if they should follow).
 
 ## 6i decisions (Marcel, 2026-11-15)
 

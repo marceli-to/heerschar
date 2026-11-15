@@ -26,7 +26,7 @@ const MAX = 80;
 const _v = new THREE.Vector3();
 
 /**
- * Bold, punchy floating numbers (approved 2026-11-14): pop in large, bounce, rise and fade.
+ * Bold, punchy floating numbers (approved 2026-11-14; Lilita with a thick ink outline since 6i): pop in large, bounce, rise and fade.
  * DOM elements over the canvas, projected from world positions every frame.
  */
 export class DamageNumbers {
@@ -52,7 +52,7 @@ export class DamageNumbers {
     const el = this.free.pop() ?? this.make();
     el.textContent = kind === 'heal' ? `+${shown}` : String(shown);
     el.style.color = NUMBER_COLORS[kind];
-    const base = kind === 'absorbed' ? 15 : 22;
+    const base = kind === 'absorbed' ? 17 : 25;
     el.style.fontSize = `${Math.round(base * size)}px`;
     el.style.display = 'block';
     this.live.push({ el, x, y, z, dx: (Math.random() - 0.5) * 40, age: 0, life: LIFE });
@@ -64,12 +64,15 @@ export class DamageNumbers {
       'position:absolute',
       'left:0',
       'top:0',
-      'font-family:Cinzel, serif',
-      'font-weight:700',
+      "font-family:'Lilita One', sans-serif",
+      'font-weight:400',
+      'font-synthesis:none',
+      '-webkit-text-stroke:4px #3b2414',
+      'paint-order:stroke fill',
       'line-height:1',
       'white-space:nowrap',
       'will-change:transform,opacity',
-      'text-shadow:0 0 3px #1b130c, 0 2px 0 #1b130c, 1px 1px 0 #1b130c, -1px -1px 0 #1b130c, 1px -1px 0 #1b130c, -1px 1px 0 #1b130c',
+      'text-shadow:0 3px 0 #3b2414',
     ].join(';');
     this.root.appendChild(el);
     return el;
