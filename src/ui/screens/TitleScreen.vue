@@ -3,14 +3,17 @@ import { ref } from 'vue';
 import { STRINGS } from '../../data/strings';
 import WarTable from './WarTable.vue';
 import WaxSeal from './WaxSeal.vue';
+import SettingsSheet from '../settings/SettingsSheet.vue';
 
 /**
  * Title (approved 3b): the name in gold on a hanging parchment banner, a wax seal, New Game.
  * With a save (approved 4): Continue above New Game; New Game asks before abandoning the save.
+ * Settings (approved 6g) under them, opening the settings sheet over the table.
  */
 const props = defineProps<{ hasSave: boolean }>();
 const emit = defineEmits<{ continue: []; newGame: [] }>();
 const confirming = ref(false);
+const showSettings = ref(false);
 
 function newGame(): void {
   if (props.hasSave) confirming.value = true;
@@ -34,6 +37,10 @@ function newGame(): void {
       <button v-if="hasSave" class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="emit('continue')">{{ STRINGS.prep.continue }}</button>
       <button v-if="hasSave" class="btn-gold mt-4 rounded-sm px-8 py-2.5 text-sm" @click="newGame">{{ STRINGS.prep.newGame }}</button>
       <button v-else class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="newGame">{{ STRINGS.prep.newGame }}</button>
+      <button class="btn-gold mt-4 rounded-sm px-6 py-2 text-xs" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
+    </div>
+    <div v-if="showSettings" class="fixed inset-0 z-20 flex items-center justify-center bg-black/55">
+      <SettingsSheet @done="showSettings = false" />
     </div>
     <div v-if="confirming" class="fixed inset-0 z-20 flex items-center justify-center bg-black/55" @click.self="confirming = false">
       <div class="parchment flex w-[min(420px,86vw)] flex-col items-center rounded-sm px-10 py-8 text-center">

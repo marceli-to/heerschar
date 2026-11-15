@@ -40,7 +40,7 @@ export class AudioEngine {
   private total = 0;
   private loading: Promise<void> | null = null;
   private unlockListeners: (() => void)[] = [];
-  /** Bus volumes, 0..1 (the settings screen in 6g will set these). */
+  /** Bus volumes, 0..1 (set from the player's settings, `settings/store.ts`). */
   readonly volume: Record<Bus | 'master', number> = { master: 0.8, sfx: 0.9, ui: 0.7, music: 0.5 };
 
   /** The audio context, created on first use (`null` where Web Audio is missing). */

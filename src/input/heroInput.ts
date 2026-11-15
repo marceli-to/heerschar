@@ -1,6 +1,7 @@
 import { dirFromAngle } from '../sim/math';
 import { emptyInput, type HeroInput } from '../sim/types';
 import type { KeyboardMouse } from './keyboardMouse';
+import { settings } from '../settings/store';
 
 /**
  * Turns keyboard and mouse state into one `HeroInput` per sim tick.
@@ -16,15 +17,17 @@ export class HeroInputSampler {
 
   /** Once per animation frame, before `endFrame` on the device. */
   collect(): void {
-    if (this.kbm.mousePressed(0)) this.pendingAttack = true;
     const k = this.kbm;
-    if (k.pressed('Space')) this.pendingDodge = true;
-    if (k.pressed('KeyQ')) this.pending.ability1 = true;
-    if (k.pressed('KeyE')) this.pending.ability2 = true;
-    if (k.pressed('KeyR')) this.pending.leader = true;
-    if (k.pressed('KeyF')) this.pending.mark = true;
-    if (k.pressed('Tab')) {
-      if (k.down('ShiftLeft') || k.down('ShiftRight')) this.pending.unlock = true;
+    const b = settings.keys;
+    if (k.bindingPressed(b.attack)) this.pendingAttack = true;
+    if (k.bindingPressed(b.dodge)) this.pendingDodge = true;
+    if (k.bindingPressed(b.ability1)) this.pending.ability1 = true;
+    if (k.bindingPressed(b.ability2)) this.pending.ability2 = true;
+    if (k.bindingPressed(b.leader)) this.pending.leader = true;
+    if (k.bindingPressed(b.mark)) this.pending.mark = true;
+    if (k.bindingPressed(b.lock)) {
+      // Shift with the lock key releases (unless the lock key is a Shift itself).
+      if (!b.lock.startsWith('Shift') && (k.down('ShiftLeft') || k.down('ShiftRight'))) this.pending.unlock = true;
       else this.pending.lock = true;
     }
   }
@@ -44,8 +47,9 @@ export class HeroInputSampler {
       this.clear();
       return input;
     }
-    const fwd = (k.down('KeyW') ? 1 : 0) - (k.down('KeyS') ? 1 : 0);
-    const side = (k.down('KeyD') ? 1 : 0) - (k.down('KeyA') ? 1 : 0);
+    const b = settings.keys;
+    const fwd = (k.bindingDown(b.forward) ? 1 : 0) - (k.bindingDown(b.back) ? 1 : 0);
+    const side = (k.bindingDown(b.right) ? 1 : 0) - (k.bindingDown(b.left) ? 1 : 0);
     const f = dirFromAngle(cameraYaw);
     const r = { x: -f.z, z: f.x };
     let mx = f.x * fwd + r.x * side;

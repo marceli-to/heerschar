@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { reactive } from 'vue';
+import { reactive, watch, type WatchStopHandle } from 'vue';
 import { createBattle, heroOf, step, type BattleSetup } from '../sim/battle';
 import { BOSS_ACTIONS, COUNTDOWN, DT, ENERGY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
 import { actionTiming, meleeAttackOf } from '../sim/ai';
@@ -32,6 +32,8 @@ import { DamageNumbers } from '../view/damageNumbers';
 import { startLoop, type RunningLoop } from './loop';
 import { BattleSound } from '../audio/battleSound';
 import { music } from '../audio/music';
+import { settings } from '../settings/store';
+import { QUALITY_PRESETS, type Quality } from '../settings/settings';
 import { FINALE, ORBIT_SKIP_MOUSE, finaleCloseIn, finaleTimeScale, orbitProgress } from './cinematics';
 
 export interface DebugStats {
@@ -63,7 +65,8 @@ export interface BattleSpec {
 
 export interface HudAbility {
   id: HeroAbilityId;
-  key: string;
+  /** The bound action; the slot shows its current key. */
+  key: 'ability1' | 'ability2' | 'leader';
   cost: number;
   /** Seconds of cooldown left, and that as a fraction of the full cooldown. */
   cooldown: number;
@@ -217,6 +220,7 @@ export class Game {
   private sound: BattleSound;
   /** Debug: when set, the scripted bot plays the hero (`?bot`). */
   bot: BotState | null = null;
+  private stopQualityWatch: WatchStopHandle;
 
   constructor(private readonly canvas: HTMLCanvasElement, opts: { spec: BattleSpec; seed: number; zoom?: number; debug?: boolean; peaceful?: boolean }) {
     this.seed = opts.seed;
@@ -250,6 +254,31 @@ export class Game {
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     document.addEventListener('pointerlockchange', this.onLockChange);
+    this.applyQuality(settings.quality);
+    // The settings sheet can change the quality while paused.
+    this.stopQualityWatch = watch(() => settings.quality, (q) => this.applyQuality(q));
+  }
+
+  /** Render scale, shadows, bloom, MSAA and particle amount for a quality preset (6g). */
+  private applyQuality(q: Quality): void {
+    const p = QUALITY_PRESETS[q];
+    const { renderer, scene, sun } = this.parts;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, p.pixelRatio));
+    if (renderer.shadowMap.enabled !== p.shadows) {
+      renderer.shadowMap.enabled = p.shadows;
+      // Materials compile with or without shadow code: rebuild them.
+      scene.traverse((o) => {
+        const m = (o as THREE.Mesh).material;
+        if (m) for (const mat of Array.isArray(m) ? m : [m]) mat.needsUpdate = true;
+      });
+    }
+    if (sun.shadow.mapSize.x !== p.shadowMap) {
+      sun.shadow.mapSize.set(p.shadowMap, p.shadowMap);
+      sun.shadow.map?.dispose();
+      sun.shadow.map = null;
+    }
+    this.post.setQuality(p.bloom, p.samples);
+    this.fx.density = p.particles;
     this.resize();
   }
 
@@ -293,6 +322,7 @@ export class Game {
 
   dispose(): void {
     this.loop?.stop();
+    this.stopQualityWatch();
     this.kbm.dispose();
     this.resizeObserver.disconnect();
     document.removeEventListener('pointerlockchange', this.onLockChange);
@@ -357,7 +387,7 @@ export class Game {
     const hero = heroOf(this.battle);
     const kit = hero ? heroKit(hero) : null;
     this.hud.abilities = kit
-      ? ([[kit.ability1, 'Q'], [kit.ability2, 'E'], [kit.leader, 'R']] as const).map(([id, key]) => ({ id, key, cost: HERO_ABILITIES[id].cost, cooldown: 0, cooldownFrac: 0, affordable: true, active: false }))
+      ? ([[kit.ability1, 'ability1'], [kit.ability2, 'ability2'], [kit.leader, 'leader']] as const).map(([id, key]) => ({ id, key, cost: HERO_ABILITIES[id].cost, cooldown: 0, cooldownFrac: 0, affordable: true, active: false }))
       : [];
     this.hud.squad = this.battle.units
       .filter((u) => u.team === 'player' && !u.isHero)
@@ -384,10 +414,10 @@ export class Game {
     const k = this.kbm;
     if (k.pressed('F3')) this.debug.visible = !this.debug.visible;
     if (this.hud.phase === 'ended' && k.pressed('Enter')) this.restart();
-    this.rig.addZoom(k.consumeWheel());
+    this.rig.addZoom(k.consumeWheel() * settings.camera.zoom);
     // While locked on, the camera frames the target itself.
     const mouse = k.consumeMouse();
-    if (this.battle.lockTargetId === null) this.rig.addYaw(mouse.dx);
+    if (this.battle.lockTargetId === null) this.rig.addYaw(mouse.dx * settings.camera.turn);
     // Any key, click or real mouse move during the countdown sweep hands the camera back.
     if (this.hud.phase === 'playing' && this.battle.countdown > 0 && (k.anyPressed() || Math.abs(mouse.dx) + Math.abs(mouse.dy) > ORBIT_SKIP_MOUSE)) this.orbit.skipped = true;
     if (this.finale) {

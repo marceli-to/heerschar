@@ -7,6 +7,8 @@ import AbilityIcon from '../hud/AbilityIcon.vue';
 import ClassMedallion from '../hud/ClassMedallion.vue';
 import FigurePreview from './FigurePreview.vue';
 import WarTable from './WarTable.vue';
+import { keyLabel } from '../../settings/settings';
+import { settings } from '../../settings/store';
 
 /** Hero class select (approved 3b): medallion tabs, turning figure, role, abilities, name. */
 const emit = defineEmits<{ choose: [heroClass: PlayableClassId, name: string]; back: [] }>();
@@ -47,7 +49,7 @@ function choose(): void {
               <div class="icon-tile relative size-11 shrink-0 rounded-[3px]">
                 <AbilityIcon :id="id" class="absolute inset-1 text-gold-light" />
               </div>
-              <span class="w-4 font-display text-xs text-ink-soft">{{ i === 0 ? 'Q' : 'E' }}</span>
+              <span class="min-w-4 font-display text-xs text-ink-soft">{{ keyLabel(i === 0 ? settings.keys.ability1 : settings.keys.ability2) }}</span>
               <span class="text-lg">{{ STRINGS.abilities[id] }}</span>
             </li>
           </ul>

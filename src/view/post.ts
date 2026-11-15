@@ -44,6 +44,16 @@ export class Post {
     this.composer.addPass(new OutputPass());
   }
 
+  /** Bloom on / off and the MSAA sample count of the scene target (quality presets). */
+  setQuality(bloom: boolean, samples: number): void {
+    this.bloom.enabled = bloom;
+    for (const t of [this.composer.renderTarget1, this.composer.renderTarget2]) {
+      if (t.samples === samples) continue;
+      t.samples = samples;
+      t.dispose(); // reallocated with the new sample count on the next render
+    }
+  }
+
   dispose(): void {
     this.composer.dispose();
   }

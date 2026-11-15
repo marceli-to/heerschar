@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { keyLabel } from '../settings/settings';
+import { settings } from '../settings/store';
 import { computed } from 'vue';
 import type { HudState } from '../game/game';
 import { STRINGS } from '../data/strings';
@@ -82,7 +84,7 @@ const time = computed(() => {
           <span
             class="font-display text-[10px] tracking-[0.22em] uppercase"
             :class="hud.dodgeReady >= 1 ? 'text-ink' : 'text-ink-soft/70'"
-          >{{ STRINGS.dodge }} · Space</span>
+          >{{ STRINGS.dodge }} · {{ keyLabel(settings.keys.dodge) }}</span>
         </div>
       </div>
 

@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a–6d done and approved (2026-11-15); 6e built (camera moments, see "6e as built"); **6f done** (sound effects approved by Marcel: "effects are perfect"; music = the recommended tracks, see "6f as built"). Marcel's playtest still finds battles hard; difficulty levels wanted later. Next: Marcel listens to the music in game, then **6g** settings (ask about the screen's look first). |
+| 6 Presentation | **in progress**: 6a–6d done and approved (2026-11-15); 6e built (camera moments, see "6e as built"); **6f done** (sound effects approved by Marcel: "effects are perfect"; music = the recommended tracks, see "6f as built"). Marcel's playtest still finds battles hard; difficulty levels wanted later. **6g built** (settings, see "6g as built"; screenshots for Marcel). Next: Marcel checks 6g, then **6h** gate. |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -143,6 +143,31 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Both sides recoloured** by swapping swatches in the KayKit texture: player warm (crimson capes / hats / cloaks, gold trim), enemies cold blue / steel.
 - **Enemy bodies:** Greenmarch + Darkwood: Shieldbearer = Knight with rectangle shield + 1H sword, Berserker = Barbarian (bear hat, beard) with two 1H axes and the dual-wield attacks. Barrowlands: Shieldbearer = Skeleton Warrior + large shield + blade, Berserker = Skeleton Minion + two skeleton axes.
 - **Hero mark:** gold trim swatch on the hero; companions keep the plain team trim.
+
+## 6g decisions (Marcel, 2026-11-15)
+
+- Settings open from the **title** (button under Continue / New Game) and the **pause panel** (under Resume); not from the war-table screens.
+- **One parchment sheet with tabs** Sound · Controls · Camera · Graphics, one section at a time, Done at the bottom; in battle over the paused field.
+- **Slider** = thin ink line, filled part gold, round gold knob with dark rim, value in Cinzel. **Key** = parchment key-cap with gold rim; click → "Press a key…" until a key (Esc cancels). "Restore defaults" per section.
+- **Graphics = presets only:** Low / Medium / High (High = the approved look, default).
+
+## 6g as built (2026-11-15)
+
+- `src/settings/settings.ts` (pure, tested in `tests/meta/settings.test.ts`): `Settings` (volume 0–100 per bus, `keys` per action, `camera.turn` / `camera.zoom` multipliers 0.25–3, `quality`), `defaultSettings`, `parseSettings` (clamps, falls back; stored bindings that collide are dropped), `rebind` (a key in use **swaps** with the old one), `keyLabel` / `keyShort` / `controlKeys`, `QUALITY_PRESETS`. Bindings are `KeyboardEvent.code` or `Mouse<n>`; Escape is reserved.
+- `src/settings/store.ts`: reactive `settings`, own `localStorage` key `heerschar.settings` (not in the game save, so it survives New Game; PLAN's `GameState.settings` dropped), saved and applied to the audio buses on every change.
+- Input: `KeyboardMouse.bindingDown/bindingPressed`; `HeroInputSampler` reads `settings.keys` (Shift + lock key still releases). While pointer-locked, the browser's default for game keys is suppressed (not with Cmd/Ctrl).
+- Camera: wheel × `camera.zoom`, mouse yaw × `camera.turn` in `Game.frameStart`.
+- Quality (`Game.applyQuality`, live via a watch): High = pixel ratio ≤ 2, soft shadows 2048, bloom, 4× MSAA, all particles; Medium = ≤ 1.25, shadows 1024, bloom, 2×, 65 %; Low = 1, no shadows, no bloom, no MSAA, 35 %. `Post.setQuality`, `FxWorld.density` (sparks, motes, dust puffs).
+- UI: `src/ui/settings/SettingsSheet.vue`, `InkSlider.vue`; title + pause wiring. Ability slots, the hero plate's dodge hint, class select's Q/E and the battle intro's controls list now show the bound keys (`strings.ts` controls rows are `ControlRow` ids).
+- Checked: typecheck, 225 tests, build; headless: tabs, rebind swap + save, restore, pause → settings → Low / Medium / High live, no page errors, 60 fps. Screenshots in `~/Downloads/heerschar-assets/settings-6g/`.
+
+## Made in 6g without asking (Marcel may veto)
+
+- Settings button looks: small red-gold button on the title and in the pause panel.
+- Camera tab has **Turn speed** and **Zoom speed**; Mouse / Wheel / Esc are shown as fixed rows in Controls.
+- Labels: "First / Second class ability", "Rally", quality one-line notes; intro controls copy shortened ("Attack (again for a heavier follow-up)", "Lock on (again to cycle, with Shift to release)").
+- Ability tiles show short keys (LMB, RMB, M4, Shift).
+- Volume sliders are linear gain (defaults unchanged: 80 / 90 / 50 / 70).
 
 ## 6f decisions (Marcel, 2026-11-15)
 
@@ -307,7 +332,7 @@ Files: OGA = `https://opengameart.org/sites/default/files/<file>`, Kevin MacLeod
 - ~~**6d** Region scenery~~ Done (see "6d as built").
 - ~~**6e**~~ Built (see "6e as built"); Marcel plays.
 - ~~**6f**~~ Done (see "6f as built").
-- **6g** Settings: volumes, key remapping, camera sensitivity, quality; saved locally. Ask about the screen's look.
+- ~~**6g**~~ Built (see "6g as built"); Marcel checks.
 - **6h** Gate: in-game credits page (CC BY music attribution), full run-through, fps, remove the `?look` spike (`src/look/`, `public/look/`), Marcel's verdict ("presentable to a newcomer").
 - 5f balance stays parked (see "5f third session"); pick it up after 6h unless Marcel says otherwise.
 

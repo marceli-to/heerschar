@@ -153,7 +153,11 @@ class SparkLayer {
     this.mesh.frustumCulled = false;
   }
 
+  /** Share of particles actually spawned (graphics quality). */
+  density = 1;
+
   burst(at: THREE.Vector3, n: number, color: THREE.Color, speed: number, dir?: THREE.Vector3, life = 0.45): void {
+    n = Math.max(1, Math.round(n * this.density));
     for (let i = 0; i < n && this.sparks.length < SparkLayer.MAX; i++) {
       const v = new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.9 + 0.1, Math.random() - 0.5).normalize();
       if (dir) v.addScaledVector(dir, 1.2).normalize();
@@ -226,7 +230,11 @@ class MoteLayer {
     this.mesh.frustumCulled = false;
   }
 
+  /** Share of particles actually spawned (graphics quality). */
+  density = 1;
+
   emit(at: THREE.Vector3, n: number, color: THREE.Color, speed: number, life: number, spread = 0.1, lift = 0): void {
+    n = Math.max(1, Math.round(n * this.density));
     for (let i = 0; i < n && this.motes.length < MoteLayer.MAX; i++) {
       const v = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(speed * Math.random());
       v.y += lift;
@@ -369,6 +377,8 @@ export class FxWorld {
   private puffs: { s: THREE.Sprite; life: number; max: number; v: THREE.Vector3; grow: number }[] = [];
   private markY = 0.05;
 
+  private particleShare = 1;
+
   constructor(readonly looks: Looks) {
     this.group.add(this.sparks.mesh, this.motes.mesh);
     for (let i = 0; i < 4; i++) {
@@ -376,6 +386,13 @@ export class FxWorld {
       this.group.add(light);
       this.lights.push({ light, life: 0, max: 1, peak: 0 });
     }
+  }
+
+  /** Share of sparks, motes and dust puffs spawned, 0..1 (graphics quality). */
+  set density(v: number) {
+    this.particleShare = v;
+    this.sparks.density = v;
+    this.motes.density = v;
   }
 
   flash(at: THREE.Vector3, color: string, peak: number, dur: number): void {
@@ -410,7 +427,7 @@ export class FxWorld {
 
   /** A footstep / landing puff. */
   puff(at: THREE.Vector3, size: number): void {
-    if (!this.looks.impact) return;
+    if (!this.looks.impact || Math.random() > this.particleShare) return;
     const mat = new THREE.SpriteMaterial({ map: dustTex, color: '#cdb991', transparent: true, depthWrite: false, opacity: 0 });
     const s = new THREE.Sprite(mat);
     s.position.copy(at).add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0, (Math.random() - 0.5) * 0.4));

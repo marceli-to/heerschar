@@ -1,20 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { HudState } from '../game/game';
 import { STRINGS } from '../data/strings';
 import EndLedger from './EndLedger.vue';
 import ParchmentPanel from './ParchmentPanel.vue';
+import SettingsSheet from './settings/SettingsSheet.vue';
+import { controlKeys } from '../settings/settings';
+import { settings } from '../settings/store';
 
 const props = defineProps<{ hud: HudState; canLeave?: boolean }>();
 const emit = defineEmits<{ takeControl: []; restart: []; leave: []; changeSquad: [] }>();
 
 const copy = computed(() => (props.hud.mode === 'trial' ? STRINGS.trial : STRINGS.squad));
-/** The squad controls with the hero's own ability names on the Q · E row. */
+/** The controls with the current key bindings, and the hero's own ability names on the abilities row. */
 const controls = computed(() => {
-  if (props.hud.mode === 'trial' || props.hud.abilities.length < 2) return copy.value.controls;
-  const [q, e] = props.hud.abilities;
-  return copy.value.controls.map(([key, action]) => (key === 'Q · E' && q && e ? [key, `${STRINGS.abilities[q.id]} · ${STRINGS.abilities[e.id]}`] : [key, action]));
+  const [q, e] = props.hud.mode === 'squad' ? props.hud.abilities : [];
+  return copy.value.controls.map(([row, action]) => [
+    controlKeys(row, settings.keys),
+    row === 'abilities' && q && e ? `${STRINGS.abilities[q.id]} · ${STRINGS.abilities[e.id]}` : action,
+  ]);
 });
+const showSettings = ref(false);
+
+// The sheet closes when the battle resumes (it only opens from the pause panel).
+watch(
+  () => props.hud.phase,
+  (p) => {
+    if (p !== 'paused') showSettings.value = false;
+  },
+);
 
 const endText = computed(() => {
   if (props.hud.mode === 'trial') return props.hud.outcome === 'won' ? STRINGS.victoryText : STRINGS.defeatText;
@@ -45,8 +59,11 @@ const time = computed(() => {
       </button>
     </ParchmentPanel>
 
+    <SettingsSheet v-else-if="hud.phase === 'paused' && showSettings" @done="showSettings = false" />
+
     <ParchmentPanel v-else-if="hud.phase === 'paused'" :title="STRINGS.paused">
       <button class="btn-gold rounded-sm px-7 py-2.5 text-sm" @click="emit('takeControl')">{{ STRINGS.resume }}</button>
+      <button class="btn-gold mt-4 block mx-auto rounded-sm px-6 py-2 text-xs" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
       <button v-if="canLeave" class="mt-4 block w-full font-display text-xs tracking-[0.15em] text-ink-soft underline-offset-4 hover:underline" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
     </ParchmentPanel>
 

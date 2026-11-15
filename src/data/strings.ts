@@ -1,3 +1,5 @@
+import type { ControlRow } from '../settings/settings';
+
 /** Every interface string. English (approved 2026-11-14). */
 export const STRINGS = {
   title: 'Heerschar',
@@ -61,13 +63,13 @@ export const STRINGS = {
     intro: 'Three raiders wait across the field. Show them what a warrior can do.',
     begin: 'Click to take the field',
     controls: [
-      ['W A S D', 'Move'],
-      ['Mouse', 'Turn the camera'],
-      ['Left click', 'Strike (click again for a second, heavier blow)'],
-      ['Space', 'Dodge'],
-      ['Wheel', 'Zoom'],
-      ['Esc', 'Pause'],
-    ],
+      ['move', 'Move'],
+      ['mouse', 'Turn the camera'],
+      ['attack', 'Strike (again for a second, heavier blow)'],
+      ['dodge', 'Dodge'],
+      ['wheel', 'Zoom'],
+      ['pause', 'Pause'],
+    ] as [ControlRow, string][],
   },
   /** Stage 2 squad battle. Draft copy, not yet approved by Marcel. */
   squad: {
@@ -77,17 +79,17 @@ export const STRINGS = {
     victoryText: 'The enemy band is broken.',
     defeatText: 'You have fallen. The enemy holds the field.',
     controls: [
-      ['W A S D', 'Move'],
-      ['Mouse', 'Turn the camera'],
-      ['Left click', 'Attack (click again for a heavier follow-up)'],
-      ['Space', 'Dodge'],
-      ['Q · E', 'Class abilities'],
-      ['R', 'Rally your companions'],
-      ['Tab', 'Lock on (again to cycle, Shift+Tab to release)'],
-      ['F', 'Mark a target for the squad'],
-      ['Wheel', 'Zoom'],
-      ['Esc', 'Pause'],
-    ],
+      ['move', 'Move'],
+      ['mouse', 'Turn the camera'],
+      ['attack', 'Attack (again for a heavier follow-up)'],
+      ['dodge', 'Dodge'],
+      ['abilities', 'Class abilities'],
+      ['leader', 'Rally your companions'],
+      ['lock', 'Lock on (again to cycle, with Shift to release)'],
+      ['mark', 'Mark a target for the squad'],
+      ['wheel', 'Zoom'],
+      ['pause', 'Pause'],
+    ] as [ControlRow, string][],
   },
   /** Stage 3 sandbox battles (approved). */
   encounters: {
@@ -220,6 +222,45 @@ export const STRINGS = {
   },
   paused: 'Paused',
   resume: 'Click to resume',
+  /** Settings sheet (6g). */
+  settings: {
+    open: 'Settings',
+    title: 'Settings',
+    done: 'Done',
+    restore: 'Restore defaults',
+    tabs: { sound: 'Sound', controls: 'Controls', camera: 'Camera', graphics: 'Graphics' },
+    volume: { master: 'Master', sfx: 'Effects', music: 'Music', ui: 'Interface' },
+    actions: {
+      forward: 'Move forward',
+      back: 'Move back',
+      left: 'Move left',
+      right: 'Move right',
+      attack: 'Attack',
+      dodge: 'Dodge',
+      ability1: 'First class ability',
+      ability2: 'Second class ability',
+      leader: 'Rally',
+      lock: 'Lock on',
+      mark: 'Mark target',
+    },
+    fixed: [
+      ['Mouse', 'Turn the camera'],
+      ['Wheel', 'Zoom'],
+      ['Esc', 'Pause'],
+    ],
+    pressKey: 'Press a key…',
+    swapHint: 'A key already in use swaps with the old one. Esc cancels.',
+    camera: { turn: 'Turn speed', zoom: 'Zoom speed' },
+    quality: {
+      label: 'Quality',
+      names: { low: 'Low', medium: 'Medium', high: 'High' },
+      notes: {
+        low: 'No shadows or glow, fewer sparks, lower resolution. For weak machines.',
+        medium: 'Coarser shadows, glow on, fewer sparks, slightly lower resolution.',
+        high: 'The full look: soft shadows, glow, every spark, sharp resolution.',
+      },
+    },
+  },
   restart: 'Fight again',
   restartHint: 'or press Enter',
   victory: 'Victory',

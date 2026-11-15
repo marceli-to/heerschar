@@ -3,10 +3,13 @@ import { computed, ref, watch } from 'vue';
 import type { HudAbility } from '../../game/game';
 import { STRINGS } from '../../data/strings';
 import AbilityIcon from './AbilityIcon.vue';
+import { keyShort } from '../../settings/settings';
+import { settings } from '../../settings/store';
 
 /** One ability tile (approved 2e): pictogram, key bottom-left, cost bottom-right, clockwise cooldown sweep. */
 const props = defineProps<{ ability: HudAbility }>();
 
+const keyName = computed(() => keyShort(settings.keys[props.ability.key]));
 const onCooldown = computed(() => props.ability.cooldown > 0);
 const ready = computed(() => !onCooldown.value && props.ability.affordable);
 /** The dark part still to go: it shrinks clockwise from 12 o'clock. */
@@ -34,7 +37,7 @@ watch(ready, (now, before) => {
         class="absolute inset-0 flex items-center justify-center font-display text-lg font-bold text-parchment tabular-nums"
         style="text-shadow: 0 1px 3px rgb(0 0 0 / 0.9)"
       >{{ seconds }}</span>
-      <span class="absolute bottom-0 left-0.5 font-display text-[10px] font-bold text-parchment/85">{{ ability.key }}</span>
+      <span class="absolute bottom-0 left-0.5 font-display text-[10px] font-bold text-parchment/85">{{ keyName }}</span>
       <span
         class="absolute right-0.5 bottom-0 font-display text-[10px] font-bold tabular-nums"
         :class="ability.affordable ? 'text-energy-light' : 'text-blood-light'"

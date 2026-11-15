@@ -67,6 +67,18 @@ export class KeyboardMouse {
     return this.buttonsPressedThisFrame.has(button);
   }
 
+  /** A binding (`KeyQ`, `Mouse0`, …) is held. */
+  bindingDown(code: string): boolean {
+    const m = /^Mouse(\d+)$/.exec(code);
+    return m ? this.buttons.has(Number(m[1])) : this.keys.has(code);
+  }
+
+  /** A binding went down this frame. */
+  bindingPressed(code: string): boolean {
+    const m = /^Mouse(\d+)$/.exec(code);
+    return m ? this.buttonsPressedThisFrame.has(Number(m[1])) : this.pressedThisFrame.has(code);
+  }
+
   consumeMouse(): { dx: number; dy: number } {
     const r = { dx: this.mouseDX, dy: this.mouseDY };
     this.mouseDX = 0;
@@ -88,7 +100,10 @@ export class KeyboardMouse {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
-    if (e.code === 'Tab' || e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+    // Keys the browser would act on (focus, scroll, quick find) while the game uses them.
+    if (this.locked || e.code === 'Tab' || e.code === 'Space' || e.code.startsWith('Arrow')) {
+      if (!e.metaKey && !e.ctrlKey && e.code !== 'F5' && e.code !== 'F12') e.preventDefault();
+    }
     if (!e.repeat) this.pressedThisFrame.add(e.code);
     this.keys.add(e.code);
   };
