@@ -6,7 +6,7 @@
   <div class="war-table fixed inset-0 overflow-auto font-body text-ink">
     <div class="candle pointer-events-none fixed inset-0" />
     <div class="vignette pointer-events-none fixed inset-0" />
-    <div class="relative flex min-h-full items-center justify-center p-8">
+    <div class="relative flex min-h-full items-center justify-center p-6">
       <slot />
     </div>
   </div>

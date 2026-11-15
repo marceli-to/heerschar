@@ -7,6 +7,7 @@ import { ROSTER_LIMIT } from '../../meta/squad';
 import ClassMedallion from '../hud/ClassMedallion.vue';
 import RecruitCard from './RecruitCard.vue';
 import WarTable from './WarTable.vue';
+import ScreenFrame from './ScreenFrame.vue';
 
 /**
  * A camp (approved 5d): two recruit cards side by side on the war table, select one, then confirm.
@@ -38,10 +39,7 @@ function moveOn(): void {
 
 <template>
   <WarTable>
-    <div class="flex flex-col items-center">
-      <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
-      <p class="mt-1 mb-5 max-w-xl text-center text-lg table-sub italic">{{ full ? T.full : T.hint }}</p>
-
+    <ScreenFrame class="w-[min(760px,96vw)]" :title="T.title" :subtitle="full ? T.full : T.hint">
       <div class="flex flex-wrap justify-center gap-10">
         <RecruitCard
           v-for="(c, i) in offers"
@@ -53,28 +51,24 @@ function moveOn(): void {
         />
       </div>
 
-      <div class="mt-6 flex h-12 items-center">
-        <button v-if="full" class="btn px-7 py-2.5 text-lg" @click="moveOn">{{ T.moveOn }}</button>
-        <button v-else class="btn px-7 py-2.5 text-lg disabled:cursor-default disabled:opacity-50 disabled:filter-none" :disabled="selected === null" @click="take">
-          {{ selected === null ? T.chooseFirst : T.take }}
-        </button>
-      </div>
-
-      <div class="mt-3 flex flex-col items-center">
-        <p class="font-black text-xs tracking-[0.12em] text-cream/60 uppercase">
+      <div class="flex flex-col items-center gap-2">
+        <p class="label table-text">
           {{ T.company }} <span class="tabular-nums">({{ roster.length }} / {{ ROSTER_LIMIT }})</span>
         </p>
-        <ul class="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-3">
+        <ul role="list" class="flex flex-wrap justify-center gap-x-5 gap-y-3">
           <li v-for="c in roster" :key="c.id" class="flex w-16 flex-col items-center gap-1">
             <ClassMedallion :class-id="c.classId" :size="34" />
-            <span class="w-full truncate text-center text-sm text-cream/80" :class="{ 'font-bold': c.isHero }">{{ c.name }}</span>
+            <span class="table-text w-full truncate text-center font-display text-base">{{ c.name }}</span>
           </li>
         </ul>
       </div>
-
-      <button class="mt-4 link link-light text-lg" @click="emit('back')">
-        {{ STRINGS.prep.back }}
-      </button>
-    </div>
+      <template #back><button class="link link-light" @click="emit('back')">{{ STRINGS.prep.back }}</button></template>
+      <template #action>
+        <button v-if="full" class="btn" @click="moveOn">{{ T.moveOn }}</button>
+        <button v-else class="btn" :disabled="selected === null" @click="take">
+          {{ selected === null ? T.chooseFirst : T.take }}
+        </button>
+      </template>
+    </ScreenFrame>
   </WarTable>
 </template>

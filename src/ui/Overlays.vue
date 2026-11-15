@@ -47,14 +47,14 @@ const time = computed(() => {
     class="absolute inset-0 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgb(20_10_4/0.3),rgb(20_10_4/0.65))]"
   >
     <TitledPanel v-if="hud.phase === 'intro'" :title="hud.title" :subtitle="STRINGS.title">
-      <p class="text-lg leading-snug font-bold text-ink-soft">{{ hud.intro }}</p>
+      <p class="text-lg text-pretty text-ink-soft">{{ hud.intro }}</p>
       <table class="mx-auto mt-5 text-left text-base">
         <tr v-for="[key, action] in controls" :key="key">
-          <td class="pr-5 py-0.5 font-display text-sm whitespace-nowrap text-ink-soft">{{ key }}</td>
-          <td class="py-0.5 font-bold">{{ action }}</td>
+          <td class="label py-0.5 pr-5 whitespace-nowrap">{{ key }}</td>
+          <td class="py-0.5">{{ action }}</td>
         </tr>
       </table>
-      <button class="btn mt-6 px-8 py-2.5 text-xl" @click="emit('takeControl')">
+      <button class="btn mt-6" @click="emit('takeControl')">
         {{ copy.begin }}
       </button>
     </TitledPanel>
@@ -63,9 +63,9 @@ const time = computed(() => {
 
     <TitledPanel v-else-if="hud.phase === 'paused'" :title="STRINGS.paused">
       <div class="flex flex-col items-center gap-3">
-        <button class="btn w-60 py-2.5 text-xl" @click="emit('takeControl')">{{ STRINGS.resume }}</button>
-        <button class="btn btn-yellow w-60 py-2 text-lg" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
-        <button v-if="canLeave" class="btn btn-blue w-60 py-2 text-lg" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
+        <button class="btn" @click="emit('takeControl')">{{ STRINGS.resume }}</button>
+        <button class="btn btn-sm btn-yellow" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
+        <button v-if="canLeave" class="link mt-1" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
       </div>
     </TitledPanel>
 
@@ -74,13 +74,13 @@ const time = computed(() => {
       :title="hud.outcome === 'won' ? STRINGS.victory : STRINGS.defeat"
       :subtitle="`${STRINGS.time} ${time}`"
     >
-      <p class="text-lg font-bold text-ink-soft">{{ endText }}</p>
+      <p class="text-lg text-pretty text-ink-soft">{{ endText }}</p>
       <EndLedger v-if="hud.mode === 'squad' && hud.ledger.length" :rows="hud.ledger" class="mt-4" />
-      <button class="btn mt-6 px-8 py-2.5 text-xl" @click="emit('restart')">{{ STRINGS.restart }}</button>
-      <p class="mt-2 text-sm text-ink-soft">{{ STRINGS.restartHint }}</p>
-      <div v-if="canLeave" class="mt-5 flex justify-center gap-3">
-        <button class="btn btn-yellow px-5 py-2 text-base whitespace-nowrap" @click="emit('changeSquad')">{{ STRINGS.prep.changeSquad }}</button>
-        <button class="btn btn-blue px-5 py-2 text-base whitespace-nowrap" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
+      <button class="btn mt-6" @click="emit('restart')">{{ STRINGS.restart }}</button>
+      <p class="note mt-2">{{ STRINGS.restartHint }}</p>
+      <div v-if="canLeave" class="mt-5 flex items-center justify-center gap-6">
+        <button class="btn btn-sm btn-yellow" @click="emit('changeSquad')">{{ STRINGS.prep.changeSquad }}</button>
+        <button class="link" @click="emit('leave')">{{ STRINGS.prep.leave }}</button>
       </div>
     </TitledPanel>
   </div>

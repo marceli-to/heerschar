@@ -26,13 +26,13 @@ const time = computed(() => {
     <!-- Foes remaining and battle time -->
     <div class="plate absolute top-4 left-1/2 flex -translate-x-1/2 items-center gap-4 px-5 py-1">
       <div class="flex items-center gap-2">
-        <span class="text-xs font-black tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.foes }}</span>
-        <span class="font-display text-[26px] leading-none text-blood">{{ hud.foes }}</span>
+        <span class="label">{{ STRINGS.foes }}</span>
+        <span class="font-display text-[1.625rem] leading-none text-blood tabular-nums">{{ hud.foes }}</span>
       </div>
-      <div class="h-6 w-[3px] rounded-full bg-ink/25" />
+      <div class="h-6 w-[3px] rounded-full bg-ink/15" />
       <div class="flex items-center gap-2">
-        <span class="text-xs font-black tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.time }}</span>
-        <span class="font-display text-[26px] leading-none tabular-nums">{{ time }}</span>
+        <span class="label">{{ STRINGS.time }}</span>
+        <span class="font-display text-[1.625rem] leading-none tabular-nums">{{ time }}</span>
       </div>
     </div>
 
@@ -45,8 +45,8 @@ const time = computed(() => {
       <ClassMedallion :class-id="hud.boss.classId" :size="42" />
       <div class="min-w-0 flex-1">
         <div class="flex items-baseline justify-between">
-          <span class="truncate font-display text-xl">{{ STRINGS.bossTitle(STRINGS.classes[hud.boss.classId]) }}</span>
-          <span class="font-display text-base tabular-nums">{{ hud.boss.hp }} / {{ Math.ceil(hud.boss.maxHp) }}</span>
+          <span class="heading-3 truncate">{{ STRINGS.bossTitle(STRINGS.classes[hud.boss.classId]) }}</span>
+          <span class="font-display text-lg tabular-nums">{{ hud.boss.hp }} / {{ Math.ceil(hud.boss.maxHp) }}</span>
         </div>
         <div class="bar mt-1 h-5">
           <div class="fill fill-hp transition-[width] duration-150" :style="{ width: `${bossFrac * 100}%` }" />
@@ -59,25 +59,25 @@ const time = computed(() => {
       <div class="plate w-72 shrink-0 px-4 pt-2 pb-3">
         <div class="flex items-baseline justify-between">
           <span class="min-w-0 truncate">
-            <span class="font-display text-xl">{{ hud.heroName || STRINGS.classes[hud.heroClass] }}</span>
-            <span v-if="hud.heroName" class="ml-1.5 text-sm font-extrabold text-ink-soft">{{ STRINGS.classes[hud.heroClass] }}</span>
+            <span class="heading-3">{{ hud.heroName || STRINGS.classes[hud.heroClass] }}</span>
+            <span v-if="hud.heroName" class="label ml-1.5">{{ STRINGS.classes[hud.heroClass] }}</span>
           </span>
           <span class="font-display text-lg tabular-nums">{{ hud.heroHp }} / {{ hud.heroMaxHp }}</span>
         </div>
-        <div class="bar mt-1 h-[18px]">
+        <div class="bar mt-1 h-4.5">
           <div class="fill fill-hp transition-[width] duration-150" :class="{ 'animate-pulse': lowHp }" :style="{ width: `${hpFrac * 100}%` }" />
         </div>
         <div class="mt-1.5 flex items-center gap-2">
           <div class="bar bar-thin h-3.5 flex-1">
             <div class="fill fill-energy transition-[width] duration-100" :style="{ width: `${energyFrac * 100}%` }" />
           </div>
-          <span class="w-7 text-right font-display text-base tabular-nums text-energy">{{ hud.energy }}</span>
+          <span class="w-7 text-right font-display text-lg tabular-nums text-energy">{{ hud.energy }}</span>
         </div>
         <div class="mt-2 flex items-center gap-2">
           <div class="bar bar-thin h-3 w-20">
             <div class="fill fill-gold" :style="{ width: `${hud.dodgeReady * 100}%` }" />
           </div>
-          <span class="text-xs font-extrabold" :class="hud.dodgeReady >= 1 ? 'text-ink' : 'text-ink-soft/70'">{{ STRINGS.dodge }} · {{ keyLabel(settings.keys.dodge) }}</span>
+          <span class="label" :class="{ 'opacity-60': hud.dodgeReady < 1 }">{{ STRINGS.dodge }} · {{ keyLabel(settings.keys.dodge) }}</span>
         </div>
       </div>
 
@@ -100,8 +100,7 @@ const time = computed(() => {
     >
       <span
         :key="hud.countdown"
-        class="countdown title-text font-display text-[140px]"
-        style="-webkit-text-stroke-width: 6px; text-shadow: 0 8px 0 var(--color-ink), 0 0 40px rgb(255 200 90 / 0.6)"
+        class="countdown heading-screen text-[8.75rem] [-webkit-text-stroke-width:6px] [text-shadow:0_8px_0_var(--color-ink),0_0_40px_rgb(255_200_90/0.6)]"
       >{{ hud.countdown }}</span>
     </div>
   </div>

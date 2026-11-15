@@ -8,6 +8,7 @@ import ClassMedallion from '../hud/ClassMedallion.vue';
 import ItemCard from './ItemCard.vue';
 import UpgradeCard from './UpgradeCard.vue';
 import WarTable from './WarTable.vue';
+import ScreenFrame from './ScreenFrame.vue';
 
 /**
  * Spoils on the war table after a first win (approved Stage 4): experience bars fill, then a
@@ -100,10 +101,8 @@ function keep(itemId: string): void {
   <WarTable>
     <Transition name="page" mode="out-in">
       <!-- Experience -->
-      <div v-if="page === 'xp'" key="xp" class="flex w-[min(640px,94vw)] flex-col items-center">
-        <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
-        <p class="mt-1 mb-8 text-lg table-sub italic">{{ encounterName }}</p>
-        <div class="panel w-full px-9 pt-7 pb-6">
+      <ScreenFrame v-if="page === 'xp'" key="xp" class="w-[min(640px,94vw)]" :title="T.title" :subtitle="encounterName">
+        <div class="panel w-full px-9 pt-6 pb-5">
           <p class="mb-3 text-center text-lg text-ink-soft">{{ T.xpHint }}</p>
           <ul class="flex flex-col">
             <li
@@ -115,51 +114,45 @@ function keep(itemId: string): void {
               <ClassMedallion :class-id="character.classId" :size="34" />
               <div class="min-w-0">
                 <div class="flex items-baseline gap-2">
-                  <span class="truncate font-display text-lg" :class="{ 'text-blood': character.isHero }">{{ character.name }}</span>
-                  <span v-if="bench" class="text-sm text-ink-soft">{{ T.bench }}</span>
-                  <span v-if="xpAt(gain, t).level > gain.fromLevel" class="level-up ml-auto font-display text-base text-[#c47a00]">{{ T.levelUp }}</span>
+                  <span class="heading-3 truncate" :class="{ 'text-blood': character.isHero }">{{ character.name }}</span>
+                  <span v-if="bench" class="note">{{ T.bench }}</span>
+                  <span v-if="xpAt(gain, t).level > gain.fromLevel" class="level-up label ml-auto text-amber">{{ T.levelUp }}</span>
                 </div>
                 <div class="bar bar-thin mt-0.5 h-3.5">
                   <div class="fill fill-xp" :style="{ width: `${Math.min(100, (xpAt(gain, t).xp / xpAt(gain, t).needed) * 100)}%` }" />
                 </div>
               </div>
               <div class="w-24 text-right">
-                <div class="font-display text-base tabular-nums">{{ T.level }} {{ xpAt(gain, t).level }}</div>
-                <div class="text-sm font-extrabold text-[#3f8f1f] tabular-nums">+{{ Math.round(gain.amount * t) }} XP</div>
+                <div class="font-display text-lg tabular-nums">{{ T.level }} {{ xpAt(gain, t).level }}</div>
+                <div class="label text-leaf tabular-nums">+{{ Math.round(gain.amount * t) }} XP</div>
               </div>
             </li>
           </ul>
-          <div class="mt-6 flex justify-center">
-            <button class="btn px-7 py-2.5 text-lg" @click="advance">{{ T.next }}</button>
-          </div>
         </div>
-      </div>
+        <template #action><button class="btn" @click="advance">{{ T.next }}</button></template>
+      </ScreenFrame>
 
       <!-- Upgrade or path pick -->
-      <div v-else-if="page === 'choice' && choice && picker" :key="`choice-${pickNumber}`" class="flex flex-col items-center">
-        <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
-        <p class="mt-1 text-base table-sub italic">{{ T.pickCount(pickNumber, totalPicks) }}</p>
-        <div class="mt-6 flex items-center gap-4">
+      <ScreenFrame v-else-if="page === 'choice' && choice && picker" :key="`choice-${pickNumber}`" :title="T.title" :subtitle="T.pickCount(pickNumber, totalPicks)">
+        <div class="flex items-center gap-4">
           <ClassMedallion :class-id="picker.classId" :size="52" />
           <div>
-            <h3 class="table-title font-display text-4xl">{{ picker.name }}</h3>
-            <p class="text-lg table-sub italic">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
+            <h3 class="heading-screen text-left">{{ picker.name }}</h3>
+            <p class="table-text text-lg">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
           </div>
         </div>
-        <p class="mt-6 mb-8 table-sub font-display text-2xl">{{ choice.kind === 'path' ? T.choosePath : T.chooseUpgrade }}</p>
-        <div class="flex flex-wrap justify-center gap-8">
+        <p class="table-text font-display text-2xl">{{ choice.kind === 'path' ? T.choosePath : T.chooseUpgrade }}</p>
+        <div class="mt-2 flex flex-wrap justify-center gap-8">
           <UpgradeCard v-for="id in choice.options" :key="id" :kind="choice.kind" :id="id" @click="pick(choice, id)" />
         </div>
-      </div>
+      </ScreenFrame>
 
       <!-- Loot -->
-      <div v-else-if="page === 'loot' && rewards?.loot" key="loot" class="flex flex-col items-center">
-        <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
-        <p class="mt-1 mb-10 text-lg table-sub italic">{{ T.lootHint }}</p>
-        <div class="flex flex-wrap justify-center gap-8">
+      <ScreenFrame v-else-if="page === 'loot' && rewards?.loot" key="loot" :title="T.title" :subtitle="T.lootHint">
+        <div class="mt-2 flex flex-wrap justify-center gap-8">
           <ItemCard v-for="id in rewards.loot" :key="id" :id="id" @click="keep(id)" />
         </div>
-      </div>
+      </ScreenFrame>
     </Transition>
   </WarTable>
 </template>

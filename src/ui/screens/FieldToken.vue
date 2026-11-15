@@ -24,8 +24,8 @@ withDefaults(defineProps<{ classId: ClassId; label: string; hero?: boolean; enem
       </div>
     </div>
     <span
-      class="mt-1.5 max-w-[104px] truncate px-1 text-center leading-tight"
-      :class="enemy ? 'text-sm font-extrabold text-blood' : 'font-display text-base'"
+      class="mt-1.5 max-w-26 truncate px-1 text-center"
+      :class="enemy ? 'label text-blood' : 'font-display text-base'"
     >{{ label }}</span>
   </div>
 </template>

@@ -79,13 +79,13 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
 </script>
 
 <template>
-  <div class="panel flex w-[min(680px,94vw)] flex-col px-10 pt-7 pb-7 font-body">
-    <h1 class="title-text text-center font-display text-5xl">{{ T.title }}</h1>
+  <div class="panel flex w-[min(680px,94vw)] flex-col px-10 py-7">
+    <h1 class="heading-screen text-center">{{ T.title }}</h1>
     <nav class="mt-5 flex justify-center gap-2">
       <button
         v-for="t in TABS"
         :key="t"
-        class="tab px-4 py-1.5 font-display text-lg"
+        class="cap px-4 py-1 font-display text-lg"
         :class="{ 'is-on': t === tab }"
         @click="pickTab(t)"
       >
@@ -93,7 +93,7 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
       </button>
     </nav>
 
-    <section class="min-h-[330px] py-6">
+    <section class="min-h-84 py-6">
       <div v-if="tab === 'sound'" class="space-y-5 pt-4">
         <InkSlider v-for="v in VOLUMES" :key="v" v-model="settings.volume[v]" :label="T.volume[v]" :min="0" :max="100" :step="1" />
       </div>
@@ -101,18 +101,18 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
       <div v-else-if="tab === 'controls'">
         <div class="grid grid-cols-2 gap-x-10 gap-y-1.5">
           <div v-for="a in ACTIONS" :key="a" class="flex items-center justify-between gap-3">
-            <span class="text-base">{{ T.actions[a] }}</span>
-            <button class="keycap min-w-[5.5rem] px-2 py-1 font-display text-base" :class="{ 'is-capturing': capturing === a }" @click="startCapture(a)">
-              <span v-if="capturing === a" class="font-body text-sm font-extrabold">{{ T.pressKey }}</span>
+            <span>{{ T.actions[a] }}</span>
+            <button class="cap min-w-24 px-2 py-0.5 font-display text-base" :class="{ 'is-capturing': capturing === a }" @click="startCapture(a)">
+              <span v-if="capturing === a" class="text-sm">{{ T.pressKey }}</span>
               <span v-else>{{ keyLabel(settings.keys[a]) }}</span>
             </button>
           </div>
           <div v-for="[key, what] in T.fixed" :key="key" class="flex items-center justify-between gap-3 text-ink-soft">
-            <span class="text-base">{{ what }}</span>
-            <span class="min-w-[5.5rem] px-2 py-1 text-center font-display text-base">{{ key }}</span>
+            <span>{{ what }}</span>
+            <span class="min-w-24 px-2 py-0.5 text-center font-display text-base">{{ key }}</span>
           </div>
         </div>
-        <p class="mt-4 text-center text-sm text-ink-soft">{{ T.swapHint }}</p>
+        <p class="note mt-4 text-center">{{ T.swapHint }}</p>
       </div>
 
       <div v-else-if="tab === 'camera'" class="space-y-5 pt-4">
@@ -122,12 +122,12 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
 
       <div v-else class="pt-4">
         <div class="flex items-center gap-6">
-          <span class="w-[9rem] text-lg">{{ T.quality.label }}</span>
+          <span class="w-36">{{ T.quality.label }}</span>
           <div class="flex gap-3">
             <button
               v-for="q in QUALITIES"
               :key="q"
-              class="keycap min-w-[6rem] px-4 py-2 font-display text-lg"
+              class="cap min-w-24 px-4 py-1 font-display text-lg"
               :class="{ 'is-on': settings.quality === q }"
               @click="settings.quality = q"
             >
@@ -135,49 +135,22 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
             </button>
           </div>
         </div>
-        <p class="mt-5 pl-[calc(9rem+1.5rem)] text-base text-ink-soft">{{ T.quality.notes[settings.quality] }}</p>
+        <p class="note mt-5 pl-42">{{ T.quality.notes[settings.quality] }}</p>
       </div>
     </section>
 
     <div class="rule w-full" />
     <div class="mt-5 flex items-center justify-between">
-      <button class="link text-lg" @click="restoreDefaults(SECTION[tab])">{{ T.restore }}</button>
-      <button class="btn px-8 py-2.5 text-lg" @click="emit('done')">{{ T.done }}</button>
+      <button class="btn btn-sm btn-yellow" @click="restoreDefaults(SECTION[tab])">{{ T.restore }}</button>
+      <button class="btn" @click="emit('done')">{{ T.done }}</button>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Tabs and key-caps (6g, restyled 6i): chunky cream caps with an ink outline; the chosen one in gold. */
-.tab,
-.keycap {
-  color: var(--color-ink);
-  background: linear-gradient(#fffbea, #f3dcaa);
-  border: 3px solid var(--color-ink);
-  border-radius: 12px;
-  box-shadow: inset 0 2px 0 #fff, 0 3px 0 var(--color-ink);
-  transition: transform 80ms, box-shadow 80ms, filter 120ms;
-}
-.tab {
-  color: var(--color-ink-soft);
-}
-.tab:hover,
-.keycap:hover {
-  filter: brightness(1.04);
-  color: var(--color-ink);
-}
-.tab:active,
-.keycap:active {
-  transform: translateY(2px);
-  box-shadow: inset 0 2px 0 #fff, 0 1px 0 var(--color-ink);
-}
-.tab.is-on,
-.keycap.is-on,
-.keycap.is-capturing {
-  color: var(--color-ink);
+/* While a key is being captured the cap is yellow with a soft gold halo. */
+.cap.is-capturing {
   background: linear-gradient(#ffe48a, #eeac2e);
-}
-.keycap.is-capturing {
   box-shadow: inset 0 2px 0 #fff, 0 3px 0 var(--color-ink), 0 0 0 4px rgb(255 214 110 / 0.6);
 }
 </style>

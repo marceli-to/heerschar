@@ -23,6 +23,12 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done and committed; screenshots in `~/Downloads/heerschar-assets/ui-restyle/built/`. See "6i as built". |
 | 7 | not started |
 
+## 6i consistency pass (Marcel, 2026-11-15, via /ui)
+
+Marcel: "better but far from perfect", asked for consistency. Decisions: **labels = small Lilita, normal case** (no spaced capitals); **buttons = two sizes, one red main action per screen, yellow = other actions, Back / Leave / Cancel always a text link** (blue dropped); **no italics anywhere**.
+
+As built: the design system is documented at the top of `src/style.css` (type scale `.title-gold` / `heading-screen` / `heading-2` / `heading-3` / `label` / `note` / `table-text`, radii tokens `--radius-sheet|card|control`, `coin`, `.well`, `.row-select`, `.cap`, `.btn` + `.btn-sm` + `.btn-yellow`, `.link` + `.link-light`; colour tokens `amber`, `leaf`, `silver`, `track`, `cream-hi|lo`, `table-text`). New `src/ui/screens/ScreenFrame.vue` gives every war-table screen (squad, formation, camp, map, the three spoils pages) the same title / subtitle / content / footer layout (Back left, main action right); all fit 1280 × 800. Removed: `.title-text`, `.table-title`, `.table-sub`, `.btn-blue`, scoped key-cap / tab / row / badge styles. Made without asking: the map now has the title "Choose your road" (was a small hint line), Restore defaults is a small yellow button, Settings + Credits sit side by side under New Game, character figure on the squad sheet 300 px high.
+
 ## 6i as built (2026-11-15)
 
 - **Theme** (`src/style.css`): fonts Lilita One + Nunito (variable, self-hosted OFL in `public/fonts/`; Cinzel / EB Garamond removed, credits updated in `CREDITS.md` and the credits sheet). Tokens: `cream`, `cream-dark`, `ink` `#3b2414`, `ink-soft`, `gold`, `blood`, `energy`, `sky`, `wood`. Shared classes: `.panel` (big sheet), `.plate` (HUD / small), `.btn` + `.btn-yellow` / `.btn-blue`, `.link` / `.link-light`, `.rule`, `.bar` + `.bar-thin` with `.fill.fill-hp|energy|gold|xp`, `.title-text`, `.title-gold`, `.table-title`, `.table-sub`, `.field` (text input), `.wood-tile`. Old names renamed everywhere: `parchment` → `panel`, `hud-plate` → `plate`, `btn-gold` → `btn`, colour `parchment` → `cream`; `ParchmentPanel.vue` → `TitledPanel.vue`. Lilita has one weight: `.font-display` sets `font-synthesis: none`.

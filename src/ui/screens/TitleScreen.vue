@@ -34,16 +34,20 @@ function newGame(): void {
       <div class="banner-wrap -mt-1.5 w-[min(540px,76vw)]">
         <div class="banner-ink p-[3px] pt-0">
           <div class="banner flex flex-col items-center px-10 pt-14 pb-28">
-            <h1 class="title-gold font-display text-[clamp(44px,8vw,88px)] leading-none">{{ STRINGS.title }}</h1>
+            <h1 class="title-gold text-[clamp(2.75rem,8vw,5.5rem)] leading-none">{{ STRINGS.title }}</h1>
           </div>
         </div>
       </div>
       <WaxSeal class="-mt-16" :size="96" />
-      <button v-if="hasSave" class="btn mt-6 w-64 py-3 text-2xl" @click="emit('continue')">{{ STRINGS.prep.continue }}</button>
-      <button v-if="hasSave" class="btn btn-yellow mt-4 w-64 py-2.5 text-xl" @click="newGame">{{ STRINGS.prep.newGame }}</button>
-      <button v-else class="btn mt-6 w-64 py-3 text-2xl" @click="newGame">{{ STRINGS.prep.newGame }}</button>
-      <button class="btn btn-blue mt-4 w-48 py-2 text-lg" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
-      <button class="btn btn-blue mt-3 w-48 py-2 text-lg" @click="showCredits = true">{{ STRINGS.credits.open }}</button>
+      <div class="mt-6 flex flex-col items-center gap-4">
+        <button v-if="hasSave" class="btn min-w-60" @click="emit('continue')">{{ STRINGS.prep.continue }}</button>
+        <button v-if="hasSave" class="btn btn-sm btn-yellow min-w-60" @click="newGame">{{ STRINGS.prep.newGame }}</button>
+        <button v-else class="btn min-w-60" @click="newGame">{{ STRINGS.prep.newGame }}</button>
+        <div class="flex gap-3">
+          <button class="btn btn-sm btn-yellow" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
+          <button class="btn btn-sm btn-yellow" @click="showCredits = true">{{ STRINGS.credits.open }}</button>
+        </div>
+      </div>
     </div>
     <div v-if="showSettings" class="fixed inset-0 z-20 flex items-center justify-center bg-black/55">
       <SettingsSheet @done="showSettings = false" />
@@ -53,10 +57,10 @@ function newGame(): void {
     </div>
     <div v-if="confirming" class="fixed inset-0 z-20 flex items-center justify-center bg-black/55" @click.self="confirming = false">
       <div class="panel flex w-[min(420px,86vw)] flex-col items-center px-10 py-8 text-center">
-        <p class="font-display text-2xl">{{ STRINGS.prep.abandon }}</p>
+        <p class="heading-3 text-2xl text-balance">{{ STRINGS.prep.abandon }}</p>
         <div class="rule mt-4 w-2/3" />
-        <button class="btn mt-6 px-8 py-2.5 text-lg" @click="emit('newGame')">{{ STRINGS.prep.confirm }}</button>
-        <button class="mt-4 link text-lg" @click="confirming = false">{{ STRINGS.prep.back }}</button>
+        <button class="btn mt-6" @click="emit('newGame')">{{ STRINGS.prep.confirm }}</button>
+        <button class="link mt-3" @click="confirming = false">{{ STRINGS.prep.back }}</button>
       </div>
     </div>
   </WarTable>
@@ -75,7 +79,7 @@ function newGame(): void {
   height: 30px;
   transform: translateY(-50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffe9a0, #e0a530 60%, #b07418);
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, var(--color-gold) 60%, #b07418);
   border: 3px solid var(--color-ink);
 }
 /* Cream banner with a swallow-tail bottom inside an ink copy of itself (the outline), with a hard drop shadow. */
@@ -85,7 +89,7 @@ function newGame(): void {
 }
 .banner {
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4px), 50% calc(84% - 3px), 0 calc(100% - 4px));
-  background: linear-gradient(#fff6dc, #f1d6a0);
+  background: linear-gradient(var(--color-cream), var(--color-cream-dark));
 }
 .banner-wrap {
   filter: drop-shadow(0 6px 0 var(--color-ink));

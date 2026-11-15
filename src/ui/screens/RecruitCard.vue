@@ -41,15 +41,15 @@ const lines = computed(() => {
     @keydown.enter.prevent="!disabled && emit('select')"
     @keydown.space.prevent="!disabled && emit('select')"
   >
-    <FigurePreview :class-id="character.classId" :hero="false" class="h-[150px] w-full" />
-    <h3 class="font-display text-2xl leading-tight">{{ character.name }}</h3>
-    <p class="text-lg italic text-ink-soft">{{ STRINGS.classes[character.classId] }} · {{ T.level }} {{ character.level }}</p>
+    <FigurePreview :class-id="character.classId" :hero="false" class="h-32 w-full" />
+    <h3 class="heading-2">{{ character.name }}</h3>
+    <p class="text-lg text-ink-soft">{{ STRINGS.classes[character.classId] }} · {{ T.level }} {{ character.level }}</p>
     <div class="rule my-3 w-full" />
     <PathUpgrades :character="character" class="justify-center" />
     <dl class="mt-auto grid w-full grid-cols-[auto_1fr] gap-x-6 pt-3 text-base">
       <template v-for="l in lines" :key="l.label">
-        <dt class="text-left font-black text-xs leading-6 tracking-[0.12em] text-ink-soft uppercase">{{ l.label }}</dt>
-        <dd class="text-right tabular-nums">{{ l.value }}</dd>
+        <dt class="label text-left leading-6">{{ l.label }}</dt>
+        <dd class="text-right font-display text-lg leading-6 tabular-nums">{{ l.value }}</dd>
       </template>
     </dl>
   </div>
@@ -64,8 +64,8 @@ const lines = computed(() => {
 .card:focus-visible {
   transform: translateY(-6px);
   box-shadow:
-    inset 0 2px 0 #fffbe9,
-    inset 0 -4px 0 #d9b77a,
+    inset 0 2px 0 var(--color-cream-hi),
+    inset 0 -4px 0 var(--color-cream-lo),
     0 10px 0 var(--color-ink),
     0 22px 30px rgb(20 10 4 / 0.45);
 }

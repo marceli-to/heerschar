@@ -23,31 +23,58 @@
   font-display: block;
 }
 
-/* Storybook look (approved 6i, 2026-11-15): cream panels with a thick dark-brown outline and a hard
-   drop shadow, fat shiny bars, Lilita One + Nunito. Matches the chunky KayKit figures. */
+/*
+ * Storybook design system (6i, approved 2026-11-15). One source for every 2D screen and the HUD.
+ *
+ * Type scale (Lilita = display, Nunito 700 = body):
+ *   .title-gold      title / ending only (clamp, gold, 6 px stroke)
+ *   .heading-screen  screen and sheet titles, 2.5rem, cream with ink stroke (on table and on panels)
+ *   .heading-2       names and class on sheets, 1.875rem ink
+ *   .heading-3       card titles, list names, 1.25rem ink
+ *   .label           small labels ("In the field", "Health"), 0.9375rem Lilita, ink-soft, normal case
+ *   body             1rem Nunito; .note = 0.875rem ink-soft (never smaller); no italics anywhere
+ *   numbers          Lilita + tabular-nums
+ * Radii: --radius-sheet 18 px (panels), --radius-card 14 px (plates, cards, buttons),
+ *        --radius-control 10 px (tiles, fields, rows, key-caps); pills / coins full.
+ * Outline: 3 px ink everywhere (2.5 px on thin bars and small coins).
+ * Buttons: two sizes (.btn = main action, .btn-sm = everything else); one red per screen,
+ *          .btn-yellow for other actions; Back / Leave / Cancel = .link (text).
+ */
 @theme {
   --font-display: 'Lilita One', 'Arial Rounded MT Bold', sans-serif;
   --font-body: 'Nunito', 'Arial Rounded MT Bold', sans-serif;
+
   --color-cream: #fff6dc;
   --color-cream-dark: #f1d6a0;
+  --color-cream-hi: #fffbe9;
+  --color-cream-lo: #d9b77a;
   --color-ink: #3b2414;
   --color-ink-soft: #8a5a32;
   --color-gold: #e0a530;
   --color-gold-light: #f6c453;
+  --color-amber: #c47a00;
   --color-blood: #d23224;
   --color-blood-light: #ff7058;
+  --color-leaf: #3f8f1f;
+  --color-silver: #c4d0dd;
+  --color-silver-ink: #5a6f86;
   --color-energy: #2a7be0;
   --color-energy-light: #6fc8ff;
-  --color-sky: #6a95c0;
-  --color-sky-light: #a3c8e6;
   --color-wood: #4e2c16;
   --color-wood-light: #7a4a28;
+  --color-track: #6d4a30;
+  --color-table-text: #fff1d0;
+
+  --radius-sheet: 1.125rem;
+  --radius-card: 0.875rem;
+  --radius-control: 0.625rem;
 }
 
 @layer base {
   body {
     font-family: var(--font-body);
     font-weight: 700;
+    -webkit-font-smoothing: antialiased;
   }
   /* Lilita has one weight: never fake a bold. */
   .font-display {
@@ -56,55 +83,150 @@
   }
 }
 
+/* ---------- Type ---------- */
+
+@utility heading-screen {
+  font-family: var(--font-display);
+  font-synthesis: none;
+  font-size: 2.5rem;
+  line-height: 1.15;
+  color: #fff4d4;
+  -webkit-text-stroke: 3px var(--color-ink);
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 var(--color-ink);
+  text-wrap: balance;
+}
+@utility heading-2 {
+  font-family: var(--font-display);
+  font-synthesis: none;
+  font-size: 1.875rem;
+  line-height: 1.15;
+  color: var(--color-ink);
+}
+@utility heading-3 {
+  font-family: var(--font-display);
+  font-synthesis: none;
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+@utility label {
+  font-family: var(--font-display);
+  font-synthesis: none;
+  font-size: 0.9375rem;
+  line-height: 1.25rem;
+  color: var(--color-ink-soft);
+}
+@utility note {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--color-ink-soft);
+  text-wrap: pretty;
+}
+/* Gold heading (title, ending): thick ink stroke, hard shadow. */
+@utility title-gold {
+  font-family: var(--font-display);
+  font-synthesis: none;
+  color: #ffcf4a;
+  -webkit-text-stroke: 6px var(--color-ink);
+  paint-order: stroke fill;
+  text-shadow: 0 7px 0 var(--color-ink);
+  letter-spacing: 0.01em;
+}
+/* Light text straight on the war table. */
+@utility table-text {
+  color: var(--color-table-text);
+  text-shadow: 0 2px 0 rgb(59 36 20 / 0.7);
+  text-wrap: pretty;
+}
+
+/* ---------- Surfaces ---------- */
+
+/* Gold coin (medallions, ticks, knobs, badges). */
+@utility coin {
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, var(--color-gold) 60%, #b07418);
+  border: 3px solid var(--color-ink);
+  border-radius: 9999px;
+}
+
 @layer components {
   /* Big sheet: cream, thick outline, hard drop shadow. */
   .panel {
     color: var(--color-ink);
-    background: linear-gradient(#fff6dc, #f1d6a0);
+    background: linear-gradient(var(--color-cream), var(--color-cream-dark));
     border: 3px solid var(--color-ink);
-    border-radius: 18px;
+    border-radius: var(--radius-sheet);
     box-shadow:
-      inset 0 2px 0 #fffbe9,
-      inset 0 -4px 0 #d9b77a,
+      inset 0 2px 0 var(--color-cream-hi),
+      inset 0 -4px 0 var(--color-cream-lo),
       0 6px 0 var(--color-ink),
       0 14px 28px rgb(20 10 4 / 0.4);
   }
 
-  /* Smaller plate for HUD and inline cards. */
+  /* Plate for the HUD, cards and notes. */
   .plate {
     color: var(--color-ink);
-    background: linear-gradient(#fff6dc, #f1d6a0);
+    background: linear-gradient(var(--color-cream), var(--color-cream-dark));
     border: 3px solid var(--color-ink);
-    border-radius: 14px;
+    border-radius: var(--radius-card);
     box-shadow:
-      inset 0 2px 0 #fffbe9,
-      inset 0 -3px 0 #d9b77a,
+      inset 0 2px 0 var(--color-cream-hi),
+      inset 0 -3px 0 var(--color-cream-lo),
       0 4px 0 var(--color-ink),
       0 8px 16px rgb(0 0 0 / 0.3);
   }
 
-  /* Chunky button: red (primary), .btn-yellow, .btn-blue. */
+  /* Recessed well inside a panel (formation bench, picker rows). */
+  .well {
+    border-radius: var(--radius-card);
+    background: rgb(138 90 50 / 0.1);
+    box-shadow: inset 0 0 0 2px rgb(59 36 20 / 0.15);
+  }
+
+  /* Selectable row: rounded, gold when chosen. */
+  .row-select {
+    border-radius: var(--radius-control);
+    transition: background-color 100ms;
+  }
+  .row-select:hover {
+    background: rgb(138 90 50 / 0.12);
+  }
+  .row-select.is-on {
+    background: rgb(246 196 83 / 0.45);
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+
+  /* ---------- Buttons ---------- */
+
+  /* Main action (one red per screen). .btn-sm for every other button; .btn-yellow = other actions. */
   .btn {
+    min-width: 10rem;
+    padding: 0.625rem 1.75rem;
     font-family: var(--font-display);
+    font-size: 1.375rem;
+    line-height: 1.75rem;
     font-weight: 400;
     font-synthesis: none;
     letter-spacing: 0.02em;
+    white-space: nowrap;
     color: #fff;
     text-shadow: 0 2px 0 rgb(80 20 10 / 0.8);
     background: linear-gradient(var(--color-blood-light), var(--color-blood));
     border: 3px solid var(--color-ink);
-    border-radius: 14px;
+    border-radius: var(--radius-card);
     box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.35), 0 5px 0 var(--color-ink);
     transition: transform 80ms, box-shadow 80ms, filter 120ms;
+  }
+  .btn-sm {
+    min-width: 7.5rem;
+    padding: 0.375rem 1rem;
+    font-size: 1.0625rem;
+    line-height: 1.5rem;
+    box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.35), 0 4px 0 var(--color-ink);
   }
   .btn-yellow {
     color: var(--color-ink);
     text-shadow: 0 1px 0 rgb(255 255 255 / 0.6);
     background: linear-gradient(#ffe48a, #eeac2e);
-  }
-  .btn-blue {
-    text-shadow: 0 2px 0 rgb(20 40 80 / 0.7);
-    background: linear-gradient(var(--color-sky-light), var(--color-sky));
   }
   .btn:hover:not(:disabled) {
     filter: brightness(1.08);
@@ -113,41 +235,59 @@
     transform: translateY(3px);
     box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.35), 0 2px 0 var(--color-ink);
   }
+  .btn:focus-visible,
+  .link:focus-visible {
+    outline: 3px solid var(--color-gold-light);
+    outline-offset: 3px;
+  }
   .btn:disabled {
+    cursor: default;
     filter: grayscale(0.85) brightness(0.9);
     opacity: 0.7;
   }
 
-  /* Quiet text link (Back, Cancel). */
+  /* Back / Leave / Cancel: a text link. On panels ink-soft; .link-light on the table. */
   .link {
     font-family: var(--font-display);
+    font-size: 1.125rem;
+    line-height: 1.75rem;
     font-synthesis: none;
     color: var(--color-ink-soft);
     text-underline-offset: 4px;
+    text-decoration-thickness: 2px;
   }
   .link:hover {
-    text-decoration: underline;
+    text-decoration-line: underline;
     color: var(--color-ink);
   }
-
-  /* Divider: short rounded ink stroke. */
-  .rule {
-    height: 3px;
-    border-radius: 99px;
-    background: rgb(59 36 20 / 0.18);
+  .link-light {
+    color: var(--color-table-text);
+    text-shadow: 0 2px 0 rgb(59 36 20 / 0.7);
+  }
+  .link-light:hover {
+    color: #fff;
   }
 
-  /* Fat rounded bar: outline, dark track, shiny fill. Fill colour via .fill-hp / .fill-energy / .fill-gold / .fill-xp. */
+  /* Divider: rounded ink stroke at low opacity. */
+  .rule {
+    height: 3px;
+    border-radius: 9999px;
+    background: rgb(59 36 20 / 0.15);
+  }
+
+  /* ---------- Bars ---------- */
+
+  /* Fat rounded bar: outline, dark track, shiny fill (.fill-hp / -energy / -gold / -xp). */
   .bar {
     position: relative;
     overflow: hidden;
     border: 3px solid var(--color-ink);
-    border-radius: 99px;
-    background: #6d4a30;
+    border-radius: 9999px;
+    background: var(--color-track);
   }
   .bar > .fill {
     height: 100%;
-    border-radius: 99px;
+    border-radius: 9999px;
     box-shadow: inset 0 4px 0 rgb(255 255 255 / 0.35), inset 0 -3px 0 rgb(0 0 0 / 0.15);
   }
   .bar-thin {
@@ -169,56 +309,14 @@
     background: linear-gradient(#b4ec6a, #5fb52e);
   }
 
-  /* Big outlined heading: cream fill, ink stroke, hard shadow. */
-  .title-text {
-    font-family: var(--font-display);
-    font-synthesis: none;
-    color: #fff4d4;
-    -webkit-text-stroke: 3px var(--color-ink);
-    paint-order: stroke fill;
-    text-shadow: 0 4px 0 var(--color-ink);
-  }
-
-  /* Gold heading (title, ending): thick ink stroke, hard shadow. */
-  .title-gold {
-    font-family: var(--font-display);
-    font-synthesis: none;
-    color: #ffcf4a;
-    -webkit-text-stroke: 6px var(--color-ink);
-    paint-order: stroke fill;
-    text-shadow: 0 7px 0 var(--color-ink);
-    letter-spacing: 0.01em;
-  }
-
-  /* Heading straight on the war table. */
-  .table-title {
-    font-family: var(--font-display);
-    font-synthesis: none;
-    color: #fff4d4;
-    -webkit-text-stroke: 3px var(--color-ink);
-    paint-order: stroke fill;
-    text-shadow: 0 4px 0 var(--color-ink);
-    letter-spacing: 0.01em;
-  }
-  /* Light text straight on the war table. */
-  .table-sub {
-    color: #fff1d0;
-    text-shadow: 0 2px 0 rgb(59 36 20 / 0.7);
-  }
-  .link-light {
-    color: #fff1d0;
-    text-shadow: 0 2px 0 rgb(59 36 20 / 0.7);
-  }
-  .link-light:hover {
-    color: #fff;
-  }
+  /* ---------- Controls ---------- */
 
   /* Text field: inset cream well with an ink outline. */
   .field {
     color: var(--color-ink);
-    background: #fffbea;
+    background: var(--color-cream-hi);
     border: 3px solid var(--color-ink);
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     box-shadow: inset 0 3px 0 rgb(59 36 20 / 0.12);
     outline: none;
   }
@@ -226,9 +324,29 @@
     box-shadow: inset 0 3px 0 rgb(59 36 20 / 0.12), 0 0 0 3px var(--color-gold-light);
   }
 
+  /* Chunky cream cap (settings tabs, key-caps); .is-on = chosen (yellow). */
+  .cap {
+    color: var(--color-ink);
+    background: linear-gradient(var(--color-cream-hi), #f3dcaa);
+    border: 3px solid var(--color-ink);
+    border-radius: var(--radius-control);
+    box-shadow: inset 0 2px 0 #fff, 0 3px 0 var(--color-ink);
+    transition: transform 80ms, box-shadow 80ms, filter 120ms;
+  }
+  .cap:hover {
+    filter: brightness(1.04);
+  }
+  .cap:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 0 #fff, 0 1px 0 var(--color-ink);
+  }
+  .cap.is-on {
+    background: linear-gradient(#ffe48a, #eeac2e);
+  }
+
   /* Wood tile with a gold ring (ability and item pictograms). */
   .wood-tile {
-    border-radius: 12px;
+    border-radius: var(--radius-control);
     background: linear-gradient(var(--color-wood-light), var(--color-wood));
     border: 3px solid var(--color-ink);
     box-shadow:

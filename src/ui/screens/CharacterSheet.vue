@@ -119,23 +119,23 @@ const xpNeeded = computed(() => xpToNext(props.character.level));
 
 <template>
   <div class="grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6">
-    <FigurePreview :class-id="character.classId" :hero="character.isHero" class="h-[340px]" />
+    <FigurePreview :class-id="character.classId" :hero="character.isHero" class="h-75" />
     <div class="flex flex-col">
-      <h3 class="font-display text-3xl">{{ character.name }}</h3>
-      <p class="text-lg italic text-ink-soft">
+      <h3 class="heading-2">{{ character.name }}</h3>
+      <p class="text-lg text-ink-soft">
         {{ STRINGS.classes[character.classId] }}<template v-if="character.isHero"> · {{ T.hero }}</template> · {{ T.level }} {{ character.level }}
       </p>
       <div class="rule my-3 w-full" />
-      <dl class="grid min-h-[150px] grid-cols-[auto_1fr] content-start gap-x-6 gap-y-0 text-base">
+      <dl class="grid min-h-42 grid-cols-[auto_1fr] content-start gap-x-6 gap-y-0 text-base">
         <template v-for="l in lines" :key="l.label">
-          <dt class="font-black text-xs leading-6 tracking-[0.12em] text-ink-soft uppercase">{{ l.label }}</dt>
-          <dd class="text-right font-display text-lg leading-6 tabular-nums">
-            <span v-if="l.delta" class="delta mr-2 font-display text-xs" :class="l.better ? 'is-better' : 'is-worse'">{{ l.delta }}</span>{{ l.value }}
+          <dt class="label leading-7">{{ l.label }}</dt>
+          <dd class="text-right font-display text-lg leading-7 tabular-nums">
+            <span v-if="l.delta" class="delta mr-2 font-display text-sm" :class="l.better ? 'is-better' : 'is-worse'">{{ l.delta }}</span>{{ l.value }}
           </dd>
         </template>
       </dl>
       <div class="mt-3">
-        <div class="flex justify-between font-black text-xs tracking-[0.12em] text-ink-soft uppercase">
+        <div class="label flex justify-between">
           <span>{{ T.xp }}</span>
           <span class="tabular-nums">{{ character.xp }} / {{ xpNeeded }}</span>
         </div>
@@ -144,7 +144,7 @@ const xpNeeded = computed(() => xpToNext(props.character.level));
         </div>
       </div>
       <div class="mt-3">
-        <div class="font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ T.pathAndUpgrades }}</div>
+        <div class="label">{{ T.pathAndUpgrades }}</div>
         <PathUpgrades :character="character" class="mt-1.5" />
       </div>
       <div ref="slotsEl" class="mt-3 flex justify-center gap-1">
@@ -166,7 +166,7 @@ const xpNeeded = computed(() => xpToNext(props.character.level));
 
 <style scoped>
 .delta.is-better {
-  color: #3f8f1f;
+  color: var(--color-leaf);
 }
 .delta.is-worse {
   color: var(--color-blood);

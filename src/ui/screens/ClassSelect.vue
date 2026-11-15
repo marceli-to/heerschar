@@ -32,7 +32,7 @@ function choose(): void {
 <template>
   <WarTable>
     <div class="flex w-[min(880px,94vw)] flex-col items-center">
-      <h2 class="mb-5 table-title font-display text-3xl">{{ STRINGS.prep.chooseHero }}</h2>
+      <h2 class="heading-screen mb-5">{{ STRINGS.prep.chooseHero }}</h2>
       <div class="mb-[-22px] flex gap-6">
         <button v-for="c in CLASSES" :key="c" class="tab relative z-10 rounded-full" :class="{ 'is-on': c === selected }" :title="STRINGS.classes[c]" @click="selected = c">
           <ClassMedallion :class-id="c" :size="60" />
@@ -41,21 +41,21 @@ function choose(): void {
       <div class="panel grid w-full grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-8 px-10 pt-12 pb-9">
         <FigurePreview :class-id="selected" class="h-[400px]" />
         <div class="flex flex-col justify-center">
-          <h1 class="font-display text-4xl">{{ STRINGS.classes[selected] }}</h1>
-          <p class="mt-1 text-xl text-ink-soft">{{ STRINGS.roles[selected] }}</p>
+          <h1 class="heading-2 text-4xl">{{ STRINGS.classes[selected] }}</h1>
+          <p class="mt-1 text-lg text-ink-soft">{{ STRINGS.roles[selected] }}</p>
           <div class="rule my-5 w-full" />
           <ul class="space-y-3">
             <li v-for="(id, i) in abilities" :key="id" class="flex items-center gap-3">
               <div class="wood-tile relative size-12 shrink-0">
                 <AbilityIcon :id="id" class="absolute inset-1.5" />
               </div>
-              <span class="min-w-5 font-display text-base text-ink-soft">{{ keyLabel(i === 0 ? settings.keys.ability1 : settings.keys.ability2) }}</span>
-              <span class="font-display text-xl">{{ STRINGS.abilities[id] }}</span>
+              <span class="label min-w-5">{{ keyLabel(i === 0 ? settings.keys.ability1 : settings.keys.ability2) }}</span>
+              <span class="heading-3">{{ STRINGS.abilities[id] }}</span>
             </li>
           </ul>
           <div class="rule my-5 w-full" />
           <label class="flex items-center gap-4">
-            <span class="font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.prep.name }}</span>
+            <span class="label">{{ STRINGS.prep.name }}</span>
             <input
               v-model="name"
               maxlength="16"
@@ -64,8 +64,8 @@ function choose(): void {
             />
           </label>
           <div class="mt-7 flex items-center justify-between">
-            <button class="link text-lg" @click="emit('back')">{{ STRINGS.prep.back }}</button>
-            <button class="btn px-8 py-2.5 text-lg disabled:opacity-50" :disabled="!name.trim()" @click="choose">{{ STRINGS.prep.choose }}</button>
+            <button class="link" @click="emit('back')">{{ STRINGS.prep.back }}</button>
+            <button class="btn" :disabled="!name.trim()" @click="choose">{{ STRINGS.prep.choose }}</button>
           </div>
         </div>
       </div>

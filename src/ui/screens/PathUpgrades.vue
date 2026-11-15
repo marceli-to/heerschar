@@ -31,33 +31,26 @@ const upgrades = computed(() =>
     <HoverNote v-if="path" class="mr-2">
       <div class="flex items-center gap-2">
         <PictogramTile :name="path.icon" :size="tile + 6" />
-        <span class="font-display text-sm">{{ path.name }}</span>
+        <span class="font-display text-base">{{ path.name }}</span>
       </div>
       <template #note>
-        <p class="font-display text-sm">{{ path.name }}</p>
-        <p class="text-[11px] italic text-ink-soft">{{ T.pathNote }}</p>
-        <p class="text-sm leading-snug">{{ path.text }}</p>
+        <p class="heading-3 text-lg">{{ path.name }}</p>
+        <p class="label">{{ T.pathNote }}</p>
+        <p class="mt-1 text-sm">{{ path.text }}</p>
       </template>
     </HoverNote>
     <HoverNote v-for="u in upgrades" :key="u.id">
       <div class="relative">
         <PictogramTile :name="u.icon" :size="tile" />
-        <span v-if="u.count > 1" class="badge absolute -right-1.5 -bottom-1.5 rounded-full px-1 font-display text-[10px] leading-4 tabular-nums">×{{ u.count }}</span>
+        <span v-if="u.count > 1" class="coin absolute -right-1.5 -bottom-1.5 px-1 font-display text-xs leading-4 tabular-nums [border-width:2px]">×{{ u.count }}</span>
       </div>
       <template #note>
-        <p class="font-display text-sm">{{ u.name }}<template v-if="u.count > 1"> ×{{ u.count }}</template></p>
-        <p class="text-[11px] italic text-ink-soft">{{ u.kind }}</p>
-        <p v-for="l in u.lines" :key="l" class="text-sm leading-snug">{{ l }}<template v-if="u.count > 1"> ({{ T.each }})</template></p>
+        <p class="heading-3 text-lg">{{ u.name }}<template v-if="u.count > 1"> ×{{ u.count }}</template></p>
+        <p class="label">{{ u.kind }}</p>
+        <p v-for="l in u.lines" :key="l" class="mt-1 text-sm">{{ l }}<template v-if="u.count > 1"> ({{ T.each }})</template></p>
       </template>
     </HoverNote>
-    <span v-if="!path && upgrades.length === 0" class="italic text-ink-soft/80">{{ T.noUpgrades }}</span>
+    <span v-if="!path && upgrades.length === 0" class="note">{{ T.noUpgrades }}</span>
   </div>
 </template>
 
-<style scoped>
-.badge {
-  color: var(--color-ink);
-  background: var(--color-gold-light);
-  border: 2px solid var(--color-ink);
-}
-</style>

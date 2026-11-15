@@ -7,6 +7,7 @@ import { isNodeDone, isNodeOpen, isRegionOpen, type GameState } from '../../meta
 import ClassMedallion from '../hud/ClassMedallion.vue';
 import HoverNote from './HoverNote.vue';
 import WarTable from './WarTable.vue';
+import ScreenFrame from './ScreenFrame.vue';
 import WaxSeal, { type SealIcon, type SealWax } from './WaxSeal.vue';
 import { CARTOUCHE, COMPASS, GLYPHS, LAND, SHEET_H, SHEET_W, regionMarks, regionPatches, regionRoads, toSheet } from './mapSketch';
 
@@ -75,12 +76,8 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
 
 <template>
   <WarTable>
-    <div class="flex w-[min(1120px,94vw,calc((100vh-190px)*5/3))] flex-col items-center">
-      <p class="mb-10 text-lg table-sub">
-        {{ STRINGS.map.hint }}
-      </p>
-
-      <div class="relative w-full">
+    <ScreenFrame class="w-[min(1120px,94vw,calc((100dvh-240px)*5/3))]" :title="STRINGS.map.hint">
+      <div class="relative mt-6 w-full">
         <!-- Bookmark ribbons hanging over the top edge of the sheet. -->
         <div class="absolute -top-7 left-12 z-10 flex gap-4">
           <HoverNote v-for="r in REGIONS" :key="r" :disabled="isRegionOpen(game, r)" below>
@@ -91,7 +88,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
               :disabled="!isRegionOpen(game, r)"
               @click="selectRegion(r)"
             >
-              <span class="face absolute inset-x-[3px] top-0 bottom-[3px] flex items-start justify-center pt-3 font-display text-base">
+              <span class="face absolute inset-x-[3px] top-0 bottom-[3px] flex items-start justify-center pt-3 font-display text-lg">
                 <svg v-if="!isRegionOpen(game, r)" class="mt-0.5 mr-1.5" width="12" height="14" viewBox="0 0 11 13" aria-hidden="true">
                   <path d="M2.5 6 V4 a3 3 0 0 1 6 0 V6" fill="none" stroke="currentColor" stroke-width="1.8" />
                   <rect x="1" y="6" width="9" height="6.5" rx="1.5" fill="currentColor" />
@@ -107,7 +104,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
 
         <!-- The region sheet. -->
         <div class="sheet panel relative w-full" :class="region">
-          <svg class="absolute inset-0 h-full w-full overflow-hidden rounded-[15px]" :viewBox="`0 0 ${SHEET_W} ${SHEET_H}`" preserveAspectRatio="none" aria-hidden="true">
+          <svg class="absolute inset-0 h-full w-full overflow-hidden rounded-[calc(var(--radius-sheet)-3px)]" :viewBox="`0 0 ${SHEET_W} ${SHEET_H}`" preserveAspectRatio="none" aria-hidden="true">
             <!-- Land and its patches. -->
             <rect :width="SHEET_W" :height="SHEET_H" :fill="land.base" />
             <ellipse v-for="(p, i) in patches" :key="`p${i}`" :cx="p.x" :cy="p.y" :rx="p.rx" :ry="p.ry" :fill="land[p.tone]" />
@@ -168,28 +165,28 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
               <button class="seal relative block" :class="{ faded: !open(n), live: open(n) && !done(n) }" :disabled="!open(n) || (isCampId(n.id) && done(n))" @click="enter(n)">
                 <span v-if="open(n) && !done(n)" class="glow pointer-events-none absolute inset-[-40%] rounded-full" />
                 <WaxSeal class="relative" :size="SEAL[n.kind].size" :wax="SEAL[n.kind].wax" :icon="SEAL[n.kind].icon" />
-                <span v-if="done(n)" class="tick absolute -top-1.5 -right-2 flex h-6 w-6 items-center justify-center rounded-full">
+                <span v-if="done(n)" class="tick coin absolute -top-1.5 -right-2 flex size-6 items-center justify-center">
                   <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><path d="M2 7 L5.2 10 L11 3" fill="none" stroke="#3b2414" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </span>
               </button>
               <template #note>
                 <template v-if="n.kind === 'camp'">
-                  <h3 class="font-display text-lg leading-tight">
+                  <h3 class="heading-3 text-lg">
                     {{ STRINGS.map.camp }}
                   </h3>
                   <div class="rule mx-auto my-1.5 w-3/4" />
-                  <p class="max-w-52 text-sm leading-snug">
+                  <p class="max-w-52 text-sm text-pretty">
                     {{ STRINGS.map.campIntro }}
                   </p>
-                  <p v-if="done(n)" class="mt-1 text-xs italic text-ink-soft">
+                  <p v-if="done(n)" class="note mt-1">
                     {{ STRINGS.map.campDone }}
                   </p>
                 </template>
                 <template v-else>
-                  <h3 class="font-display text-lg leading-tight">
+                  <h3 class="heading-3 text-lg">
                     {{ STRINGS.encounters[n.id as EncounterId].name }}
                   </h3>
-                  <p class="level mt-0.5 font-black text-[11px] tracking-[0.12em] uppercase">
+                  <p class="label mt-0.5">
                     {{ STRINGS.prep.level }} {{ encounter(n).level }}<template v-if="n.kind === 'elite'"> · {{ STRINGS.map.elite }}</template
                     ><template v-if="n.kind === 'boss'"> · {{ STRINGS.map.boss }}</template>
                   </p>
@@ -199,14 +196,14 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
                       <ClassMedallion v-for="(u, k) in row" :key="k" :class-id="u.classId" :size="22" :title="STRINGS.classes[u.classId]" />
                     </div>
                   </div>
-                  <p class="mt-1.5 max-w-52 text-sm leading-snug">
+                  <p class="mt-1.5 max-w-52 text-sm text-pretty">
                     {{ STRINGS.encounters[n.id as EncounterId].intro }}
                   </p>
-                  <p v-if="done(n)" class="mt-1 text-xs italic text-ink-soft">
+                  <p v-if="done(n)" class="note mt-1">
                     {{ STRINGS.prep.replay }}
                   </p>
                 </template>
-                <p v-if="!open(n)" class="mt-1 font-black text-[11px] tracking-[0.12em] text-ink-soft uppercase">
+                <p v-if="!open(n)" class="label mt-1">
                   {{ STRINGS.map.notReached }}
                 </p>
               </template>
@@ -215,10 +212,8 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
         </div>
       </div>
 
-      <button class="mt-8 link link-light text-lg" @click="emit('back')">
-        {{ STRINGS.prep.back }}
-      </button>
-    </div>
+      <template #back><button class="link link-light" @click="emit('back')">{{ STRINGS.prep.back }}</button></template>
+    </ScreenFrame>
   </WarTable>
 </template>
 
@@ -298,11 +293,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
   }
 }
 .tick {
-  background: radial-gradient(circle at 35% 30%, #ffe9a0, #e0a530 60%, #b07418);
-  border: 2.5px solid var(--color-ink);
-}
-.level {
-  color: var(--color-ink-soft);
+  border-width: 2.5px;
 }
 @media (prefers-reduced-motion: reduce) {
   .glow {

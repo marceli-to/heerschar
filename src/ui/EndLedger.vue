@@ -25,9 +25,9 @@ const isBest = (r: HudLedgerRow, c: Column) => r[c] > 0 && r[c] === best.value[c
 <template>
   <table class="mx-auto w-full text-left">
     <thead>
-      <tr class="text-[11px] font-black tracking-[0.12em] text-ink-soft uppercase">
+      <tr class="label">
         <th class="pb-1.5" colspan="2" />
-        <th v-for="c in COLUMNS" :key="c" class="w-16 pb-1.5 text-right font-normal">{{ STRINGS.ledger[c] }}</th>
+        <th v-for="c in COLUMNS" :key="c" class="w-20 pb-1.5 text-right font-normal">{{ STRINGS.ledger[c] }}</th>
       </tr>
     </thead>
     <tbody>
@@ -36,14 +36,14 @@ const isBest = (r: HudLedgerRow, c: Column) => r[c] > 0 && r[c] === best.value[c
           <ClassMedallion :class-id="r.classId" :size="24" />
         </td>
         <td class="py-1 pl-1" :class="{ 'opacity-45': r.fallen }">
-          <span class="font-display text-base" :class="{ 'text-blood': r.hero }">{{ r.name }}</span>
-          <span v-if="r.fallen" class="ml-2 text-sm text-ink-soft">{{ STRINGS.ledger.fallen }}</span>
+          <span class="font-display text-lg" :class="{ 'text-blood': r.hero }">{{ r.name }}</span>
+          <span v-if="r.fallen" class="note ml-2">{{ STRINGS.ledger.fallen }}</span>
         </td>
         <td
           v-for="c in COLUMNS"
           :key="c"
-          class="py-1 text-right font-extrabold tabular-nums"
-          :class="isBest(r, c) ? 'font-display text-lg text-[#c47a00]' : r[c] === 0 ? 'text-ink-soft/50' : ''"
+          class="py-1 text-right font-display text-lg tabular-nums"
+          :class="isBest(r, c) ? 'text-amber' : r[c] === 0 ? 'text-ink-soft/50' : ''"
         >{{ r[c] }}</td>
       </tr>
     </tbody>

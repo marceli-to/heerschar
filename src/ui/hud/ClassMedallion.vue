@@ -8,8 +8,8 @@ withDefaults(defineProps<{ classId: ClassId; size?: number }>(), { size: 30 });
 
 <template>
   <div
-    class="medallion flex shrink-0 items-center justify-center rounded-full font-display text-ink"
-    :style="{ width: `${size}px`, height: `${size}px`, fontSize: `${size * 0.46}px`, borderWidth: `${size >= 28 ? 3 : 2}px` }"
+    class="medallion coin flex shrink-0 items-center justify-center font-display text-ink"
+    :style="{ width: `${size}px`, height: `${size}px`, fontSize: `${size * 0.46}px`, borderWidth: `${size >= 28 ? 3 : 2.5}px` }"
   >
     <slot>{{ STRINGS.monograms[classId] }}</slot>
   </div>
@@ -17,8 +17,6 @@ withDefaults(defineProps<{ classId: ClassId; size?: number }>(), { size: 30 });
 
 <style scoped>
 .medallion {
-  background: radial-gradient(circle at 35% 30%, #ffe9a0, #e0a530 60%, #b07418);
-  border: 3px solid var(--color-ink);
   box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.2), inset 0 2px 0 rgb(255 255 255 / 0.35);
   line-height: 1;
   padding-top: 0.06em;

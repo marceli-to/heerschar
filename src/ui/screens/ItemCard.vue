@@ -18,11 +18,11 @@ const fits = computed(() => (item.value.classId ? STRINGS.spoils.weapon(STRINGS.
 <template>
   <button class="card panel flex w-64 flex-col items-center px-6 pt-7 pb-6 text-center" :class="item.rarity">
     <PictogramTile :name="item.icon" :size="68" />
-    <h3 class="mt-4 font-display text-xl leading-tight">{{ STRINGS.items[item.id] ?? item.id }}</h3>
-    <p class="rarity font-black text-[11px] tracking-[0.12em] uppercase">{{ STRINGS.rarities[item.rarity] }}</p>
-    <p class="mt-1 text-sm text-ink-soft italic">{{ fits }}</p>
+    <h3 class="heading-3 mt-4 text-balance">{{ STRINGS.items[item.id] ?? item.id }}</h3>
+    <p class="label rarity">{{ STRINGS.rarities[item.rarity] }}</p>
+    <p class="note mt-1">{{ fits }}</p>
     <div class="rule my-3 w-3/4" />
-    <ul class="text-base leading-snug">
+    <ul role="list">
       <li v-for="l in effectLines(item.effect)" :key="l">{{ l }}</li>
     </ul>
   </button>
@@ -38,13 +38,13 @@ const fits = computed(() => (item.value.classId ? STRINGS.spoils.weapon(STRINGS.
 }
 .card.rare {
   box-shadow:
-    inset 0 0 0 5px #c4d0dd,
-    inset 0 -4px 0 #d9b77a,
+    inset 0 0 0 5px var(--color-silver),
+    inset 0 -4px 0 var(--color-cream-lo),
     0 6px 0 var(--color-ink),
     0 14px 28px rgb(20 10 4 / 0.4);
 }
 .card.rare .rarity {
-  color: #5a6f86;
+  color: var(--color-silver-ink);
 }
 .card.epic {
   box-shadow:
@@ -54,14 +54,14 @@ const fits = computed(() => (item.value.classId ? STRINGS.spoils.weapon(STRINGS.
     0 0 26px 4px rgb(255 214 110 / 0.55);
 }
 .card.epic .rarity {
-  color: #c47a00;
+  color: var(--color-amber);
 }
 .card:hover,
 .card:focus-visible {
   transform: translateY(-6px);
   box-shadow:
-    inset 0 2px 0 #fffbe9,
-    inset 0 -4px 0 #d9b77a,
+    inset 0 2px 0 var(--color-cream-hi),
+    inset 0 -4px 0 var(--color-cream-lo),
     0 10px 0 var(--color-ink),
     0 22px 30px rgb(20 10 4 / 0.45);
 }

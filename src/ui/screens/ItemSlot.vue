@@ -24,24 +24,24 @@ const worn = computed(() => (props.item ? itemById(props.item) : null));
 </script>
 
 <template>
-  <div class="flex w-[150px] flex-col items-center gap-1">
+  <div class="flex w-38 flex-col items-center gap-1">
     <HoverNote :disabled="!worn || open">
-      <button class="slot-btn block rounded-xl" :class="{ 'is-open': open }">
+      <button class="slot-btn rounded-(--radius-control)" :class="{ 'is-open': open }">
         <PictogramTile v-if="worn" :name="worn.icon" :rarity="worn.rarity" :size="56" />
-        <div v-else class="slot flex size-14 items-center justify-center rounded-xl">
+        <div v-else class="slot flex size-14 items-center justify-center rounded-(--radius-control)">
           <svg viewBox="0 0 32 32" class="size-9 opacity-45" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
             <path :d="ICONS[kind]" />
           </svg>
         </div>
       </button>
       <template v-if="worn" #note>
-        <p class="font-display text-sm">{{ STRINGS.items[worn.id] ?? worn.id }}</p>
-        <p class="font-black text-[11px] tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.rarities[worn.rarity] }}</p>
-        <p v-for="l in effectLines(worn.effect)" :key="l" class="text-sm leading-snug">{{ l }}</p>
+        <p class="heading-3 text-lg">{{ STRINGS.items[worn.id] ?? worn.id }}</p>
+        <p class="label">{{ STRINGS.rarities[worn.rarity] }}</p>
+        <p v-for="l in effectLines(worn.effect)" :key="l" class="text-sm">{{ l }}</p>
       </template>
     </HoverNote>
-    <span class="font-black text-[11px] tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.squadStep[kind] }}</span>
-    <span class="-mt-1 max-w-full truncate text-center text-sm leading-tight" :class="worn ? 'font-display' : 'italic text-ink-soft/80'">
+    <span class="label">{{ STRINGS.squadStep[kind] }}</span>
+    <span class="max-w-full truncate text-center" :class="worn ? 'font-display text-base' : 'note'">
       {{ worn ? (STRINGS.items[worn.id] ?? worn.id) : STRINGS.squadStep.empty }}
     </span>
   </div>

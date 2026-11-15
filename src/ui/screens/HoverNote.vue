@@ -8,7 +8,7 @@ defineProps<{ disabled?: boolean; below?: boolean }>();
     <slot />
     <div
       v-if="!disabled"
-      class="note panel pointer-events-none absolute left-1/2 z-20 w-max max-w-64 px-3 py-2 text-center"
+      class="tip plate pointer-events-none absolute left-1/2 z-20 w-max max-w-64 px-3 py-2 text-center"
       :class="below ? 'top-full mt-2' : 'bottom-full mb-2'"
     >
       <slot name="note" />
@@ -17,13 +17,13 @@ defineProps<{ disabled?: boolean; below?: boolean }>();
 </template>
 
 <style scoped>
-.note {
+.tip {
   opacity: 0;
   transform: translate(-50%, 4px);
   transition: opacity 120ms, transform 120ms;
   outline: none;
 }
-.has-note:hover > .note {
+.has-note:hover > .tip {
   opacity: 1;
   transform: translate(-50%, 0);
 }

@@ -25,11 +25,11 @@ const view = computed(() => {
 <template>
   <button class="card panel flex w-64 flex-col items-center px-6 pt-7 pb-6 text-center">
     <PictogramTile :name="view.icon" :size="68" />
-    <h3 class="mt-4 font-display text-xl leading-tight">{{ view.name }}</h3>
-    <p class="text-sm text-ink-soft italic">{{ view.kind }}</p>
+    <h3 class="heading-3 mt-4 text-balance">{{ view.name }}</h3>
+    <p class="label">{{ view.kind }}</p>
     <div class="rule my-3 w-3/4" />
-    <p v-if="view.text" class="mb-2 text-base leading-snug italic">{{ view.text }}</p>
-    <ul class="text-base leading-snug">
+    <p v-if="view.text" class="mb-2 text-pretty">{{ view.text }}</p>
+    <ul role="list">
       <li v-for="l in view.lines" :key="l">{{ l }}</li>
     </ul>
   </button>
@@ -43,8 +43,8 @@ const view = computed(() => {
 .card:focus-visible {
   transform: translateY(-6px);
   box-shadow:
-    inset 0 2px 0 #fffbe9,
-    inset 0 -4px 0 #d9b77a,
+    inset 0 2px 0 var(--color-cream-hi),
+    inset 0 -4px 0 var(--color-cream-lo),
     0 10px 0 var(--color-ink),
     0 22px 30px rgb(20 10 4 / 0.45);
 }

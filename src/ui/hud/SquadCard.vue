@@ -16,8 +16,8 @@ const danger = computed(() => !props.companion.dead && frac.value < 0.3);
     <ClassMedallion :class-id="companion.classId" :size="32" />
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline justify-between gap-1">
-        <span class="shrink-0 font-display text-[15px]">{{ companion.name }}</span>
-        <span class="hidden min-w-0 truncate text-[11px] font-extrabold text-ink-soft @[148px]:inline">{{ companion.dead ? STRINGS.fallen : STRINGS.classes[companion.classId] }}</span>
+        <span class="shrink-0 font-display text-base">{{ companion.name }}</span>
+        <span class="label hidden min-w-0 truncate text-[0.8125rem] @[148px]:inline">{{ companion.dead ? STRINGS.fallen : STRINGS.classes[companion.classId] }}</span>
       </div>
       <div class="bar bar-thin mt-0.5 h-3.5">
         <div class="fill fill-hp transition-[width] duration-150" :class="{ 'animate-pulse': danger }" :style="{ width: `${frac * 100}%` }" />

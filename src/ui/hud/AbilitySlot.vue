@@ -32,17 +32,17 @@ watch(ready, (now, before) => {
     >
       <AbilityIcon :id="ability.id" class="absolute inset-2.5 text-cream" :class="{ 'opacity-45 grayscale': !ready }" />
       <div v-if="onCooldown" class="absolute inset-0" :style="{ background: sweep }" />
-      <span v-if="onCooldown" class="label absolute inset-0 flex items-center justify-center font-display text-2xl text-white tabular-nums">{{ seconds }}</span>
-      <span class="label absolute right-1.5 bottom-0.5 font-display text-[13px] tabular-nums" :class="ability.affordable ? 'text-energy-light' : 'text-blood-light'">{{ ability.cost }}</span>
+      <span v-if="onCooldown" class="shade absolute inset-0 flex items-center justify-center font-display text-2xl text-white tabular-nums">{{ seconds }}</span>
+      <span class="shade absolute right-1.5 bottom-0.5 font-display text-[0.8125rem] tabular-nums" :class="ability.affordable ? 'text-energy-light' : 'text-blood-light'">{{ ability.cost }}</span>
       <div v-if="flash" :key="flash" class="ready-flash absolute inset-0" />
     </div>
-    <span class="key absolute -bottom-1.5 -left-1.5 font-display text-xs text-ink">{{ keyName }}</span>
+    <span class="key coin absolute -bottom-1.5 -left-1.5 font-display text-xs text-ink">{{ keyName }}</span>
   </div>
 </template>
 
 <style scoped>
 .tile {
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   background: linear-gradient(var(--color-wood-light), var(--color-wood));
   border: 3px solid var(--color-ink);
   box-shadow:
@@ -63,7 +63,7 @@ watch(ready, (now, before) => {
     0 4px 0 var(--color-ink),
     0 0 16px 2px rgb(255 210 90 / 0.8);
 }
-.label {
+.shade {
   text-shadow: 0 2px 0 var(--color-ink);
 }
 .key {
@@ -72,9 +72,7 @@ watch(ready, (now, before) => {
   padding: 1px 5px 0;
   display: grid;
   place-items: center;
-  border-radius: 99px;
-  background: var(--color-gold-light);
-  border: 2px solid var(--color-ink);
+  border-width: 2px;
   line-height: 1;
   white-space: nowrap;
 }

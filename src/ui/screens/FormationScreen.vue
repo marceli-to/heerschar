@@ -8,6 +8,7 @@ import ClassMedallion from '../hud/ClassMedallion.vue';
 import CharacterSheet from './CharacterSheet.vue';
 import FieldToken from './FieldToken.vue';
 import WarTable from './WarTable.vue';
+import ScreenFrame from './ScreenFrame.vue';
 
 /**
  * Preparation step 2 (approved 3d): an ink-drawn field map, the enemy formation at the top as
@@ -99,22 +100,20 @@ const OWN_ROWS = [0, 1] as const;
 
 <template>
   <WarTable>
-    <div class="flex w-[min(1160px,96vw)] flex-col items-center">
-      <h2 class="table-title font-display text-3xl">{{ STRINGS.encounters[encounterId].name }} · {{ T.title }}</h2>
-      <p class="mt-1 mb-6 text-lg table-sub italic">{{ T.hint }}</p>
+    <ScreenFrame class="w-[min(1160px,96vw)]" :title="`${STRINGS.encounters[encounterId].name} · ${T.title}`" :subtitle="T.hint">
       <div class="panel grid w-full grid-cols-[auto_minmax(0,1fr)] gap-10 px-8 pt-7 pb-6">
         <div class="flex flex-col">
-          <div class="map rounded-[3px] px-3 py-3">
+          <div class="map p-3">
             <div class="grid grid-cols-[52px_repeat(3,112px)] items-center">
               <template v-for="row in ENEMY_ROWS" :key="`e${row}`">
-                <span class="label">{{ row === 0 ? T.front : T.back }}</span>
+                <span class="label side-label">{{ row === 0 ? T.front : T.back }}</span>
                 <div v-for="col in COLS" :key="col" class="cell" @mouseenter="hoverEnemy = enemyAt(row, col) ? `${row},${col}` : null" @mouseleave="hoverEnemy = null">
                   <div class="ring is-enemy" :class="{ 'is-empty': !enemyAt(row, col) }" />
                   <template v-if="enemyAt(row, col)">
                     <FieldToken class="token" :class-id="enemyAt(row, col)!.classId" :label="STRINGS.classes[enemyAt(row, col)!.classId]" enemy />
-                    <div v-if="hoverEnemy === `${row},${col}`" class="note panel pointer-events-none absolute bottom-[calc(100%-6px)] left-1/2 z-10 w-56 -translate-x-1/2 px-4 py-3">
-                      <div class="font-display text-base text-blood">{{ STRINGS.classes[enemyAt(row, col)!.classId] }}</div>
-                      <p class="text-sm leading-snug italic text-ink-soft">{{ T.threats[enemyAt(row, col)!.classId] }}</p>
+                    <div v-if="hoverEnemy === `${row},${col}`" class="plate pointer-events-none absolute bottom-[calc(100%-6px)] left-1/2 z-10 w-56 -translate-x-1/2 px-4 py-3">
+                      <div class="heading-3 text-lg text-blood">{{ STRINGS.classes[enemyAt(row, col)!.classId] }}</div>
+                      <p class="note">{{ T.threats[enemyAt(row, col)!.classId] }}</p>
                     </div>
                   </template>
                 </div>
@@ -123,7 +122,7 @@ const OWN_ROWS = [0, 1] as const;
               <div class="midline col-span-4 my-1.5" />
 
               <template v-for="row in OWN_ROWS" :key="`o${row}`">
-                <span class="label">{{ row === 0 ? T.front : T.back }}</span>
+                <span class="label side-label">{{ row === 0 ? T.front : T.back }}</span>
                 <div
                   v-for="col in COLS"
                   :key="col"
@@ -152,18 +151,18 @@ const OWN_ROWS = [0, 1] as const;
           </div>
 
           <div
-            class="bench mt-4 px-3 pt-2 pb-2.5"
+            class="bench well mt-4 px-3 pt-2 pb-2.5"
             :class="{ 'is-target': dropTarget === 'bench' }"
             @dragover="onDragOver($event, 'bench')"
             @dragleave="onDragLeave('bench')"
             @drop="onDrop($event, 'bench')"
           >
-            <div class="mb-1.5 font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ T.bench }}</div>
+            <div class="label mb-1.5">{{ T.bench }}</div>
             <div class="flex min-h-10 flex-wrap gap-x-4 gap-y-2">
               <div
                 v-for="c in bench"
                 :key="c.id"
-                class="chip flex cursor-grab items-center gap-2 py-0.5 pr-2.5 pl-0.5"
+                class="chip row-select flex cursor-grab items-center gap-2 py-0.5 pr-2.5 pl-0.5"
                 :class="{ 'is-on': c.id === selectedId, 'is-dragging': c.id === dragId }"
                 draggable="true"
                 @click="selectedId = c.id"
@@ -171,9 +170,9 @@ const OWN_ROWS = [0, 1] as const;
                 @dragend="onDragEnd"
               >
                 <ClassMedallion :class-id="c.classId" :size="34" class="opacity-80" />
-                <span class="font-display text-base text-ink-soft">{{ c.name }}</span>
+                <span class="font-display text-base">{{ c.name }}</span>
               </div>
-              <p v-if="bench.length === 0" class="self-center italic text-ink-soft/70">{{ T.benchEmpty }}</p>
+              <p v-if="bench.length === 0" class="note self-center">{{ T.benchEmpty }}</p>
             </div>
           </div>
         </div>
@@ -182,40 +181,33 @@ const OWN_ROWS = [0, 1] as const;
           <CharacterSheet :character="selected" :game="game" />
         </div>
       </div>
-      <div class="mt-6 flex w-full items-center justify-between px-2">
-        <button class="link link-light text-lg" @click="emit('back')">{{ STRINGS.prep.back }}</button>
-        <button class="btn px-8 py-2.5 text-lg" @click="emit('next')">{{ T.fight }}</button>
-      </div>
-    </div>
+      <template #back><button class="link link-light" @click="emit('back')">{{ STRINGS.prep.back }}</button></template>
+      <template #action><button class="btn" @click="emit('next')">{{ T.fight }}</button></template>
+    </ScreenFrame>
   </WarTable>
 </template>
 
 <style scoped>
 /* The field map: a grassy board with an ink outline (6i). */
 .map {
-  border-radius: 16px;
-  background: linear-gradient(#cfe39a, #a9cc6c);
+  border-radius: var(--radius-card);
+  background: linear-gradient(#cfe39a, #a9cc6c); /* Greenmarch grass */
   border: 3px solid var(--color-ink);
   box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.35), inset 0 -4px 0 rgb(0 0 0 / 0.1);
 }
-.label {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgb(59 36 20 / 0.65);
+.side-label {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   justify-self: center;
 }
 .cell {
   position: relative;
-  height: 100px;
+  height: 92px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding-top: 4px;
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   transition: background-color 100ms;
 }
 /* Ink circle on the ground under each slot; dashed when empty. */
@@ -259,21 +251,7 @@ const OWN_ROWS = [0, 1] as const;
 .chip {
   transition: background-color 100ms;
 }
-.chip {
-  border-radius: 12px;
-}
-.chip:hover {
-  background: rgb(138 90 50 / 0.12);
-}
-.chip.is-on {
-  background: rgb(246 196 83 / 0.45);
-  box-shadow: inset 0 0 0 2px var(--color-ink);
-}
-.bench {
-  border-radius: 14px;
-  background: rgb(138 90 50 / 0.1);
-  box-shadow: inset 0 0 0 2px rgb(59 36 20 / 0.2);
-}
+
 .cell.is-target,
 .bench.is-target {
   background: rgb(210 50 36 / 0.15);

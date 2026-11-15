@@ -11,7 +11,7 @@ withDefaults(defineProps<{ name: UpgradeIcon | ItemIcon; size?: number; rarity?:
 </script>
 
 <template>
-  <div class="tile relative shrink-0 rounded-[3px]" :class="rarity" :style="{ width: `${size}px`, height: `${size}px` }">
+  <div class="tile relative shrink-0" :class="rarity" :style="{ width: `${size}px`, height: `${size}px` }">
     <Pictogram :name="name" class="absolute inset-[12%] text-gold-light" />
   </div>
 </template>
@@ -19,7 +19,7 @@ withDefaults(defineProps<{ name: UpgradeIcon | ItemIcon; size?: number; rarity?:
 <style scoped>
 /* Wood tile (6i); the ring colour shows the rarity: wood / silver / gold with a glow. */
 .tile {
-  border-radius: 12px;
+  border-radius: var(--radius-control);
   background: linear-gradient(var(--color-wood-light), var(--color-wood));
   border: 3px solid var(--color-ink);
   box-shadow:

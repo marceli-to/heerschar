@@ -11,7 +11,7 @@ const shown = computed(() => (props.format ? props.format(model.value) : String(
 
 <template>
   <label class="grid grid-cols-[9rem_1fr_3.5rem] items-center gap-4">
-    <span class="text-lg">{{ label }}</span>
+    <span>{{ label }}</span>
     <input v-model.number="model" type="range" class="ink-slider" :min="min" :max="max" :step="step" :style="{ '--fill': fill }" />
     <span class="text-right font-display text-xl tabular-nums">{{ shown }}</span>
   </label>
@@ -28,19 +28,19 @@ const shown = computed(() => (props.format ? props.format(model.value) : String(
   height: 16px;
   border: 3px solid var(--color-ink);
   border-radius: 99px;
-  background: linear-gradient(90deg, #f6c453 var(--fill), #6d4a30 var(--fill));
+  background: linear-gradient(90deg, var(--color-gold-light) var(--fill), var(--color-track) var(--fill));
   box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.3);
 }
 .ink-slider::-moz-range-track {
   height: 10px;
   border: 3px solid var(--color-ink);
   border-radius: 99px;
-  background: #6d4a30;
+  background: var(--color-track);
 }
 .ink-slider::-moz-range-progress {
   height: 10px;
   border-radius: 99px;
-  background: #f6c453;
+  background: var(--color-gold-light);
 }
 .ink-slider::-webkit-slider-thumb {
   appearance: none;
@@ -48,7 +48,7 @@ const shown = computed(() => (props.format ? props.format(model.value) : String(
   height: 26px;
   margin-top: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffe9a0, #e0a530 60%, #b07418);
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, var(--color-gold) 60%, #b07418);
   border: 3px solid var(--color-ink);
   box-shadow: 0 2px 0 var(--color-ink);
 }
@@ -56,7 +56,7 @@ const shown = computed(() => (props.format ? props.format(model.value) : String(
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ffe9a0, #e0a530 60%, #b07418);
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, var(--color-gold) 60%, #b07418);
   border: 3px solid var(--color-ink);
 }
 .ink-slider:hover::-webkit-slider-thumb,
