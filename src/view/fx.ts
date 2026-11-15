@@ -607,6 +607,52 @@ export class FxWorld {
     this.blown(new THREE.Vector3(x + (Math.random() - 0.5) * 0.3, 0.08, z + (Math.random() - 0.5) * 0.3), new THREE.Vector3(0, 0.05, 0), 0.8, 0.6 + Math.random() * 0.2, SLOW_DRAG);
   }
 
+  /**
+   * Blessing: a golden ribbon flies from `from` (the staff) to `to` (the ally's chest) in a low arc,
+   * its tail drawn behind the head; on arrival a bright ring and a burst of sparks. `onArrive` fires then.
+   */
+  ribbon(from: THREE.Vector3, to: THREE.Vector3, color: string, onArrive: () => void): void {
+    const mid = from.clone().lerp(to, 0.5);
+    mid.y += 1.2 + from.distanceTo(to) * 0.12;
+    const curve = new THREE.QuadraticBezierCurve3(from.clone(), mid, to.clone());
+    const segs = 40;
+    const radial = 5;
+    const geo = new THREE.TubeGeometry(curve, segs, 0.06, radial, false);
+    const mat = new THREE.MeshBasicMaterial({ color: hdr(color, 3), transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    this.group.add(mesh);
+    const perSeg = radial * 6;
+    const dur = 0.26;
+    const tail = 0.45;
+    let t = 0;
+    let arrived = false;
+    const head = new THREE.Vector3();
+    this.transients.push({
+      update: (dt) => {
+        t += dt;
+        const k = t / dur;
+        const h = Math.min(1, k);
+        const start = Math.max(0, k - tail);
+        geo.setDrawRange(Math.floor(start * segs) * perSeg, Math.max(0, Math.ceil((h - start) * segs)) * perSeg);
+        if (h < 1) {
+          curve.getPoint(h, head);
+          this.motes.emit(head, 1, hdr(color, 3), 0.6, 0.35, 0.05);
+        }
+        if (!arrived && k >= 1) {
+          arrived = true;
+          this.glint(to, color, 1.6);
+          onArrive();
+        }
+        return start < 1;
+      },
+      dispose: () => {
+        this.group.remove(mesh);
+        geo.dispose();
+        mat.dispose();
+      },
+    });
+  }
+
   /** A short golden glint (Shield Bash: the shield face lights up as it lands). */
   glint(at: THREE.Vector3, color: string, size: number): void {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: hdr(color, 3), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));

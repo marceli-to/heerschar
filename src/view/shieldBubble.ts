@@ -30,19 +30,33 @@ function shieldMaterial(color: string): THREE.ShaderMaterial {
   });
 }
 
+/** Seconds of the pop-on overshoot. */
+const POP = 0.3;
+
 /** The shield bubble around a shielded unit, fading in and out. */
 export class ShieldBubble {
   readonly mesh: THREE.Mesh;
   private level = 0;
+  private on = false;
+  private pop = POP;
+  private readonly base: THREE.Vector3;
 
   constructor(team: Team, scale: THREE.Vector3Like = { x: 0.75, y: 1.15, z: 0.75 }, y = 1.0) {
     this.mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), shieldMaterial(team === 'player' ? FX.shieldPlayer : FX.shieldEnemy));
     this.mesh.scale.set(scale.x, scale.y, scale.z);
+    this.base = new THREE.Vector3(scale.x, scale.y, scale.z);
     this.mesh.position.y = y;
     this.mesh.visible = false;
   }
 
   update(on: boolean, frameTime: number, time: number): void {
+    // Popping on: a quick overshoot in size as the bubble appears.
+    if (on && !this.on) this.pop = 0;
+    this.on = on;
+    this.pop = Math.min(POP, this.pop + frameTime);
+    const k = this.pop / POP;
+    const s = 1 + Math.sin(k * Math.PI) * 0.3 * (1 - k);
+    this.mesh.scale.set(this.base.x * s, this.base.y * s, this.base.z * s);
     this.level += ((on ? 1 : 0) - this.level) * Math.min(1, frameTime * 10);
     this.mesh.visible = this.level > 0.02;
     if (this.mesh.visible) (this.mesh.material as THREE.ShaderMaterial).uniforms.opacity!.value = this.level * (0.85 + Math.sin(time * 4) * 0.15);

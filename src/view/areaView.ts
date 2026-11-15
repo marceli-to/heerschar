@@ -62,6 +62,8 @@ export class AreaLayer {
     this.time += frameTime;
     const alive = new Set<number>();
     for (const a of battle.areas) {
+      // The hero's Healing Circle is drawn as a rune ring (`runeRing.ts`).
+      if (a.kind === 'heilkreis') continue;
       alive.add(a.id);
       let it = this.items.get(a.id);
       if (!it) {

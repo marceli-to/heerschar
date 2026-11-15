@@ -56,6 +56,13 @@ Options were asked per class; Marcel chose all four recommended directions. No n
 - Capturing archers: `setup-dist.js` (DIST replaced per shot; hero HP set to 5000 so foes don't kill it without `peaceful`). Volley at 5.5 m with `peaceful`; Fall Back at 2.6 m without, so slowed foes walk.
 - **Next:** anim-3 Healer.
 
+**anim-3 Healer: built, committed, waiting for Marcel's look.** Screenshots in `~/Downloads/heerschar-assets/anim/healer/` (`circle-sheet`, `circle-close`, `bless-close` = ribbon in flight, `bless-pop` = arrival).
+- Healing Circle: new `view/runeRing.ts` (`RuneRings`): golden ring of 16 angular runes between two circles (canvas texture, shader reveals it round in 0.45 s with a bright drawing tip, turns slowly, fades 0.4 s after the area ends). `AreaLayer` skips `heilkreis` (companion heals keep the green disc). Each heal tick (`areaResolve`) = ring flare + gold motes rising + a gold ring. Release = the existing column of light + dust where the staff is planted (staff anim unchanged: the `slam` chop already raises and plants).
+- Blessing: `fx.ribbon` (gold tube along a low bezier arc, tail drawn behind the head, motes off the head, 0.26 s, glint on arrival). `game.ts` pairs the `release` (sets `blessFrom`) with the following `shielded` status; the ally's bubble waits (`bubbleHold`) until the ribbon lands, then a gold ring at the feet. `ShieldBubble` now pops on with a 0.3 s overshoot (every bubble, enemy wards too).
+- Made without asking (Marcel may veto): rune shapes (simple invented strokes), ribbon gold = rally gold.
+- Capturing: `setup-healer.js` (wounded companions, `?hero=heiler&peaceful`).
+- **Next:** Marcel's verdict on the Healer, then anim-4 Mage.
+
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
 
 Marcel: "better but far from perfect", asked for consistency. Decisions: **labels = small Lilita, normal case** (no spaced capitals); **buttons = two sizes, one red main action per screen, yellow = other actions, Back / Leave / Cancel always a text link** (blue dropped); **no italics anywhere**.

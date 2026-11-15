@@ -21,6 +21,7 @@ import { CameraRig, CAMERA, type OrbitShot } from '../view/camera';
 import { Effects } from '../view/effects';
 import { FxWorld, SwingTrail, WhirlRing } from '../view/fx';
 import { StunStars } from '../view/stunStars';
+import { RuneRings } from '../view/runeRing';
 import { Post } from '../view/post';
 import { HealthBar } from '../view/markers';
 import { FX } from '../view/palette';
@@ -200,6 +201,11 @@ export class Game {
   private lockRing = new LockRing();
   private markBanner = new MarkBanner();
   private stunStars = new StunStars();
+  private runeRings = new RuneRings();
+  /** Blessing: the healer whose release is waiting for its shield status (same tick, release first). */
+  private blessFrom: number | null = null;
+  /** Allies whose Blessing bubble waits for the ribbon to arrive. */
+  private bubbleHold = new Set<number>();
   /** Whirlwind's ring of light, made the first time a hero spins. */
   private whirl: WhirlRing | null = null;
   private numbers: DamageNumbers;
@@ -257,6 +263,7 @@ export class Game {
       this.lockRing.group,
       this.markBanner.group,
       this.stunStars.group,
+      this.runeRings.group,
     );
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
     this.post = new Post(this.parts.renderer, this.parts.scene, this.rig.camera);
@@ -318,6 +325,9 @@ export class Game {
     this.buildUnits();
     this.fx.clear();
     this.stunStars.clear();
+    this.runeRings.clear();
+    this.bubbleHold.clear();
+    this.blessFrom = null;
     this.numbers.clear();
     this.heroInput.clear();
     if (this.bot) this.bot = createBot();
@@ -351,6 +361,7 @@ export class Game {
     this.lockRing.dispose();
     this.markBanner.dispose();
     this.stunStars.dispose();
+    this.runeRings.dispose();
     this.whirl?.dispose();
     this.numbers.dispose();
     this.parts.renderer.dispose();
@@ -551,7 +562,13 @@ export class Game {
           this.effects.burst(u.pos.x, 1, u.pos.z, [FX.frost, FX.frostCore], 8, 2, 0.07, 0.5);
           this.fx.frostPatch(u.pos.x, u.pos.z);
         }
-        // Blessing (and the squad's wards): a column of light on the shielded ally.
+        // Blessing: a golden ribbon from the staff; the bubble pops on when it arrives.
+        if (e.kind === 'shielded' && this.blessFrom !== null && u.team === 'player') {
+          this.blessRibbon(this.blessFrom, u);
+          this.blessFrom = null;
+          break;
+        }
+        // The squad's wards: a column of light on the shielded ally.
         if (e.kind === 'shielded' && u.team === 'player') this.fx.holyLight(new THREE.Vector3(u.pos.x, 0, u.pos.z));
         if (e.kind === 'shielded') this.effects.burst(u.pos.x, 1.1, u.pos.z, [u.team === 'player' ? FX.shieldPlayer : FX.shieldEnemy], 8, 1.5, 0.05, 0.4, 0);
         break;
@@ -611,7 +628,11 @@ export class Game {
           this.fx.gust(u.pos.x, u.pos.z, u.facing, r.reach, r.arc);
           this.rig.shake(SHAKE.light);
         } else if (e.action === 'heilkreis') {
+          // The staff is planted: light and a puff of dust where it strikes.
           this.fx.holyLight(new THREE.Vector3(u.pos.x, 0, u.pos.z));
+          this.fx.dust(u.pos.x + Math.sin(u.facing) * 0.5, u.pos.z - Math.cos(u.facing) * 0.5, 8);
+        } else if (e.action === 'segen') {
+          this.blessFrom = u.id;
         } else if (e.action === 'sammeln') {
           this.effects.ring(u.pos.x, u.pos.z, 0.5, 9, FX.rally, 0.8, 0.9);
         }
@@ -652,6 +673,26 @@ export class Game {
     const size = (heavy ? 1.3 : 1) * (attacker?.isHero || target.isHero ? 1.2 : 0.9);
     this.numbers.spawn(kind, amount, target.pos.x, y, target.pos.z, size);
     if (absorbed > 0) this.numbers.spawn('absorbed', absorbed, target.pos.x + 0.3, y + 0.35, target.pos.z, 1);
+  }
+
+  /** Blessing: the ribbon from the healer's staff tip to the ally; the bubble waits for it. */
+  private blessRibbon(fromId: number, ally: Unit): void {
+    const healer = this.unit(fromId);
+    const slot = this.units.get(fromId);
+    if (!healer) return;
+    const from = new THREE.Vector3();
+    if (!slot?.view.weaponEdge?.(_base, from)) from.set(healer.pos.x + Math.sin(healer.facing) * 0.5, 1.6, healer.pos.z - Math.cos(healer.facing) * 0.5);
+    const to = new THREE.Vector3(ally.pos.x, 1.1, ally.pos.z);
+    if (ally.id === fromId) {
+      // Blessing oneself: the ribbon loops up and comes back down.
+      to.y = 1.0;
+      from.y = Math.max(from.y, 1.5);
+    }
+    this.bubbleHold.add(ally.id);
+    this.fx.ribbon(from, to, FX.rally, () => {
+      this.bubbleHold.delete(ally.id);
+      this.effects.ring(ally.pos.x, ally.pos.z, 0.3, 1.3, FX.rally, 0.4, 0.9);
+    });
   }
 
   /** Whirlwind: the ring's bright head follows the blade round both turns. */
@@ -704,7 +745,10 @@ export class Game {
         this.fx.frostRing(new THREE.Vector3(x, 0, z), radius);
         break;
       case 'heilkreis':
-        this.effects.rise(x, z, radius, [FX.heal, FX.healCore], 10);
+        // A heal tick: the rune ring flares and golden motes rise from it.
+        this.runeRings.pulse(x, z);
+        this.effects.rise(x, z, radius, [FX.rally, FX.holy], 12);
+        this.effects.ring(x, z, radius * 0.6, radius * 1.02, FX.rally, 0.45, 0.5);
         break;
     }
   }
@@ -741,7 +785,7 @@ export class Game {
       if (animTime > 0 && u.action === 'schildstoss' && u.state === 'windup') this.fx.dust(x, z, 2);
       if (u.state === 'stunned' && u.stunDuration >= STARS_FROM) this.stunStars.show(u.id, x, slot.view.barY - 0.2, z, animTime);
       slot.view.animate(
-        { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded'), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2 },
+        { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded') && !this.bubbleHold.has(u.id), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2 },
         animTime,
       );
       if (slot.trail) this.updateTrail(slot, u, animTime);
@@ -759,6 +803,7 @@ export class Game {
     if (this.battle.markTargetId === null) this.markBanner.update(0, 0, 0, false, this.rig.camera, 0);
     this.projectiles.sync(this.battle, a, animTime);
     this.areas.sync(this.battle, animTime);
+    this.runeRings.sync(this.battle, animTime);
     const hero = heroOf(this.battle);
     const lock = this.battle.units.find((u) => u.id === this.battle.lockTargetId);
     const victim = this.finale?.victimId != null ? this.unit(this.finale.victimId) : undefined;
