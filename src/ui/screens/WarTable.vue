@@ -1,11 +1,21 @@
 <script setup lang="ts">
-/** Backdrop of every 2D screen (approved 3, restyled 6i): a flat, chunky war table — bold planks, simple shading, warm light. */
+/**
+ * Backdrop of every 2D screen (approved 3, restyled 6i): a flat, chunky war table — bold planks,
+ * simple shading, warm light. `image` swaps the table for a picture (the title's rendered scene).
+ */
+defineProps<{ image?: string }>();
 </script>
 
 <template>
   <div class="war-table fixed inset-0 overflow-auto font-body text-ink">
-    <div class="candle pointer-events-none fixed inset-0" />
-    <div class="vignette pointer-events-none fixed inset-0" />
+    <template v-if="image">
+      <div class="picture pointer-events-none fixed inset-0" :style="{ backgroundImage: `url(${image})` }" />
+      <div class="picture-shade pointer-events-none fixed inset-0" />
+    </template>
+    <template v-else>
+      <div class="candle pointer-events-none fixed inset-0" />
+      <div class="vignette pointer-events-none fixed inset-0" />
+    </template>
     <div class="relative flex min-h-full items-center justify-center p-6">
       <slot />
     </div>
@@ -23,6 +33,14 @@
     /* a few flat grain strokes */
     repeating-linear-gradient(180deg, transparent 0 38px, rgb(59 36 20 / 0.12) 38px 41px, transparent 41px 83px, rgb(59 36 20 / 0.08) 83px 85px, transparent 85px 120px),
     linear-gradient(180deg, #84502c, #6e3f21);
+}
+.picture {
+  background-size: cover;
+  background-position: 50% 70%;
+}
+/* Soft dark edges so the banner and buttons stay the brightest thing on screen. */
+.picture-shade {
+  background: radial-gradient(ellipse 85% 80% at 50% 45%, transparent 55%, rgb(40 18 6 / 0.45) 100%);
 }
 .candle {
   background: radial-gradient(ellipse 60% 55% at 50% 42%, rgb(255 200 110 / 0.22), rgb(255 170 80 / 0.06) 55%, transparent 75%);

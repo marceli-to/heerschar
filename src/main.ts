@@ -10,6 +10,9 @@ import './style.css';
 if (new URLSearchParams(location.search).has('lineup')) {
   // Dev scene: every unit body in a row (see `view/models/lineup.ts`).
   void import('./view/models/lineup').then((m) => m.startLineup(document.getElementById('app')!));
+} else if (new URLSearchParams(location.search).has('titleart')) {
+  // Dev scene: the title-screen backdrop, rendered once by tools/titleart.mjs.
+  void import('./view/titleArt').then((m) => m.startTitleArt(document.getElementById('app')!));
 } else if (new URLSearchParams(location.search).has('sounds')) {
   // Dev page: audition every sound effect.
   void import('./audio/soundBoard').then((m) => m.startSoundBoard(document.getElementById('app')!));
