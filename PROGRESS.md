@@ -32,7 +32,7 @@ Agreed numbers, built, **approved by Marcel's playtest ("feels fine", 2026-11-15
 - Tests: `prepMatters` Skirmish fixture strength 1.9 → 2.5 (at 1.9 every variant won); new dodge-strike test. Campaign strengths **not** retuned: bots will now find the campaign easier; retune with the difficulty setting.
 - **Next:** step 2: better ability animations (see "Ability animations").
 
-## Ability animations (decided by Marcel 2026-11-15, all four built)
+## Ability animations (decided by Marcel 2026-11-15, done and approved)
 
 Options were asked per class; Marcel chose all four recommended directions. No new clips packs (crossbow stays; KayKit Character Animations 1.1 and Adventurers 2.0 with a bow are on disk in `/tmp/anim-compare/dl/` but unused, rig untested).
 - **Warrior "charge + tornado":** Shield Bash = visible dash forward with a dust streak, shield flashes gold, hit = gold shockwave arc + small camera kick, stunned foes show circling stars. Whirlwind = two fast full turns, closed circular blade trail, dust ring sweeping out to the 2.6 m edge.
@@ -63,12 +63,12 @@ Options were asked per class; Marcel chose all four recommended directions. No n
 - Capturing: `setup-healer.js` (wounded companions, `?hero=heiler&peaceful`).
 - **Next:** anim-4 Mage.
 
-**anim-4 Mage: built, committed, waiting for Marcel's look.** Screenshots in `~/Downloads/heerschar-assets/anim/mage/` (`fireball-sheet`, `fireball-charge`, `fireball-blast`, `frost-sheet`, `frost-spikes`, `frost-shatter`).
+**anim-4 Mage: done, approved by Marcel (2026-11-15, "perfect").** Screenshots in `~/Downloads/heerschar-assets/anim/mage/` (`fireball-sheet`, `fireball-charge`, `fireball-blast`, `frost-sheet`, `frost-spikes`, `frost-shatter`).
 - Fireball: `fx.charge(tip, k)` called every frame of the windup: a fire ball grows at the staff's far end (the orb knob) with 12 flame tongues spiralling in, a held light and embers; winks out (0.06 s) when the calls stop. Staff tip: `BodySpec.staff = '2H_Staff'` on the player Mage body, `UnitView.staffTip()` (measured like the blade). The hero's blast (`areaResolve` now carries `ownerId`, view-only) = `fireBlast` drawn 1.35× (`HERO_BLAST`), `fx.shockwave` (bright ground ring out to 1.3× radius + dust ring) and `SHAKE.heavy`. Enemy fireballs unchanged.
 - Frost Ring: release = frost burst + dust where the staff strikes. `fx.iceSpikes`: cold wave ring, two rings of ice spikes (18 outer 0.9–1.5 m, 10 inner) burst up from the centre outward with an overshoot, leaning outward, stand ~1.1–1.4 s, then shatter into tumbling tetra shards (gravity, bounce), sparks and glitter; frost mark. Enemy Frost Nova keeps the old melting ring.
 - Made without asking (Marcel may veto): spike count / size / lean, shard look, shockwave in fire orange.
 - Capturing: `setup-fire.js` (DIST 8, `peaceful`) / `setup-frost.js` (DIST 2.4); `burst2.mjs` = burst.mjs plus `POST` env (JS run 120 ms after the key, e.g. `__game.rig.yaw += 0.9` for a side view). The staff tip sits behind the hat from straight behind; a side view shows the charge.
-- **Next:** Marcel's verdict on the Mage; then ability animations are complete.
+- Ability animations complete. **Next:** the Stage 6 gate (Marcel's full playtest).
 
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
 
