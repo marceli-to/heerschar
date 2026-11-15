@@ -7,7 +7,7 @@ import SettingsSheet from '../settings/SettingsSheet.vue';
 import CreditsSheet from '../settings/CreditsSheet.vue';
 
 /**
- * Title (approved 3b): the name in gold on a hanging parchment banner, a wax seal, New Game.
+ * Title (approved 3b): the name in gold on a hanging panel banner, a wax seal, New Game.
  * With a save (approved 4): Continue above New Game; New Game asks before abandoning the save.
  * Settings (approved 6g) under them, opening the settings sheet over the table; Credits (6h) likewise.
  */
@@ -31,16 +31,16 @@ function newGame(): void {
         <span class="finial left-[-14px]" />
         <span class="finial right-[-14px]" />
       </div>
-      <div class="banner parchment -mt-1 flex w-[min(540px,76vw)] flex-col items-center px-10 pt-14 pb-28">
+      <div class="banner panel -mt-1 flex w-[min(540px,76vw)] flex-col items-center px-10 pt-14 pb-28">
         <h1 class="title-gold font-display text-[clamp(36px,6vw,64px)] leading-none font-bold tracking-[0.08em]">{{ STRINGS.title }}</h1>
         <div class="rule mt-6 w-2/3" />
       </div>
       <WaxSeal class="-mt-16" :size="96" />
-      <button v-if="hasSave" class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="emit('continue')">{{ STRINGS.prep.continue }}</button>
-      <button v-if="hasSave" class="btn-gold mt-4 rounded-sm px-8 py-2.5 text-sm" @click="newGame">{{ STRINGS.prep.newGame }}</button>
-      <button v-else class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="newGame">{{ STRINGS.prep.newGame }}</button>
-      <button class="btn-gold mt-4 rounded-sm px-6 py-2 text-xs" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
-      <button class="btn-gold mt-3 rounded-sm px-6 py-2 text-xs" @click="showCredits = true">{{ STRINGS.credits.open }}</button>
+      <button v-if="hasSave" class="btn mt-8 px-10 py-3 text-base" @click="emit('continue')">{{ STRINGS.prep.continue }}</button>
+      <button v-if="hasSave" class="btn mt-4 px-8 py-2.5 text-sm" @click="newGame">{{ STRINGS.prep.newGame }}</button>
+      <button v-else class="btn mt-8 px-10 py-3 text-base" @click="newGame">{{ STRINGS.prep.newGame }}</button>
+      <button class="btn mt-4 px-6 py-2 text-xs" @click="showSettings = true">{{ STRINGS.settings.open }}</button>
+      <button class="btn mt-3 px-6 py-2 text-xs" @click="showCredits = true">{{ STRINGS.credits.open }}</button>
     </div>
     <div v-if="showSettings" class="fixed inset-0 z-20 flex items-center justify-center bg-black/55">
       <SettingsSheet @done="showSettings = false" />
@@ -49,10 +49,10 @@ function newGame(): void {
       <CreditsSheet @done="showCredits = false" />
     </div>
     <div v-if="confirming" class="fixed inset-0 z-20 flex items-center justify-center bg-black/55" @click.self="confirming = false">
-      <div class="parchment flex w-[min(420px,86vw)] flex-col items-center rounded-sm px-10 py-8 text-center">
+      <div class="panel flex w-[min(420px,86vw)] flex-col items-center px-10 py-8 text-center">
         <p class="font-display text-lg">{{ STRINGS.prep.abandon }}</p>
         <div class="rule mt-4 w-2/3" />
-        <button class="btn-gold mt-6 rounded-sm px-8 py-2.5 text-sm" @click="emit('newGame')">{{ STRINGS.prep.confirm }}</button>
+        <button class="btn mt-6 px-8 py-2.5 text-sm" @click="emit('newGame')">{{ STRINGS.prep.confirm }}</button>
         <button class="mt-4 font-display text-xs tracking-[0.15em] text-ink-soft underline-offset-4 hover:underline" @click="confirming = false">{{ STRINGS.prep.back }}</button>
       </div>
     </div>

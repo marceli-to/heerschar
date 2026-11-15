@@ -7,7 +7,7 @@ import { characterOf, fittingItems, type GameState } from '../../meta/game';
 import PictogramTile from '../PictogramTile.vue';
 
 /**
- * The baggage under an equipment slot (approved 4d): a parchment popover with one row per item
+ * The baggage under an equipment slot (approved 4d): a panel popover with one row per item
  * that fits, and "Take off" on top when something is worn. Hovering a row asks the sheet to
  * preview the stats (`preview(id)`; `null` = the slot empty, `undefined` = no preview).
  */
@@ -21,7 +21,7 @@ const entries = computed(() => fittingItems(props.game, props.characterId, props
 </script>
 
 <template>
-  <div class="picker parchment w-80 rounded-sm py-1.5 text-left" @mouseleave="emit('preview', undefined)">
+  <div class="picker panel w-80 py-1.5 text-left" @mouseleave="emit('preview', undefined)">
     <template v-if="worn">
       <button class="row flex w-full text-left items-baseline gap-2 px-4 py-2" @mouseenter="emit('preview', null)" @click="emit('takeOff')">
         <span class="font-display text-xs tracking-[0.15em] text-blood uppercase">{{ T.takeOff }}</span>

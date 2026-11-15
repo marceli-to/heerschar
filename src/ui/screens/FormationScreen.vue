@@ -101,8 +101,8 @@ const OWN_ROWS = [0, 1] as const;
   <WarTable>
     <div class="flex w-[min(1160px,96vw)] flex-col items-center">
       <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ STRINGS.encounters[encounterId].name }} · {{ T.title }}</h2>
-      <p class="mt-1 mb-6 text-lg italic text-parchment/70">{{ T.hint }}</p>
-      <div class="parchment grid w-full grid-cols-[auto_minmax(0,1fr)] gap-10 rounded-sm px-8 pt-7 pb-6">
+      <p class="mt-1 mb-6 text-lg italic text-cream/70">{{ T.hint }}</p>
+      <div class="panel grid w-full grid-cols-[auto_minmax(0,1fr)] gap-10 px-8 pt-7 pb-6">
         <div class="flex flex-col">
           <div class="map rounded-[3px] px-3 py-3">
             <div class="grid grid-cols-[52px_repeat(3,112px)] items-center">
@@ -112,7 +112,7 @@ const OWN_ROWS = [0, 1] as const;
                   <div class="ring is-enemy" :class="{ 'is-empty': !enemyAt(row, col) }" />
                   <template v-if="enemyAt(row, col)">
                     <FieldToken class="token" :class-id="enemyAt(row, col)!.classId" :label="STRINGS.classes[enemyAt(row, col)!.classId]" enemy />
-                    <div v-if="hoverEnemy === `${row},${col}`" class="note parchment pointer-events-none absolute bottom-[calc(100%-6px)] left-1/2 z-10 w-56 -translate-x-1/2 rounded-sm px-4 py-3">
+                    <div v-if="hoverEnemy === `${row},${col}`" class="note panel pointer-events-none absolute bottom-[calc(100%-6px)] left-1/2 z-10 w-56 -translate-x-1/2 px-4 py-3">
                       <div class="font-display text-base font-bold tracking-[0.06em] text-blood">{{ STRINGS.classes[enemyAt(row, col)!.classId] }}</div>
                       <p class="text-sm leading-snug italic text-ink-soft">{{ T.threats[enemyAt(row, col)!.classId] }}</p>
                     </div>
@@ -152,7 +152,7 @@ const OWN_ROWS = [0, 1] as const;
           </div>
 
           <div
-            class="bench mt-4 rounded-sm px-3 pt-2 pb-2.5"
+            class="bench mt-4 px-3 pt-2 pb-2.5"
             :class="{ 'is-target': dropTarget === 'bench' }"
             @dragover="onDragOver($event, 'bench')"
             @dragleave="onDragLeave('bench')"
@@ -163,7 +163,7 @@ const OWN_ROWS = [0, 1] as const;
               <div
                 v-for="c in bench"
                 :key="c.id"
-                class="chip flex cursor-grab items-center gap-2 rounded-sm py-0.5 pr-2.5 pl-0.5"
+                class="chip flex cursor-grab items-center gap-2 py-0.5 pr-2.5 pl-0.5"
                 :class="{ 'is-on': c.id === selectedId, 'is-dragging': c.id === dragId }"
                 draggable="true"
                 @click="selectedId = c.id"
@@ -183,8 +183,8 @@ const OWN_ROWS = [0, 1] as const;
         </div>
       </div>
       <div class="mt-6 flex w-full items-center justify-between px-2">
-        <button class="font-display text-xs tracking-[0.15em] text-parchment/70 underline-offset-4 hover:underline" @click="emit('back')">{{ STRINGS.prep.back }}</button>
-        <button class="btn-gold rounded-sm px-8 py-2.5 text-sm" @click="emit('next')">{{ T.fight }}</button>
+        <button class="font-display text-xs tracking-[0.15em] text-cream/70 underline-offset-4 hover:underline" @click="emit('back')">{{ STRINGS.prep.back }}</button>
+        <button class="btn px-8 py-2.5 text-sm" @click="emit('next')">{{ T.fight }}</button>
       </div>
     </div>
   </WarTable>

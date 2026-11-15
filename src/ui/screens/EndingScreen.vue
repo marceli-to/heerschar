@@ -28,7 +28,7 @@ const stats = computed(() => [
 <template>
   <WarTable>
     <div class="flex flex-col items-center">
-      <div class="parchment flex w-[min(720px,92vw)] flex-col items-center rounded-sm px-12 pt-10 pb-14 text-center">
+      <div class="panel flex w-[min(720px,92vw)] flex-col items-center px-12 pt-10 pb-14 text-center">
         <h1 class="title-gold font-display text-[clamp(26px,3.6vw,40px)] leading-tight font-bold tracking-[0.06em]">{{ T.title }}</h1>
         <p class="mt-2 text-lg italic text-ink-soft">{{ T.subtitle }}</p>
         <div class="rule mt-5 w-3/4" />
@@ -51,7 +51,7 @@ const stats = computed(() => [
         </ul>
       </div>
       <WaxSeal class="-mt-12" :size="88" icon="crown" />
-      <button class="btn-gold mt-8 rounded-sm px-10 py-3 text-base" @click="emit('done')">{{ T.toTitle }}</button>
+      <button class="btn mt-8 px-10 py-3 text-base" @click="emit('done')">{{ T.toTitle }}</button>
     </div>
   </WarTable>
 </template>

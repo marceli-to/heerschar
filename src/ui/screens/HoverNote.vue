@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A small parchment note above (or below) its element while hovered (names and effect lines on the sheet). */
+/** A small panel note above (or below) its element while hovered (names and effect lines on the sheet). */
 defineProps<{ disabled?: boolean; below?: boolean }>();
 </script>
 
@@ -8,7 +8,7 @@ defineProps<{ disabled?: boolean; below?: boolean }>();
     <slot />
     <div
       v-if="!disabled"
-      class="note parchment pointer-events-none absolute left-1/2 z-20 w-max max-w-64 rounded-sm px-3 py-2 text-center"
+      class="note panel pointer-events-none absolute left-1/2 z-20 w-max max-w-64 px-3 py-2 text-center"
       :class="below ? 'top-full mt-2' : 'bottom-full mb-2'"
     >
       <slot name="note" />

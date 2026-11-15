@@ -298,8 +298,8 @@ export const STRINGS = {
       {
         heading: 'Fonts',
         lines: [
-          ['', 'Cinzel by the Cinzel Project Authors', 'SIL Open Font License 1.1'],
-          ['', 'EB Garamond by the EB Garamond Project Authors', 'SIL Open Font License 1.1'],
+          ['', 'Lilita One by Juan Montoreano', 'SIL Open Font License 1.1'],
+          ['', 'Nunito by the Nunito Project Authors', 'SIL Open Font License 1.1'],
         ],
       },
     ] as { heading: string; lines: [string, string, string][]; note?: string }[],

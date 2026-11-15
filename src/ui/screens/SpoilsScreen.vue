@@ -102,8 +102,8 @@ function keep(itemId: string): void {
       <!-- Experience -->
       <div v-if="page === 'xp'" key="xp" class="flex w-[min(640px,94vw)] flex-col items-center">
         <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-        <p class="mt-1 mb-8 text-lg italic text-parchment/70">{{ encounterName }}</p>
-        <div class="parchment w-full rounded-sm px-9 pt-7 pb-6">
+        <p class="mt-1 mb-8 text-lg italic text-cream/70">{{ encounterName }}</p>
+        <div class="panel w-full px-9 pt-7 pb-6">
           <p class="mb-4 text-center text-lg italic text-ink-soft">{{ T.xpHint }}</p>
           <ul class="flex flex-col">
             <li
@@ -130,7 +130,7 @@ function keep(itemId: string): void {
             </li>
           </ul>
           <div class="mt-6 flex justify-center">
-            <button class="btn-gold rounded-sm px-7 py-2.5 text-sm" @click="advance">{{ T.next }}</button>
+            <button class="btn px-7 py-2.5 text-sm" @click="advance">{{ T.next }}</button>
           </div>
         </div>
       </div>
@@ -138,12 +138,12 @@ function keep(itemId: string): void {
       <!-- Upgrade or path pick -->
       <div v-else-if="page === 'choice' && choice && picker" :key="`choice-${pickNumber}`" class="flex flex-col items-center">
         <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-        <p class="mt-1 text-base italic text-parchment/60">{{ T.pickCount(pickNumber, totalPicks) }}</p>
+        <p class="mt-1 text-base italic text-cream/60">{{ T.pickCount(pickNumber, totalPicks) }}</p>
         <div class="mt-6 flex items-center gap-4">
           <ClassMedallion :class-id="picker.classId" :size="52" />
           <div>
-            <h3 class="font-display text-3xl font-bold tracking-[0.08em] text-parchment">{{ picker.name }}</h3>
-            <p class="text-lg text-parchment/70 italic">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
+            <h3 class="font-display text-3xl font-bold tracking-[0.08em] text-cream">{{ picker.name }}</h3>
+            <p class="text-lg text-cream/70 italic">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
           </div>
         </div>
         <p class="mt-6 mb-8 font-display text-base tracking-[0.2em] text-gold-light uppercase">{{ choice.kind === 'path' ? T.choosePath : T.chooseUpgrade }}</p>
@@ -155,7 +155,7 @@ function keep(itemId: string): void {
       <!-- Loot -->
       <div v-else-if="page === 'loot' && rewards?.loot" key="loot" class="flex flex-col items-center">
         <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-        <p class="mt-1 mb-10 text-lg italic text-parchment/70">{{ T.lootHint }}</p>
+        <p class="mt-1 mb-10 text-lg italic text-cream/70">{{ T.lootHint }}</p>
         <div class="flex flex-wrap justify-center gap-8">
           <ItemCard v-for="id in rewards.loot" :key="id" :id="id" @click="keep(id)" />
         </div>

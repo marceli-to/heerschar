@@ -2,7 +2,7 @@
 import { STRINGS } from '../../data/strings';
 
 /**
- * Credits (approved 6h): parchment sheet like Settings, opened from the title. Cinzel section
+ * Credits (approved 6h): panel sheet like Settings, opened from the title. Cinzel section
  * headings, one EB Garamond line per work with its licence beneath; scrolls when the window is short.
  */
 const emit = defineEmits<{ done: [] }>();
@@ -10,7 +10,7 @@ const T = STRINGS.credits;
 </script>
 
 <template>
-  <div class="parchment flex max-h-[92vh] w-[min(720px,94vw)] flex-col rounded-sm px-10 pt-7 pb-7 font-body">
+  <div class="panel flex max-h-[92vh] w-[min(720px,94vw)] flex-col px-10 pt-7 pb-7 font-body">
     <h1 class="text-center font-display text-3xl font-bold tracking-[0.12em]">{{ T.title }}</h1>
     <div class="rule mt-4 w-full" />
     <div class="credits-scroll -mx-4 min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -28,7 +28,7 @@ const T = STRINGS.credits;
     </div>
     <div class="rule w-full" />
     <div class="mt-5 flex justify-end">
-      <button class="btn-gold rounded-sm px-8 py-2.5 text-sm" @click="emit('done')">{{ T.done }}</button>
+      <button class="btn px-8 py-2.5 text-sm" @click="emit('done')">{{ T.done }}</button>
     </div>
   </div>
 </template>

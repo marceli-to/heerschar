@@ -12,19 +12,15 @@ const danger = computed(() => !props.companion.dead && frac.value < 0.3);
 </script>
 
 <template>
-  <div class="hud-plate flex max-w-40 min-w-0 flex-1 basis-40 items-center gap-2 rounded-sm px-2 py-1.5" :class="{ 'opacity-55 grayscale': companion.dead, danger }">
-    <ClassMedallion :class-id="companion.classId" :size="30" />
+  <div class="plate @container flex max-w-40 min-w-0 flex-1 basis-40 items-center gap-2 px-2 py-1.5" :class="{ 'opacity-60 grayscale': companion.dead, danger }">
+    <ClassMedallion :class-id="companion.classId" :size="32" />
     <div class="min-w-0 flex-1">
       <div class="flex items-baseline justify-between gap-1">
-        <span class="truncate font-display text-xs font-bold tracking-[0.12em]">{{ companion.name }}</span>
-        <span class="text-[11px] whitespace-nowrap text-ink-soft italic">{{ companion.dead ? STRINGS.fallen : STRINGS.classes[companion.classId] }}</span>
+        <span class="shrink-0 font-display text-[15px]">{{ companion.name }}</span>
+        <span class="hidden min-w-0 truncate text-[11px] font-extrabold text-ink-soft @[148px]:inline">{{ companion.dead ? STRINGS.fallen : STRINGS.classes[companion.classId] }}</span>
       </div>
-      <div class="mt-0.5 h-2 overflow-hidden rounded-[2px] border border-ink/60 bg-ink/25">
-        <div
-          class="h-full bg-gradient-to-b from-blood-light to-blood transition-[width] duration-150"
-          :class="{ 'animate-pulse': danger }"
-          :style="{ width: `${frac * 100}%` }"
-        />
+      <div class="bar bar-thin mt-0.5 h-3.5">
+        <div class="fill fill-hp transition-[width] duration-150" :class="{ 'animate-pulse': danger }" :style="{ width: `${frac * 100}%` }" />
       </div>
     </div>
   </div>
@@ -36,10 +32,10 @@ const danger = computed(() => !props.companion.dead && frac.value < 0.3);
 }
 @keyframes danger {
   50% {
-    border-color: var(--color-blood-light);
+    background: linear-gradient(#ffd9cf, #ffb4a2);
     box-shadow:
-      inset 0 0 12px rgb(155 45 32 / 0.45),
-      0 0 12px rgb(201 72 58 / 0.7);
+      0 4px 0 var(--color-ink),
+      0 0 14px 3px rgb(255 90 68 / 0.75);
   }
 }
 </style>

@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import type { HeroAbilityId } from '../../sim/types';
 
-/** Gold line-art pictograms for the hero abilities (approved 2e), drawn on a 32 × 32 grid. */
+/** Bold line-art pictograms for the hero abilities (approved 2e), drawn on a 32 × 32 grid. */
 const props = defineProps<{ id: HeroAbilityId }>();
 
 /** An arrow from (x1, y1) to (x2, y2) with a head and fletching. */
@@ -50,7 +50,7 @@ const d = computed(() => PATHS[props.id]);
 </script>
 
 <template>
-  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
     <path :d="d" />
   </svg>
 </template>

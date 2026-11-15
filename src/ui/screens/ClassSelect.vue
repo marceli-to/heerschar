@@ -38,7 +38,7 @@ function choose(): void {
           <ClassMedallion :class-id="c" :size="60" />
         </button>
       </div>
-      <div class="parchment grid w-full grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-8 rounded-sm px-10 pt-12 pb-9">
+      <div class="panel grid w-full grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-8 px-10 pt-12 pb-9">
         <FigurePreview :class-id="selected" class="h-[400px]" />
         <div class="flex flex-col justify-center">
           <h1 class="font-display text-4xl font-bold tracking-[0.12em]">{{ STRINGS.classes[selected] }}</h1>
@@ -65,7 +65,7 @@ function choose(): void {
           </label>
           <div class="mt-7 flex items-center justify-between">
             <button class="font-display text-xs tracking-[0.15em] text-ink-soft underline-offset-4 hover:underline" @click="emit('back')">{{ STRINGS.prep.back }}</button>
-            <button class="btn-gold rounded-sm px-8 py-2.5 text-sm disabled:opacity-50" :disabled="!name.trim()" @click="choose">{{ STRINGS.prep.choose }}</button>
+            <button class="btn px-8 py-2.5 text-sm disabled:opacity-50" :disabled="!name.trim()" @click="choose">{{ STRINGS.prep.choose }}</button>
           </div>
         </div>
       </div>

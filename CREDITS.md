@@ -2,8 +2,8 @@
 
 Fonts (SIL Open Font License 1.1, licence files in `public/fonts/`):
 
-- Cinzel by the Cinzel Project Authors (github.com/NDISCOVER/Cinzel).
-- EB Garamond by the EB Garamond Project Authors (github.com/octaviopardo/EBGaramond12).
+- Lilita One by Juan Montoreano (github.com/google/fonts/tree/main/ofl/lilitaone).
+- Nunito by the Nunito Project Authors (github.com/googlefonts/nunito).
 
 Code adapted from tin-wolf (same author): seeded RNG, fixed-timestep loop, keyboard and mouse input.
 

@@ -6,7 +6,7 @@ import { effectLines } from '../../meta/describe';
 import PictogramTile from '../PictogramTile.vue';
 
 /**
- * An upgrade or path offer (approved Stage 4): parchment card with a pictogram tile on top, the
+ * An upgrade or path offer (approved Stage 4): panel card with a pictogram tile on top, the
  * name in Cinzel, the kind in small italics, then what it does. Hover lifts.
  */
 const props = defineProps<{ kind: 'upgrade' | 'path'; id: string }>();
@@ -23,7 +23,7 @@ const view = computed(() => {
 </script>
 
 <template>
-  <button class="card parchment flex w-64 flex-col items-center rounded-sm px-6 pt-7 pb-6 text-center">
+  <button class="card panel flex w-64 flex-col items-center px-6 pt-7 pb-6 text-center">
     <PictogramTile :name="view.icon" :size="68" />
     <h3 class="mt-4 font-display text-xl leading-tight font-bold tracking-[0.06em]">{{ view.name }}</h3>
     <p class="text-sm text-ink-soft italic">{{ view.kind }}</p>

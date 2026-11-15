@@ -6,7 +6,7 @@ import { restoreDefaults, settings } from '../../settings/store';
 import InkSlider from './InkSlider.vue';
 
 /**
- * Settings (approved 6g): one parchment sheet with four tabs (Sound · Controls · Camera · Graphics),
+ * Settings (approved 6g): one panel sheet with four tabs (Sound · Controls · Camera · Graphics),
  * one section at a time, Done at the bottom. Opened from the title and the pause panel; every change
  * applies and saves at once.
  */
@@ -79,7 +79,7 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
 </script>
 
 <template>
-  <div class="parchment flex w-[min(680px,94vw)] flex-col rounded-sm px-10 pt-7 pb-7 font-body">
+  <div class="panel flex w-[min(680px,94vw)] flex-col px-10 pt-7 pb-7 font-body">
     <h1 class="text-center font-display text-3xl font-bold tracking-[0.12em]">{{ T.title }}</h1>
     <nav class="mt-4 flex justify-center gap-8 border-b border-ink-soft/30">
       <button
@@ -142,7 +142,7 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
     <div class="rule w-full" />
     <div class="mt-5 flex items-center justify-between">
       <button class="font-display text-xs tracking-[0.15em] text-ink-soft underline-offset-4 hover:underline" @click="restoreDefaults(SECTION[tab])">{{ T.restore }}</button>
-      <button class="btn-gold rounded-sm px-8 py-2.5 text-sm" @click="emit('done')">{{ T.done }}</button>
+      <button class="btn px-8 py-2.5 text-sm" @click="emit('done')">{{ T.done }}</button>
     </div>
   </div>
 </template>
@@ -150,7 +150,7 @@ const times = (v: number): string => `${v.toFixed(2).replace(/0$/, '')}×`;
 <style scoped>
 .keycap {
   color: var(--color-ink);
-  background: linear-gradient(var(--color-parchment), var(--color-parchment-dark));
+  background: linear-gradient(var(--color-cream), var(--color-cream-dark));
   border: 1px solid var(--color-gold);
   box-shadow: 0 0 0 1px rgb(58 39 23 / 0.55), 0 2px 0 rgb(58 39 23 / 0.45);
   transition: box-shadow 120ms, transform 120ms;

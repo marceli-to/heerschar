@@ -10,8 +10,8 @@ defineProps<{ marker: HudEdgeMarker }>();
   <div class="absolute" :style="{ left: `${marker.x}px`, top: `${marker.y}px` }">
     <!-- Arrow tip, rotated around the medallion centre. -->
     <div class="absolute top-0 left-0" :style="{ transform: `rotate(${marker.angle}rad)` }">
-      <svg class="tip absolute" width="14" height="16" viewBox="0 0 14 16" style="left: 19px; top: -8px">
-        <path d="M1 1 L13 8 L1 15 L4 8 Z" fill="#e0bf6a" stroke="#3a2717" stroke-width="1.2" stroke-linejoin="round" />
+      <svg class="tip absolute" width="18" height="20" viewBox="0 0 18 20" style="left: 18px; top: -10px">
+        <path d="M2 2 L16 10 L2 18 L5.5 10 Z" fill="#f6c453" stroke="#3b2414" stroke-width="2.5" stroke-linejoin="round" />
       </svg>
     </div>
     <ClassMedallion
@@ -21,8 +21,8 @@ defineProps<{ marker: HudEdgeMarker }>();
       :class="marker.kind === 'ally' ? 'ally' : ''"
     >
       <svg v-if="marker.kind === 'mark'" width="20" height="20" viewBox="0 0 20 20">
-        <path d="M5 2 V18" stroke="#e0bf6a" stroke-width="1.6" stroke-linecap="round" />
-        <path d="M5.5 3 H16 L13 7 L16 11 H5.5 Z" fill="#c9483a" stroke="#7a2117" stroke-width="0.8" stroke-linejoin="round" />
+        <path d="M5 2 V18" stroke="#3b2414" stroke-width="2.4" stroke-linecap="round" />
+        <path d="M5.5 3 H16 L13 7 L16 11 H5.5 Z" fill="#ff5a44" stroke="#3b2414" stroke-width="1.6" stroke-linejoin="round" />
       </svg>
     </ClassMedallion>
   </div>
@@ -34,10 +34,8 @@ defineProps<{ marker: HudEdgeMarker }>();
 }
 @keyframes ally {
   50% {
-    border-color: var(--color-blood-light);
-    box-shadow:
-      0 0 0 1px rgb(58 39 23 / 0.8),
-      0 0 14px 3px rgb(201 72 58 / 0.85);
+    background: radial-gradient(circle at 35% 30%, #ffb0a0, #ff5a44 60%, #c0281a);
+    box-shadow: 0 0 14px 4px rgb(255 90 68 / 0.85);
   }
 }
 </style>

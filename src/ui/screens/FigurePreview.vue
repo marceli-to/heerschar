@@ -6,7 +6,7 @@ import { createUnitView } from '../../view/createView';
 import { loadModels } from '../../view/models/assets';
 import type { UnitView } from '../../view/unitView';
 
-/** A class figure turning slowly on parchment (approved 3): its own small transparent renderer. */
+/** A class figure turning slowly on panel (approved 3): its own small transparent renderer. */
 const props = withDefaults(defineProps<{ classId: ClassId; hero?: boolean }>(), { hero: true });
 
 const canvas = ref<HTMLCanvasElement | null>(null);

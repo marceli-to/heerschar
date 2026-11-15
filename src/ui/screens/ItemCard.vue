@@ -16,7 +16,7 @@ const fits = computed(() => (item.value.classId ? STRINGS.spoils.weapon(STRINGS.
 </script>
 
 <template>
-  <button class="card parchment flex w-64 flex-col items-center rounded-sm px-6 pt-7 pb-6 text-center" :class="item.rarity">
+  <button class="card panel flex w-64 flex-col items-center px-6 pt-7 pb-6 text-center" :class="item.rarity">
     <PictogramTile :name="item.icon" :size="68" />
     <h3 class="mt-4 font-display text-xl leading-tight font-bold tracking-[0.06em]">{{ STRINGS.items[item.id] ?? item.id }}</h3>
     <p class="rarity font-display text-[11px] tracking-[0.25em] uppercase">{{ STRINGS.rarities[item.rarity] }}</p>

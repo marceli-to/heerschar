@@ -99,7 +99,7 @@ const d = computed(() => PATHS[props.name]);
 </script>
 
 <template>
-  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
     <path :d="d" />
   </svg>
 </template>

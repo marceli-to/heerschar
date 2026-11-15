@@ -1,83 +1,182 @@
 @import 'tailwindcss';
 
 @font-face {
-  font-family: 'Cinzel';
-  src: url('/fonts/Cinzel.ttf') format('truetype');
-  font-weight: 400 900;
+  font-family: 'Lilita One';
+  src: url('/fonts/LilitaOne.ttf') format('truetype');
+  font-weight: 400;
   font-display: block;
 }
 
 @font-face {
-  font-family: 'EB Garamond';
-  src: url('/fonts/EBGaramond.ttf') format('truetype');
-  font-weight: 400 800;
+  font-family: 'Nunito';
+  src: url('/fonts/Nunito.ttf') format('truetype');
+  font-weight: 200 1000;
+  font-style: normal;
   font-display: block;
 }
 
-/* Parchment look (approved 2026-11-14): parchment panels, dark-brown ink, gold accents. */
+@font-face {
+  font-family: 'Nunito';
+  src: url('/fonts/Nunito-Italic.ttf') format('truetype');
+  font-weight: 200 1000;
+  font-style: italic;
+  font-display: block;
+}
+
+/* Storybook look (approved 6i, 2026-11-15): cream panels with a thick dark-brown outline and a hard
+   drop shadow, fat shiny bars, Lilita One + Nunito. Matches the chunky KayKit figures. */
 @theme {
-  --font-display: 'Cinzel', 'Trajan Pro', Georgia, serif;
-  --font-body: 'EB Garamond', Garamond, Georgia, serif;
-  --color-parchment: #f1e4c3;
-  --color-parchment-dark: #dcc79b;
-  --color-ink: #3a2717;
-  --color-ink-soft: #6b5137;
-  --color-gold: #b98a2e;
-  --color-gold-light: #e0bf6a;
-  --color-blood: #9b2d20;
-  --color-blood-light: #c9483a;
-  /* Energy (approved 2e): deep blue. */
-  --color-energy: #1f3f8f;
-  --color-energy-light: #6f9be8;
+  --font-display: 'Lilita One', 'Arial Rounded MT Bold', sans-serif;
+  --font-body: 'Nunito', 'Arial Rounded MT Bold', sans-serif;
+  --color-cream: #fff6dc;
+  --color-cream-dark: #f1d6a0;
+  --color-ink: #3b2414;
+  --color-ink-soft: #8a5a32;
+  --color-gold: #e0a530;
+  --color-gold-light: #f6c453;
+  --color-blood: #d23224;
+  --color-blood-light: #ff7058;
+  --color-energy: #2a7be0;
+  --color-energy-light: #6fc8ff;
+  --color-sky: #6a95c0;
+  --color-sky-light: #a3c8e6;
+  --color-wood: #4e2c16;
+  --color-wood-light: #7a4a28;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body);
+    font-weight: 700;
+  }
+  /* Lilita has one weight: never fake a bold. */
+  .font-display {
+    font-synthesis: none;
+    font-weight: 400;
+  }
 }
 
 @layer components {
-  .parchment {
+  /* Big sheet: cream, thick outline, hard drop shadow. */
+  .panel {
     color: var(--color-ink);
-    background:
-      radial-gradient(ellipse at 50% 40%, rgb(255 250 232 / 0.75), transparent 70%),
-      radial-gradient(ellipse at 10% 90%, rgb(160 120 60 / 0.18), transparent 50%),
-      radial-gradient(ellipse at 95% 5%, rgb(160 120 60 / 0.15), transparent 45%),
-      linear-gradient(160deg, var(--color-parchment), var(--color-parchment-dark));
-    border: 1px solid var(--color-gold);
-    outline: 1px solid rgb(58 39 23 / 0.55);
-    outline-offset: 3px;
+    background: linear-gradient(#fff6dc, #f1d6a0);
+    border: 3px solid var(--color-ink);
+    border-radius: 18px;
     box-shadow:
-      inset 0 0 28px rgb(120 80 30 / 0.35),
-      0 10px 30px rgb(20 12 4 / 0.45);
+      inset 0 2px 0 #fffbe9,
+      inset 0 -4px 0 #d9b77a,
+      0 6px 0 var(--color-ink),
+      0 14px 28px rgb(20 10 4 / 0.4);
   }
 
-  /* Plate for HUD elements over the 3D view: darker, slightly translucent parchment. */
-  .hud-plate {
+  /* Smaller plate for HUD and inline cards. */
+  .plate {
     color: var(--color-ink);
-    background: linear-gradient(160deg, rgb(241 228 195 / 0.92), rgb(220 199 155 / 0.92));
-    border: 1px solid var(--color-gold);
+    background: linear-gradient(#fff6dc, #f1d6a0);
+    border: 3px solid var(--color-ink);
+    border-radius: 14px;
     box-shadow:
-      inset 0 0 12px rgb(120 80 30 / 0.3),
-      0 4px 14px rgb(20 12 4 / 0.35);
+      inset 0 2px 0 #fffbe9,
+      inset 0 -3px 0 #d9b77a,
+      0 4px 0 var(--color-ink),
+      0 8px 16px rgb(0 0 0 / 0.3);
   }
 
-  .btn-gold {
+  /* Chunky button: red (primary), .btn-yellow, .btn-blue. */
+  .btn {
     font-family: var(--font-display);
-    letter-spacing: 0.08em;
-    color: var(--color-parchment);
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: 0.02em;
+    color: #fff;
+    text-shadow: 0 2px 0 rgb(80 20 10 / 0.8);
     background: linear-gradient(var(--color-blood-light), var(--color-blood));
-    border: 1px solid var(--color-gold-light);
-    outline: 1px solid var(--color-ink);
-    box-shadow: 0 3px 0 var(--color-ink), inset 0 1px 0 rgb(255 255 255 / 0.2);
+    border: 3px solid var(--color-ink);
+    border-radius: 14px;
+    box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.35), 0 5px 0 var(--color-ink);
     transition: transform 80ms, box-shadow 80ms, filter 120ms;
   }
-  .btn-gold:hover {
+  .btn-yellow {
+    color: var(--color-ink);
+    text-shadow: 0 1px 0 rgb(255 255 255 / 0.6);
+    background: linear-gradient(#ffe48a, #eeac2e);
+  }
+  .btn-blue {
+    text-shadow: 0 2px 0 rgb(20 40 80 / 0.7);
+    background: linear-gradient(var(--color-sky-light), var(--color-sky));
+  }
+  .btn:hover:not(:disabled) {
     filter: brightness(1.08);
   }
-  .btn-gold:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 0 var(--color-ink);
+  .btn:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.35), 0 2px 0 var(--color-ink);
+  }
+  .btn:disabled {
+    filter: grayscale(0.85) brightness(0.9);
+    opacity: 0.7;
   }
 
+  /* Quiet text link (Back, Cancel). */
+  .link {
+    font-family: var(--font-display);
+    font-synthesis: none;
+    color: var(--color-ink-soft);
+    text-underline-offset: 4px;
+  }
+  .link:hover {
+    text-decoration: underline;
+    color: var(--color-ink);
+  }
+
+  /* Divider: short rounded ink stroke. */
   .rule {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+    height: 3px;
+    border-radius: 99px;
+    background: rgb(59 36 20 / 0.18);
+  }
+
+  /* Fat rounded bar: outline, dark track, shiny fill. Fill colour via .fill-hp / .fill-energy / .fill-gold / .fill-xp. */
+  .bar {
+    position: relative;
+    overflow: hidden;
+    border: 3px solid var(--color-ink);
+    border-radius: 99px;
+    background: #6d4a30;
+  }
+  .bar > .fill {
+    height: 100%;
+    border-radius: 99px;
+    box-shadow: inset 0 4px 0 rgb(255 255 255 / 0.35), inset 0 -3px 0 rgb(0 0 0 / 0.15);
+  }
+  .bar-thin {
+    border-width: 2.5px;
+  }
+  .bar-thin > .fill {
+    box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.32), inset 0 -2px 0 rgb(0 0 0 / 0.15);
+  }
+  .fill-hp {
+    background: linear-gradient(#ff7b62, #e0392a);
+  }
+  .fill-energy {
+    background: linear-gradient(var(--color-energy-light), var(--color-energy));
+  }
+  .fill-gold {
+    background: linear-gradient(#ffe07a, #f0a92a);
+  }
+  .fill-xp {
+    background: linear-gradient(#b4ec6a, #5fb52e);
+  }
+
+  /* Big outlined heading: cream fill, ink stroke, hard shadow. */
+  .title-text {
+    font-family: var(--font-display);
+    font-synthesis: none;
+    color: #fff4d4;
+    -webkit-text-stroke: 3px var(--color-ink);
+    paint-order: stroke fill;
+    text-shadow: 0 4px 0 var(--color-ink);
   }
 }
 

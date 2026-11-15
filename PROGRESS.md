@@ -20,7 +20,23 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | Look spike | **done, code removed in 6h**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
 | 6 Presentation | **gate pending**: 6a–6g done and approved (6g approved 2026-11-15); **6h built** (credits sheet, look spike removed, fps and run-through checked, see "6h as built"). Waiting for **Marcel's full playtest and verdict** ("presentable to a newcomer"). Battles still feel hard to him; difficulty levels wanted later. |
+| 6i UI restyle | **in progress** (Marcel 2026-11-15: "the UI does not match the arenas / characters"). See "6i decisions" and "6i breakdown". |
 | 7 | not started |
+
+## 6i decisions (Marcel, 2026-11-15)
+
+- Mockups in `~/Downloads/heerschar-assets/ui-restyle/` (`hud-A/B/C.png`, `menu-A/B/C.png`, source `mock/index.html`). **Chosen: A "Storybook"**: chunky toy look to match KayKit. Cream panels (`#fff6dc` → `#f1d6a0`) with a thick dark-brown outline (3 px `#3b2414`), 14 px corners, hard 4 px drop shadow in the outline colour; fat rounded bars with a dark outline and a white shine stripe (health red `#ff7b62` → `#e0392a`, energy blue `#6fc8ff` → `#2a7be0`, dodge yellow); ability tiles = brown wood with a gold inner ring, round yellow key badge; class medallions = round gold coin with outline; buttons = red primary / yellow secondary / blue tertiary with outline and hard shadow; fonts **Lilita One** (display, numbers) + **Nunito** 800 (body). Replaces the parchment / Cinzel / EB Garamond look everywhere.
+- Rejected: B forged wood & iron, C clean modern.
+- **Menu backdrop = stylised flat war table** (bold planks, simple shading, no photo grain); the war-table metaphor stays.
+- **Scope = everything:** panels, buttons, HUD, over-head bars, damage numbers, pictograms and medallions (bolder), map sheet.
+
+## 6i breakdown (do in this order, commit after each, screenshots to Marcel)
+
+1. **6i-1 Foundation:** self-host Lilita One + Nunito (OFL), theme tokens, shared panel / button / bar styles, flat war table.
+2. **6i-2 HUD:** hero plate, ability tiles, squad cards, medallions, foes / time, boss bar, countdown, edge markers, battle intro, pause, end ledger.
+3. **6i-3 Screens:** title, class select, squad, formation, camp, spoils, level-up, ending, settings, credits, item / upgrade cards, seals.
+4. **6i-4 Map sheet.**
+5. **6i-5 In-world:** over-head bars, damage numbers, bolder pictograms.
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
 

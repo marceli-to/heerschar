@@ -11,7 +11,7 @@ import WaxSeal, { type SealIcon, type SealWax } from './WaxSeal.vue';
 import { CARTOUCHE, COMPASS, GLYPHS, SHEET_H, SHEET_W, regionMarks, regionRoads, toSheet } from './mapSketch';
 
 /**
- * The campaign map (approved 5c): one parchment sheet per region on the war table, bookmark
+ * The campaign map (approved 5c): one panel sheet per region on the war table, bookmark
  * ribbons on top to switch region (locked ones greyed with a lock), light ink sketches of the
  * land, dotted roads, wax-seal nodes (red battle, black elite, green camp, large red boss).
  * Open seals glow softly, done ones carry the gold tick, unreachable ones are faded. Hovering a
@@ -73,7 +73,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
 <template>
   <WarTable>
     <div class="flex w-[min(1120px,94vw,calc((100vh-190px)*5/3))] flex-col items-center">
-      <p class="mb-10 text-lg italic text-parchment/70">
+      <p class="mb-10 text-lg italic text-cream/70">
         {{ STRINGS.map.hint }}
       </p>
 
@@ -101,7 +101,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
         </div>
 
         <!-- The region sheet. -->
-        <div class="sheet parchment relative w-full rounded-sm" :class="region">
+        <div class="sheet panel relative w-full" :class="region">
           <div class="wash pointer-events-none absolute inset-0" />
           <svg class="absolute inset-0 h-full w-full" :viewBox="`0 0 ${SHEET_W} ${SHEET_H}`" aria-hidden="true">
             <!-- Ink sketches of the land. -->
@@ -211,7 +211,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
         </div>
       </div>
 
-      <button class="mt-8 font-display text-xs tracking-[0.15em] text-parchment/70 underline-offset-4 hover:underline" @click="emit('back')">
+      <button class="mt-8 font-display text-xs tracking-[0.15em] text-cream/70 underline-offset-4 hover:underline" @click="emit('back')">
         {{ STRINGS.prep.back }}
       </button>
     </div>
@@ -280,7 +280,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
 .seal.live:hover {
   transform: translateY(-3px) scale(1.06);
 }
-/* Unreachable: washed out toward the parchment but opaque, so the roads stay under the seal. */
+/* Unreachable: washed out toward the panel but opaque, so the roads stay under the seal. */
 .seal.faded {
   filter: grayscale(0.75) sepia(0.35) brightness(1.55) contrast(0.45);
 }

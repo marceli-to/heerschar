@@ -40,7 +40,7 @@ function moveOn(): void {
   <WarTable>
     <div class="flex flex-col items-center">
       <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-      <p class="mt-1 mb-5 max-w-xl text-center text-lg italic text-parchment/70">{{ full ? T.full : T.hint }}</p>
+      <p class="mt-1 mb-5 max-w-xl text-center text-lg italic text-cream/70">{{ full ? T.full : T.hint }}</p>
 
       <div class="flex flex-wrap justify-center gap-10">
         <RecruitCard
@@ -54,25 +54,25 @@ function moveOn(): void {
       </div>
 
       <div class="mt-6 flex h-12 items-center">
-        <button v-if="full" class="btn-gold rounded-sm px-7 py-2.5 text-sm" @click="moveOn">{{ T.moveOn }}</button>
-        <button v-else class="btn-gold rounded-sm px-7 py-2.5 text-sm disabled:cursor-default disabled:opacity-50 disabled:filter-none" :disabled="selected === null" @click="take">
+        <button v-if="full" class="btn px-7 py-2.5 text-sm" @click="moveOn">{{ T.moveOn }}</button>
+        <button v-else class="btn px-7 py-2.5 text-sm disabled:cursor-default disabled:opacity-50 disabled:filter-none" :disabled="selected === null" @click="take">
           {{ selected === null ? T.chooseFirst : T.take }}
         </button>
       </div>
 
       <div class="mt-3 flex flex-col items-center">
-        <p class="font-display text-xs tracking-[0.2em] text-parchment/60 uppercase">
+        <p class="font-display text-xs tracking-[0.2em] text-cream/60 uppercase">
           {{ T.company }} <span class="tabular-nums">({{ roster.length }} / {{ ROSTER_LIMIT }})</span>
         </p>
         <ul class="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-3">
           <li v-for="c in roster" :key="c.id" class="flex w-16 flex-col items-center gap-1">
             <ClassMedallion :class-id="c.classId" :size="34" />
-            <span class="w-full truncate text-center text-sm text-parchment/80" :class="{ 'font-bold': c.isHero }">{{ c.name }}</span>
+            <span class="w-full truncate text-center text-sm text-cream/80" :class="{ 'font-bold': c.isHero }">{{ c.name }}</span>
           </li>
         </ul>
       </div>
 
-      <button class="mt-4 font-display text-xs tracking-[0.15em] text-parchment/70 underline-offset-4 hover:underline" @click="emit('back')">
+      <button class="mt-4 font-display text-xs tracking-[0.15em] text-cream/70 underline-offset-4 hover:underline" @click="emit('back')">
         {{ STRINGS.prep.back }}
       </button>
     </div>

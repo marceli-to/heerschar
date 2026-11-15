@@ -56,7 +56,7 @@ const upgrades = computed(() =>
 
 <style scoped>
 .badge {
-  color: var(--color-parchment);
+  color: var(--color-cream);
   background: var(--color-ink);
   border: 1px solid var(--color-gold);
 }

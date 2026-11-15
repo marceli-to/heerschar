@@ -7,7 +7,7 @@ import FigurePreview from './FigurePreview.vue';
 import PathUpgrades from './PathUpgrades.vue';
 
 /**
- * A recruit at a camp (approved 5d): tall parchment card with the turning figure, name, class and
+ * A recruit at a camp (approved 5d): tall panel card with the turning figure, name, class and
  * level, path and upgrades, and the stats as fought. Clicking selects it (gold frame); the camp
  * screen confirms.
  */
@@ -35,7 +35,7 @@ const lines = computed(() => {
     :tabindex="disabled ? -1 : 0"
     :aria-pressed="selected"
     :aria-disabled="disabled"
-    class="card parchment flex w-80 flex-col items-center rounded-sm px-7 pt-2 pb-5 text-center"
+    class="card panel flex w-80 flex-col items-center px-7 pt-2 pb-5 text-center"
     :class="{ 'is-selected': selected, 'is-disabled': disabled }"
     @click="!disabled && emit('select')"
     @keydown.enter.prevent="!disabled && emit('select')"
