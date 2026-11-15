@@ -2,7 +2,7 @@
  * Strength finder, not a test: `REPORT=1 [RUNS=12] [ONLY=…] npx vitest run tests/balance/tune.test.ts`
  * bisects each encounter's strength toward the middle of its win band (standard 80 %, elite 57 %,
  * boss 47 %) with the squads of `snapshots`, `RUNS` battles per hero class per probe, and prints
- * the strength found with the solo win rate there. Copy the numbers into `ENCOUNTERS`.
+ * the strength found with the solo win rate there (`AIM=0.75,0.5,0.4` aims elsewhere in the bands). Copy the numbers into `ENCOUNTERS`.
  */
 import { it } from 'vitest';
 import { NODES } from '../../src/data/campaign';
@@ -15,7 +15,9 @@ import { snapshots } from './walk';
 
 const RUNS = Number(process.env.RUNS ?? 12);
 const HEROES: PlayableClassId[] = ['krieger', 'bogenschuetze', 'heiler', 'magier'];
-const AIM = { battle: 0.8, elite: 0.575, boss: 0.475 } as const;
+/** `AIM=0.75,0.5,0.4` aims standard, elite and boss battles elsewhere in their bands. */
+const [battle = 0.8, elite = 0.575, boss = 0.475] = (process.env.AIM?.split(',') ?? []).map(Number);
+const AIM = { battle, elite, boss } as const;
 
 it.skipIf(!process.env.REPORT)('strength finder', () => {
   const walks = new Map(HEROES.map((k) => [k, Array.from({ length: 4 }, (_, w) => snapshots(k, w + 1))] as const));

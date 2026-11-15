@@ -32,13 +32,20 @@ export const COMPANION_POWER = 1.6;
 export const HERO_POWER: Record<PlayableClassId, number> = { krieger: 1, bogenschuetze: 1.8, heiler: 2.2, magier: 1.6 };
 
 /**
+ * Hero guard (Marcel, 5f): the frail hero classes take less damage, a hidden passive on top of
+ * any toughness. A factor on damage taken. Health alone does not save them: once a battle is hard
+ * enough the shooters collapse a back-row hero all at once while the Warrior's armour holds.
+ */
+export const HERO_GUARD: Record<PlayableClassId, number> = { krieger: 1, bogenschuetze: 0.8, heiler: 0.8, magier: 0.8 };
+
+/**
  * A further factor on the hero's health and power that runs with the hero's level: at level 1 and
  * at `HERO_CURVE_LEVEL`, linear in between and held beyond. The classes carry differently over
  * the campaign (the Warrior's armour grows into the late battles, the Archer falls behind there),
  * so one constant per class could not keep all four heroes in the same win band (5f).
  */
 export const HERO_CURVE: Record<PlayableClassId, readonly [number, number]> = {
-  krieger: [1.07, 0.77],
+  krieger: [1.07, 0.85],
   bogenschuetze: [0.88, 1.03],
   heiler: [1.1, 1.2],
   magier: [0.97, 1.07],
@@ -135,23 +142,23 @@ export const ENCOUNTERS: readonly Encounter[] = [
   { id: 'raiders', level: 1, strength: 2, xp: 540, loot: 'normal', enemies: [E('berserker', 0, 0), E('krieger', 1, 0), E('krieger', 2, 0), E('bogenschuetze', 1, 1)] },
   { id: 'farmstead', level: 2, strength: 2.2, xp: 880, loot: 'normal', enemies: [E('krieger', 0, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 2, 1)] },
   { id: 'archerLine', level: 3, strength: 1.85, xp: 1000, loot: 'normal', enemies: [E('krieger', 0, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('magier', 1, 1), E('bogenschuetze', 2, 1)] },
-  { id: 'shieldWall', level: 5, strength: 3.05, xp: 1500, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 1, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
-  { id: 'ironWarlord', level: 6, strength: 1.75, xp: 2700, loot: 'boss', enemies: [E('krieger', 0, 0), E('kriegsherr', 1, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 2, 1)] },
+  { id: 'shieldWall', level: 5, strength: 2.6, xp: 1500, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 1, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
+  { id: 'ironWarlord', level: 6, strength: 1.75, xp: 2700, loot: 'boss', enemies: [E('krieger', 0, 0), E('kriegsherr', 1, 0), E('krieger', 2, 0), E('krieger', 0, 1), E('bogenschuetze', 2, 1)] },
 
-  { id: 'skirmish', level: 7, strength: 2.7, xp: 2700, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
+  { id: 'skirmish', level: 7, strength: 2.5, xp: 2700, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
   { id: 'berserkerRush', level: 8, strength: 3.2, xp: 2800, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 2, 1)] },
-  { id: 'shamansGrove', level: 9, strength: 3.3, xp: 2900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 1, 1), E('schamane', 2, 1)] },
-  { id: 'wolfPack', level: 11, strength: 4.3, xp: 3300, loot: 'elite', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('berserker', 0, 1), E('schamane', 2, 1)] },
-  { id: 'fenWitch', level: 12, strength: 3.3, xp: 3300, loot: 'boss', enemies: [E('berserker', 0, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('sumpfhexe', 1, 1), E('schamane', 2, 1)] },
+  { id: 'shamansGrove', level: 9, strength: 2.7, xp: 2900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('schamane', 0, 1), E('schamane', 1, 1), E('schamane', 2, 1)] },
+  { id: 'wolfPack', level: 11, strength: 3.8, xp: 3300, loot: 'elite', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('berserker', 0, 1), E('schamane', 2, 1)] },
+  { id: 'fenWitch', level: 12, strength: 2.8, xp: 3300, loot: 'boss', enemies: [E('berserker', 0, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('sumpfhexe', 1, 1), E('schamane', 2, 1)] },
 
   { id: 'ambush', level: 13, strength: 4.2, xp: 2700, loot: 'normal', enemies: [E('berserker', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('magier', 0, 1), E('bogenschuetze', 2, 1)] },
   { id: 'burningField', level: 14, strength: 3.5, xp: 2800, loot: 'normal', enemies: [E('krieger', 0, 0), E('schildtraeger', 1, 0), E('krieger', 2, 0), E('bogenschuetze', 0, 1), E('magier', 1, 1), E('magier', 2, 1)] },
   { id: 'graveWatch', level: 14, strength: 3.25, xp: 2800, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('schildtraeger', 2, 0), E('bogenschuetze', 0, 1), E('bogenschuetze', 1, 1), E('bogenschuetze', 2, 1)] },
   { id: 'ironColumn', level: 15, strength: 3.7, xp: 2900, loot: 'normal', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('schildtraeger', 2, 0), E('bogenschuetze', 0, 1), E('krieger', 1, 1), E('bogenschuetze', 2, 1)] },
   { id: 'boneLegion', level: 16, strength: 5.9, xp: 3300, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('schildtraeger', 2, 0), E('krieger', 0, 1), E('schamane', 1, 1), E('krieger', 2, 1)] },
-  { id: 'cryptRoad', level: 17, strength: 4.2, xp: 2900, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
-  { id: 'warband', level: 17, strength: 4, xp: 3400, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
-  { id: 'boneKing', level: 18, strength: 3.25, xp: 0, loot: 'boss', enemies: [E('krieger', 0, 0), E('knochenkoenig', 1, 0), E('krieger', 2, 0), E('magier', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
+  { id: 'cryptRoad', level: 17, strength: 3.8, xp: 2900, loot: 'normal', enemies: [E('berserker', 0, 0), E('berserker', 1, 0), E('berserker', 2, 0), E('schamane', 0, 1), E('schamane', 2, 1)] },
+  { id: 'warband', level: 17, strength: 3.6, xp: 3400, loot: 'elite', enemies: [E('schildtraeger', 0, 0), E('krieger', 1, 0), E('berserker', 2, 0), E('bogenschuetze', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
+  { id: 'boneKing', level: 18, strength: 2.8, xp: 0, loot: 'boss', enemies: [E('krieger', 0, 0), E('knochenkoenig', 1, 0), E('krieger', 2, 0), E('magier', 0, 1), E('schamane', 1, 1), E('magier', 2, 1)] },
 ];
 
 export function encounterById(id: EncounterId): Encounter {

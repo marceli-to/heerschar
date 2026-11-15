@@ -16,9 +16,9 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 1 Hero alone | done, committed. **Gate passed**: Marcel playtested, "feels quite good, hard to beat 3 opponents, I like that". Keep current feel numbers. |
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
-| 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
+| 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| 5 Campaign | **in progress**: 5a–5e done (5c, 5d, 5e waiting for Marcel's look at the screenshots); 5f balance: suite + strengths done, class spread worked on (see "5f second session"); **waiting for Marcel's call on the matchup questions there** before the map walk can pass. PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
+| 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: suite + strengths + class spread done; matchup decisions taken (see "5f matchup decisions"), being built; then the map walk and the 5f gate. PLAN sections 10, 13, 14. |
 | 6–7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -106,6 +106,27 @@ The rest is **matchups**, not class strength (the averages are even), and number
 1. Accept the per-battle spread and judge class balance on the region averages plus "every hero class can finish the walk"? Or must every battle meet the PLAN rule?
 2. Should enemies single out the hero less (berserkers diving the back row, archers on the lone hero), or is "protect the hero" part of the game?
 3. Or class-side help for the fragile heroes: e.g. a Healer hero escape, a hero damage reduction for the ranged classes, a gentler Warlord escort (one archer instead of two)?
+
+## 5f matchup decisions (Marcel, 2026-11-15)
+
+- Class balance is judged on the **region averages plus "every hero class can finish the walk"**, not battle by battle.
+- Enemy targeting stays as is: "protect your hero" is part of the game.
+- **Segen on self:** the Healer hero can cast Segen on himself, at reduced strength (like the self-heal rule).
+- **Hero guard:** a hidden passive; the Archer, Healer and Mage heroes take less damage (~20 %, tuned). Not shown in the UI.
+- **Iron Warlord escort:** 3 warriors + 1 archer (one archer becomes a warrior).
+
+## 5f matchup changes as built (2026-11-15)
+
+- `HERO_GUARD` in `encounters.ts` (0.8 on damage taken for the Archer, Healer and Mage heroes), applied in `characterMods`.
+- Segen could already shield the Healer hero himself (at `HERO_SELF_HEAL` 0.5, on the weakest ally in range); the bot now counts Segen as an escape and saves energy for it when enemies are within 8 m.
+- Iron Warlord escort: krieger, Warlord, krieger in front; krieger + bogenschuetze behind.
+- Warrior hero curve end 0.77 → 0.85 (he fell off late).
+- Strengths eased so the walk passes: shieldWall 2.6, skirmish 2.5, shamansGrove 2.7, wolfPack 3.8, fenWitch 2.8, cryptRoad 3.8, warband 3.6, boneKing 2.8 (rest unchanged).
+- `tune.test.ts` takes `AIM=battle,elite,boss` to aim elsewhere in the bands.
+
+Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 9, Healer 9, Mage 11 of 12 (before: 5, 5, 4, 7). Stuck runs are spread out (Archer still twice at the Iron Warlord).
+
+**Open (next session starts here):** the two halves of criterion A pull apart, because **walk squads do clearly worse than `snapshots` squads at the same strength** (Fen Witch at 3.3: walk 15–33 %, snapshots 25–65 %; at 2.8: walk 50–92 %, snapshots 70–100 %). With the eased strengths the walk passes, but `campaign.test` (snapshots) now reads too easy: bosses 70–100 % (band 35–60), many standard battles > 90 %. The tuner on snapshots puts strengths back near the old values (Fen Witch ~3.3, Wolf Pack ~4.3, Bone King ~3.3), where the walk only finishes 4–7 / 12. Next: find why walk squads are weaker (lost elites skipped = less XP? camp picks? loot?) and make both measures agree, then tune once. Also: the hero guard pushed solo up (Burning Field ~21 %, Raiders 8–15 %, Ambush 6 %; target < 5 %) and the hero damage share up (often 55–95 %, target 35–50 %).
 
 ## 5e decisions (Marcel, 2026-11-14)
 

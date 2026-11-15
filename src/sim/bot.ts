@@ -146,8 +146,11 @@ function worthCasting(battle: Battle, hero: Unit, id: HeroAbilityId, target: Uni
   }
 }
 
-/** Escape abilities: when enemies are this close, the bot saves energy for them. */
-const ESCAPES: readonly HeroAbilityId[] = ['rueckzug', 'frostring'];
+/**
+ * Escape abilities: when enemies are this close, the bot saves energy for them. Segen counts: it
+ * is the Healer hero's way out, a shield on himself (Marcel, 5f).
+ */
+const ESCAPES: readonly HeroAbilityId[] = ['rueckzug', 'frostring', 'segen'];
 const SAVE_FOR_ESCAPE_WITHIN = 8;
 
 function pickAbility(battle: Battle, hero: Unit, target: Unit, enemies: Unit[], input: HeroInput): boolean {
