@@ -20,7 +20,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | Look spike | **done, code removed in 6h**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
 | 6 Presentation | **gate pending**: 6a–6g done and approved (6g approved 2026-11-15); **6h built** (credits sheet, look spike removed, fps and run-through checked, see "6h as built"). Waiting for **Marcel's full playtest and verdict** ("presentable to a newcomer"). Battles still feel hard to him; difficulty levels wanted later. |
-| 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look (lock ring and mark banner now Storybook too, see "6i-6"; credits sheet now tabs and map seal notes above the ribbons, see "6i-7"). Then the Stage 6 gate (his full playtest). |
+| 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look (lock ring and mark banner now Storybook too, see "6i-6"; credits sheet now tabs and map seal notes above the ribbons, see "6i-7", approved). Then the Stage 6 gate (his full playtest). |
 | 7 | not started |
 
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
@@ -48,10 +48,10 @@ As built: the design system is documented at the top of `src/style.css` (type sc
 - Map colours per region (Greenmarch light green, Darkwood moss green, Barrowlands grey with violet-grey patches), glyph fills (fields yellow, trees green, cottages cream with red roofs, stones grey).
 - Lock ring and mark banner: Marcel said yes to the chunky style (2026-11-15), built as 6i-6.
 
-## 6i-7 credits tabs and map note fix (2026-11-15)
+## 6i-7 credits tabs and map note fix (2026-11-15, approved by Marcel)
 
 - Marcel chose **tabs, no scroll** for the credits sheet and kept the red Done on the right. `CreditsSheet.vue`: tabs Music · Art · Sound · Fonts (same `.cap` tabs as Settings), one well per tab with a row per work (label for what it is used for, work in bold, "by" author, source lines beneath; Kevin MacLeod's required wording on its own line), licence chip on the right (gold = attribution licence, silver = CC0). Every tab has the Music tab's height, so the sheet does not jump. Data: `STRINGS.credits.tabs` with `CreditLine` (`what`, `work`, `by`, `licence`, `source`).
-- Made without asking: chip colours, "Art" as the tab name for Characters & Scenery, Fonts labelled Headings / Text, the third sound line credited to "various authors".
+- Made without asking, then approved: chip colours, "Art" as the tab name for Characters & Scenery, Fonts labelled Headings / Text, the third sound line credited to "various authors".
 - Map: a hovered seal now sits above the region ribbons (`hover:z-20`), so its note is no longer hidden behind them.
 
 ## 6i-6 lock ring and mark banner (2026-11-15)
