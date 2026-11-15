@@ -1074,7 +1074,7 @@ export class FxWorld {
         varying float vH; varying vec3 vN; varying vec3 vV;
         void main() {
           float edge = 1.0 - abs(dot(vN, vV));
-          float a = pow(1.0 - vH, 2.2) * (0.08 + edge * 0.5) * uFade;
+          float a = pow(max(0.0, 1.0 - vH), 2.2) * (0.08 + edge * 0.5) * uFade;
           gl_FragColor = vec4(uColor * a, a);
         }`,
       blending: THREE.AdditiveBlending,
@@ -1125,7 +1125,8 @@ export class FxWorld {
         uniform vec3 uColor; uniform float uFade; uniform float uPulse;
         varying vec3 vN; varying vec3 vV;
         void main() {
-          float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.2);
+          // max(): pow() of a negative base is NaN (see shieldBubble.ts).
+          float rim = pow(max(0.0, 1.0 - abs(dot(normalize(vN), normalize(vV)))), 2.2);
           float a = (0.06 + rim * 0.9 + uPulse * 0.35) * uFade;
           gl_FragColor = vec4(uColor * a, a);
         }`,

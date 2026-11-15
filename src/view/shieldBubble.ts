@@ -21,7 +21,9 @@ function shieldMaterial(color: string): THREE.ShaderMaterial {
       varying vec3 vNormal;
       varying vec3 vView;
       void main() {
-        float rim = pow(1.0 - abs(dot(normalize(vNormal), normalize(vView))), 2.5);
+        // max(): rounding can push the dot product past 1, and pow() of a negative base is NaN
+        // (one NaN pixel turns into a big black box once bloom blurs it).
+        float rim = pow(max(0.0, 1.0 - abs(dot(normalize(vNormal), normalize(vView)))), 2.5);
         gl_FragColor = vec4(color, (0.04 + rim * 0.75) * opacity);
       }`,
     transparent: true,
