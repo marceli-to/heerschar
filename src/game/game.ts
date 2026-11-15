@@ -19,7 +19,8 @@ import { createArena, type Arena } from '../view/arena';
 import { REGION_LOOKS } from '../view/scenery/looks';
 import { CameraRig, CAMERA, type OrbitShot } from '../view/camera';
 import { Effects } from '../view/effects';
-import { FxWorld, SwingTrail } from '../view/fx';
+import { FxWorld, SwingTrail, WhirlRing } from '../view/fx';
+import { StunStars } from '../view/stunStars';
 import { Post } from '../view/post';
 import { HealthBar } from '../view/markers';
 import { FX } from '../view/palette';
@@ -177,6 +178,8 @@ const EDGE = { danger: 0.3, side: 44, top: 90, bottom: 150 } as const;
 const _edge = new THREE.Vector3();
 
 const SHAKE = { heroHit: 0.45, heavy: 0.32, light: 0.14 } as const;
+/** Stuns at least this long (Shield Bash) get circling stars; short staggers do not. */
+const STARS_FROM = 0.9;
 
 /** Glue between simulation, input and view. Owns the loop. */
 export class Game {
@@ -190,6 +193,9 @@ export class Game {
   private areas = new AreaLayer();
   private lockRing = new LockRing();
   private markBanner = new MarkBanner();
+  private stunStars = new StunStars();
+  /** Whirlwind's ring of light, made the first time a hero spins. */
+  private whirl: WhirlRing | null = null;
   private numbers: DamageNumbers;
   private parts: SceneParts;
   private rig: CameraRig;
@@ -218,6 +224,8 @@ export class Game {
   private tickDeathId: number | null = null;
   /** Battle events → sound effects. */
   private sound: BattleSound;
+  /** Debug: game speed (set `__game.debugTimeScale` to watch ability animations in slow motion). */
+  debugTimeScale = 1;
   /** Debug: when set, the scripted bot plays the hero (`?bot`). */
   bot: BotState | null = null;
   private stopQualityWatch: WatchStopHandle;
@@ -242,6 +250,7 @@ export class Game {
       this.fx.group,
       this.lockRing.group,
       this.markBanner.group,
+      this.stunStars.group,
     );
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
     this.post = new Post(this.parts.renderer, this.parts.scene, this.rig.camera);
@@ -292,7 +301,7 @@ export class Game {
       frameStart: (frameTime) => this.frameStart(frameTime),
       tick: () => this.tick(),
       render: (alpha, frameTime, realTime) => this.render(alpha, frameTime, realTime),
-      timeScale: () => (this.finale ? finaleTimeScale(this.finale.t) : 1),
+      timeScale: () => (this.finale ? finaleTimeScale(this.finale.t) : 1) * this.debugTimeScale,
     });
   }
 
@@ -302,6 +311,7 @@ export class Game {
     this.battle = this.newBattle();
     this.buildUnits();
     this.fx.clear();
+    this.stunStars.clear();
     this.numbers.clear();
     this.heroInput.clear();
     if (this.bot) this.bot = createBot();
@@ -334,6 +344,8 @@ export class Game {
     this.arena.dispose();
     this.lockRing.dispose();
     this.markBanner.dispose();
+    this.stunStars.dispose();
+    this.whirl?.dispose();
     this.numbers.dispose();
     this.parts.renderer.dispose();
     this.parts.renderer.forceContextLoss();
@@ -567,9 +579,18 @@ export class Game {
         // Placeholder look until 2d: melee abilities reuse the swing arc, the leap kicks up dust.
         const u = this.unit(e.unitId);
         if (!u) break;
-        if (e.action === 'schildstoss' || e.action === 'wirbel') {
-          const a = HERO_ABILITIES[e.action];
-          this.effects.swingArc(u.pos.x, u.pos.z, u.facing, a.reach, a.arc, true);
+        if (e.action === 'schildstoss') {
+          // The shield face lights up and a gold shockwave races out over the arc.
+          const a = HERO_ABILITIES.schildstoss;
+          const fx = Math.sin(u.facing);
+          const fz = -Math.cos(u.facing);
+          this.fx.glint(_base.set(u.pos.x + fx * 0.7, 1.05, u.pos.z + fz * 0.7), FX.rally, 1.4);
+          this.fx.shockArc(u.pos.x, u.pos.z, u.facing, a.reach, a.arc, FX.rally);
+          this.fx.dust(u.pos.x + fx * 0.4, u.pos.z + fz * 0.4, 10);
+          this.rig.shake(SHAKE.heavy);
+        } else if (e.action === 'wirbel') {
+          this.fx.dustRing(u.pos.x, u.pos.z, HERO_ABILITIES.wirbel.reach);
+          this.rig.shake(SHAKE.light);
         } else if (e.action === 'rueckzug') {
           this.fx.dust(u.pos.x, u.pos.z, 8);
         } else if (e.action === 'heilkreis') {
@@ -614,6 +635,18 @@ export class Game {
     const size = (heavy ? 1.3 : 1) * (attacker?.isHero || target.isHero ? 1.2 : 0.9);
     this.numbers.spawn(kind, amount, target.pos.x, y, target.pos.z, size);
     if (absorbed > 0) this.numbers.spawn('absorbed', absorbed, target.pos.x + 0.3, y + 0.35, target.pos.z, 1);
+  }
+
+  /** Whirlwind: the ring's bright head follows the blade round both turns. */
+  private updateWhirl(slot: UnitSlot, u: Unit, x: number, z: number, animTime: number): void {
+    if (!this.whirl) {
+      this.whirl = new WhirlRing(FX.rally, HERO_ABILITIES.wirbel.reach * 0.75);
+      this.fx.group.add(this.whirl.mesh);
+    }
+    const spinning = u.action === 'wirbel' && (u.state === 'windup' || u.state === 'recover');
+    let angle = 0;
+    if (slot.view.weaponEdge?.(_base, _tip)) angle = Math.atan2(-(_tip.z - z), _tip.x - x);
+    if (animTime > 0) this.whirl.update(animTime, spinning, x, 0.85, z, angle);
   }
 
   /** The blade leaves a ribbon while it moves fast in an attack (windup end and recover). */
@@ -673,11 +706,15 @@ export class Game {
       slot.view.setPose(x, z, lerpAngle(slot.prev.facing, u.facing, a));
       // A charging boss kicks up dust along its run.
       if (animTime > 0 && u.action === 'charge' && u.state === 'recover' && u.stateTime <= BOSS_ACTIONS.charge.dash) this.fx.dust(x, z, 2);
+      // Shield Bash: a dust streak along the dash.
+      if (animTime > 0 && u.action === 'schildstoss' && u.state === 'windup') this.fx.dust(x, z, 2);
+      if (u.state === 'stunned' && u.stunDuration >= STARS_FROM) this.stunStars.show(u.id, x, slot.view.barY - 0.2, z, animTime);
       slot.view.animate(
         { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded'), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2 },
         animTime,
       );
       if (slot.trail) this.updateTrail(slot, u, animTime);
+      if (u.isHero && (this.whirl || u.action === 'wirbel')) this.updateWhirl(slot, u, x, z, animTime);
       if (slot.bar) {
         slot.bar.group.visible = u.state !== 'dead';
         slot.bar.update(x, slot.view.barY, z, u.hp / u.stats.maxHp, this.rig.camera, frameTime);
@@ -686,6 +723,7 @@ export class Game {
       if (u.id === this.battle.lockTargetId) this.lockRing.update(x, z, u.state !== 'dead', animTime);
       if (u.id === this.battle.markTargetId) this.markBanner.update(x, slot.view.barY + 0.2, z, u.state !== 'dead', this.rig.camera, animTime);
     }
+    this.stunStars.endFrame();
     if (this.battle.lockTargetId === null) this.lockRing.update(0, 0, false, 0);
     if (this.battle.markTargetId === null) this.markBanner.update(0, 0, 0, false, this.rig.camera, 0);
     this.projectiles.sync(this.battle, a, animTime);

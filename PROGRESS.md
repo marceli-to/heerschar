@@ -30,7 +30,24 @@ Agreed numbers, built, **approved by Marcel's playtest ("feels fine", 2026-11-15
 - **Dodge strike** (`HERO.dodgeStrike`, `dodgeStrike` in `heroControl.ts`), every class: each enemy the hero's body passes during a dodge is hit once per dodge (0.5× physical), pushed aside off the dodge line (3 m/s), and gives +8 energy. Not on the Archer's Fall Back leap.
 - **Hero damage** `HERO_DAMAGE` 1.3 in `encounters.ts`, applied as `mods.damage` in `characterMods` (all classes, healing unaffected).
 - Tests: `prepMatters` Skirmish fixture strength 1.9 → 2.5 (at 1.9 every variant won); new dodge-strike test. Campaign strengths **not** retuned: bots will now find the campaign easier; retune with the difficulty setting.
-- **Next:** step 2: better ability animations for all four classes (mockups / options first, design approval).
+- **Next:** step 2: better ability animations (see "Ability animations").
+
+## Ability animations (decided by Marcel 2026-11-15, building)
+
+Options were asked per class; Marcel chose all four recommended directions. No new clips packs (crossbow stays; KayKit Character Animations 1.1 and Adventurers 2.0 with a bow are on disk in `/tmp/anim-compare/dl/` but unused, rig untested).
+- **Warrior "charge + tornado":** Shield Bash = visible dash forward with a dust streak, shield flashes gold, hit = gold shockwave arc + small camera kick, stunned foes show circling stars. Whirlwind = two fast full turns, closed circular blade trail, dust ring sweeping out to the 2.6 m edge.
+- **Archer "keep crossbow, add punch":** Volley = crossbow recoil, muzzle puff, three bright bolt streaks that spark as they pierce each foe. Fall Back = dust kick + pale gust blast in the front cone; slowed foes trail a dragging mark.
+- **Healer "runes + ribbon":** Healing Circle = staff raised high, then planted; golden rune ring draws itself on the ground, pulses on every heal tick, motes rise. Blessing = staff points, golden ribbon flies to the ally, bubble pops on with a bright ring.
+- **Mage "charge-up + ice spikes":** Fireball = flames gather into a growing ball at the staff tip during the windup, thrust throws it; bigger blast with shockwave ring and camera kick. Frost Ring = staff slams, ice spikes burst out in a ring, stay a moment, then shatter.
+- Order: anim-1 Warrior, anim-2 Archer, anim-3 Healer, anim-4 Mage; commit + screenshots after each.
+
+**anim-1 Warrior: built, committed, waiting for Marcel's look.** Screenshots in `~/Downloads/heerschar-assets/anim/warrior/` (`bash-sheet`, `bash-close`, `whirl-sheet`).
+- `clips.ts`: `Segment.wrap` / `easeOut`; Whirlwind = two turns of `2H_Melee_Attack_Spinning` (one turn = 0.67 s; hit after the first). `modelUnitView.ts` honours both.
+- `fx.ts`: `WhirlRing` (ring at blade height, head follows the blade via `weaponEdge`), `FxWorld.dustRing`, `shockArc`, `glint`. New `view/stunStars.ts` (Storybook stars on stuns >= 0.9 s, `STARS_FROM` in `game.ts`).
+- `game.ts`: Shield Bash release = glint + gold shock arc + dust + `SHAKE.heavy`, dust streak while dashing; Whirlwind release = dust ring + light shake; `updateWhirl`; `debugTimeScale` (slow motion via `__game`).
+- **Sim unchanged; the dash stays at 0.5 m.** A longer lunge (0.8 / 1.0 / 1.1 / 1.3 m), and even a "stop in front of a foe" rule at 0.5 m, each flipped one or two statistical gates (`bot.test` never-dodges / hero-alone, `prepMatters` hero-in-back-row). The gates are chaotic, so tuning against them is noise. If Marcel wants a longer visible dash, it needs a gate retune (maybe together with the difficulty setting).
+- Capturing: `/tmp/heer-anim/burst.mjs` + `setup-melee.js` (dev server `npx vite --port 5191`, URL `?hero=krieger&debug&peaceful&seed=3`). The setup must fake pointer lock (`Object.defineProperty(g.kbm, "locked", { get: () => true })`), or `HeroInputSampler` drops every input. Abilities aim along the camera yaw, so set `g.rig.yaw` = hero facing. Headless Chrome stalls the loop without `--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows` (in burst.mjs; `tools/shot.mjs` lacks them).
+- **Next:** Marcel's verdict on the Warrior, then anim-2 Archer.
 
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
 

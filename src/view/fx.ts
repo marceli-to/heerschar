@@ -347,6 +347,83 @@ export class SwingTrail {
   }
 }
 
+/* ------------------------------------------------------------------ whirl ring */
+
+/**
+ * Whirlwind: a closed ring of light at blade height whose bright head rides the blade and whose
+ * tail fades round the full circle behind it. Driven every frame while the spin lasts.
+ */
+export class WhirlRing {
+  readonly mesh: THREE.Mesh;
+  private level = 0;
+  private lastAngle: number | null = null;
+
+  constructor(color: string, radius: number) {
+    const geo = new THREE.RingGeometry(radius * 0.4, radius, 72, 1);
+    const pos = geo.attributes.position!;
+    const alpha = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      let t = Math.atan2(y, x);
+      if (t < 0) t += Math.PI * 2;
+      const along = 1 - t / (Math.PI * 2);
+      const outer = Math.hypot(x, y) > radius * 0.7 ? 1 : 0.15;
+      alpha[i] = along * along * along * outer;
+    }
+    geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+    geo.rotateX(-Math.PI / 2);
+    this.mesh = new THREE.Mesh(
+      geo,
+      new THREE.ShaderMaterial({
+        uniforms: { uColor: { value: hdr(color, 2.2) }, uLevel: { value: 0 } },
+        vertexShader: /* glsl */ `
+          attribute float aAlpha;
+          varying float vAlpha;
+          void main() { vAlpha = aAlpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uColor;
+          uniform float uLevel;
+          varying float vAlpha;
+          void main() { float a = vAlpha * uLevel; gl_FragColor = vec4(uColor * a, a); }`,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+    this.mesh.frustumCulled = false;
+    this.mesh.visible = false;
+  }
+
+  /**
+   * `angle` = where the blade points, measured like the ring's own angle (atan2(-dz, dx)).
+   * The tail always trails the way the blade came from.
+   */
+  update(dt: number, active: boolean, x: number, y: number, z: number, angle: number): void {
+    this.level = active ? Math.min(1, this.level + dt * 10) : Math.max(0, this.level - dt * 6);
+    (this.mesh.material as THREE.ShaderMaterial).uniforms.uLevel!.value = this.level * 0.85;
+    this.mesh.visible = this.level > 0;
+    if (!active) {
+      this.lastAngle = null;
+      return;
+    }
+    if (this.lastAngle !== null) {
+      let d = angle - this.lastAngle;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      if (Math.abs(d) > 1e-3) this.mesh.scale.z = d < 0 ? 1 : -1;
+    }
+    this.lastAngle = angle;
+    this.mesh.position.set(x, y, z);
+    this.mesh.rotation.y = this.mesh.scale.z > 0 ? angle : -angle;
+  }
+
+  dispose(): void {
+    this.mesh.geometry.dispose();
+    (this.mesh.material as THREE.Material).dispose();
+  }
+}
+
 /* ------------------------------------------------------------------ transient effects */
 
 interface Transient {
@@ -418,6 +495,84 @@ export class FxWorld {
     const at = new THREE.Vector3(x, 0.12, z);
     const n = Math.max(1, Math.round(amount / 4));
     for (let i = 0; i < n; i++) this.puff(at, 0.5 + Math.random() * 0.4 + amount * 0.02);
+  }
+
+  /** A puff ring blown outward from the feet to `radius` (Whirlwind). */
+  dustRing(x: number, z: number, radius: number, count = 14): void {
+    if (!this.looks.impact) return;
+    const at = new THREE.Vector3();
+    for (let i = 0; i < count; i++) {
+      if (Math.random() > this.particleShare) continue;
+      const a = (i / count) * Math.PI * 2 + Math.random() * 0.3;
+      const dx = Math.cos(a);
+      const dz = Math.sin(a);
+      at.set(x + dx * 0.6, 0.15, z + dz * 0.6);
+      const mat = new THREE.SpriteMaterial({ map: dustTex, color: '#cdb991', transparent: true, depthWrite: false, opacity: 0 });
+      const s = new THREE.Sprite(mat);
+      s.position.copy(at);
+      this.group.add(s);
+      const speed = ((radius - 0.6) / 0.55) * (0.85 + Math.random() * 0.3);
+      this.puffs.push({ s, life: 0.7, max: 0.7, v: new THREE.Vector3(dx * speed, 0.3, dz * speed), grow: 1.3 + Math.random() * 0.4 });
+    }
+  }
+
+  /**
+   * A glowing band racing out over the ground in front of a blow (Shield Bash): an arc of `arc`
+   * radians round `facing`, from close by to `reach`.
+   */
+  shockArc(x: number, z: number, facing: number, reach: number, arc: number, color: string): void {
+    const geo = new THREE.RingGeometry(0.78, 1, 32, 1, Math.PI / 2 - arc / 2, arc).rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: hdr(color, 2.4), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+    const mesh = new THREE.Mesh(geo, mat);
+    const low = mesh.clone();
+    low.material = mat;
+    mesh.position.set(x, 0.75, z);
+    low.position.set(x, 0.08, z);
+    mesh.rotation.y = low.rotation.y = -facing;
+    this.group.add(mesh, low);
+    const dur = 0.3;
+    let t = 0;
+    this.transients.push({
+      update: (dt) => {
+        t += dt;
+        const k = Math.min(1, t / dur);
+        const grow = 1 - (1 - k) * (1 - k) * (1 - k);
+        const r = 0.5 + (reach * 1.05 - 0.5) * grow;
+        mesh.scale.set(r, 1, r);
+        low.scale.set(r * 0.92, 1, r * 0.92);
+        mat.opacity = (1 - k) * 0.9;
+        return k < 1;
+      },
+      dispose: () => {
+        this.group.remove(mesh, low);
+        geo.dispose();
+        mat.dispose();
+      },
+    });
+  }
+
+  /** A short golden glint (Shield Bash: the shield face lights up as it lands). */
+  glint(at: THREE.Vector3, color: string, size: number): void {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: softDot, color: hdr(color, 3), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    s.position.copy(at);
+    this.group.add(s);
+    this.sparks.burst(at, 16, hdr(color, 4), 6, undefined, 0.35);
+    this.flash(at, color, 3.5, 0.16);
+    const dur = 0.22;
+    let t = 0;
+    this.transients.push({
+      update: (dt) => {
+        t += dt;
+        const k = Math.min(1, t / dur);
+        s.scale.setScalar(size * (0.6 + k * 0.8));
+        s.material.opacity = 1 - k;
+        return k < 1;
+      },
+      dispose: () => {
+        this.group.remove(s);
+        s.material.dispose();
+      },
+    });
   }
 
   /** Fire landing at `at`: flash, a glowing shell, embers, sparks, dust and a scorch mark, sized to `radius`. */

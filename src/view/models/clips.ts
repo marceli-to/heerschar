@@ -11,6 +11,10 @@ export interface Segment {
   clip: string;
   from: number;
   to: number;
+  /** Times past the clip's end wrap round (a looping clip played more than once). */
+  wrap?: boolean;
+  /** Slow down towards `to` instead of running at an even pace. */
+  easeOut?: boolean;
 }
 
 export interface ActionAnim {
@@ -30,7 +34,11 @@ const ANIMS = {
   chop: split('1H_Melee_Attack_Chop', 0, 0.6, 1.07),
   dualChop: split('Dualwield_Melee_Attack_Chop', 0, 0.55, 1.27),
   bash: split('Block_Attack', 0.05, 0.35, 1.07),
-  spin: split('2H_Melee_Attack_Spinning', 0, 0.12, 0.67),
+  // Whirlwind: the clip is one full turn (0.67 s); two turns, the blow lands after the first.
+  spin: {
+    windup: { clip: '2H_Melee_Attack_Spinning', from: 0, to: 0.67 },
+    recover: { clip: '2H_Melee_Attack_Spinning', from: 0.67, to: 1.34, wrap: true, easeOut: true },
+  },
   cheer: split('Cheer', 0, 0.45, 1.3),
   taunt: split('Taunt', 0, 0.45, 1.03),
   shoot: { windup: { clip: '2H_Ranged_Aiming', from: 0, to: 0.1 }, recover: { clip: '2H_Ranged_Shoot', from: 0.08, to: 1.07 } },

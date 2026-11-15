@@ -271,7 +271,9 @@ export class ModelUnitView implements UnitView {
         const windup = a.state === 'windup';
         const seg = windup ? anim.windup : anim.recover;
         const dur = windup ? a.windup : a.recover;
-        return { pose: segmentPose(seg, a.stateTime / Math.max(0.01, dur)), key: `${windup ? 'w' : 'r'}|${a.action ?? 'basic'}|${a.chain}`, fade: windup ? FADE_ACTION : FADE };
+        const pose = segmentPose(seg, a.stateTime / Math.max(0.01, dur));
+        if (seg.wrap) pose.time %= this.clipLength(seg.clip);
+        return { pose, key: `${windup ? 'w' : 'r'}|${a.action ?? 'basic'}|${a.chain}`, fade: windup ? FADE_ACTION : FADE };
       }
       case 'dodging': {
         const clip = a.dodgeBack ? this.base.dodgeBack : this.base.dodge;
@@ -368,5 +370,6 @@ export class ModelUnitView implements UnitView {
 const _flash = new THREE.Color();
 
 function segmentPose(seg: Segment, p: number): Pose {
-  return { clip: seg.clip, time: lerp(seg.from, seg.to, clamp(p, 0, 1)) };
+  const k = clamp(p, 0, 1);
+  return { clip: seg.clip, time: lerp(seg.from, seg.to, seg.easeOut ? 1 - (1 - k) * (1 - k) : k) };
 }
