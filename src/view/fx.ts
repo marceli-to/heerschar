@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { FX } from '../view/palette';
+import { FX, hdr } from './palette';
 
-/** Which of the four looks are on (keys 1–4). */
+/** Which of the four looks are on (spike keys 1–4; later a quality setting). */
 export interface Looks {
   glow: boolean;
   impact: boolean;
@@ -9,8 +9,6 @@ export interface Looks {
   marks: boolean;
 }
 
-/** Linear colour scaled above 1 so bloom picks it up. */
-const hdr = (hex: string, k: number): THREE.Color => new THREE.Color(hex).multiplyScalar(k);
 
 function canvasTexture(size: number, draw: (g: CanvasRenderingContext2D, s: number) => void): THREE.Texture {
   const c = document.createElement('canvas');
@@ -165,6 +163,16 @@ class SparkLayer {
     }
   }
 
+  clear(): void {
+    this.sparks = [];
+    this.update(0);
+  }
+
+  dispose(): void {
+    this.mesh.geometry.dispose();
+    (this.mesh.material as THREE.Material).dispose();
+  }
+
   update(dt: number): void {
     let n = 0;
     this.sparks = this.sparks.filter((s) => (s.life -= dt) > 0);
@@ -226,6 +234,16 @@ class MoteLayer {
       const max = life * (0.6 + Math.random() * 0.6);
       this.motes.push({ p, v, life: max, max, c: color });
     }
+  }
+
+  clear(): void {
+    this.motes = [];
+    this.update(0);
+  }
+
+  dispose(): void {
+    this.mesh.geometry.dispose();
+    (this.mesh.material as THREE.Material).dispose();
   }
 
   update(dt: number): void {
@@ -293,6 +311,11 @@ export class SwingTrail {
     this.mesh.frustumCulled = false;
   }
 
+  dispose(): void {
+    this.mesh.geometry.dispose();
+    (this.mesh.material as THREE.Material).dispose();
+  }
+
   /** Call every frame; `active` adds a new sample, old ones always age out. */
   update(dt: number, active: boolean, base: THREE.Vector3, tip: THREE.Vector3): void {
     for (const s of this.samples) s.age += dt;
@@ -343,7 +366,7 @@ export class FxWorld {
   private transients: Transient[] = [];
   private marks: { mesh: THREE.Mesh; life: number; max: number; peak: number }[] = [];
   private lights: { light: THREE.PointLight; life: number; max: number; peak: number }[] = [];
-  private dust: { s: THREE.Sprite; life: number; max: number; v: THREE.Vector3; grow: number }[] = [];
+  private puffs: { s: THREE.Sprite; life: number; max: number; v: THREE.Vector3; grow: number }[] = [];
   private markY = 0.05;
 
   constructor(readonly looks: Looks) {
@@ -364,13 +387,25 @@ export class FxWorld {
   }
 
   /** A sword hit: sparks out of the contact point, a puff of dust at the feet. */
-  hit(at: THREE.Vector3, away: THREE.Vector3): void {
+  hit(at: THREE.Vector3, away: THREE.Vector3, heavy = true): void {
     if (!this.looks.impact) return;
-    this.sparks.burst(at, 26, hdr('#ffe6a8', 5), 7, away, 0.4);
-    this.motes.emit(at, 8, hdr('#ffd38a', 2.5), 2.5, 0.25, 0.05);
-    this.flash(at, '#ffd9a0', 3, 0.12);
+    this.sparks.burst(at, heavy ? 26 : 14, hdr('#ffe6a8', 5), heavy ? 7 : 5.5, away, 0.4);
+    this.motes.emit(at, heavy ? 8 : 4, hdr('#ffd38a', 2.5), 2.5, 0.25, 0.05);
+    this.flash(at, '#ffd9a0', heavy ? 3 : 1.8, 0.12);
     const feet = at.clone().setY(0.15);
-    for (let i = 0; i < 3; i++) this.puff(feet, 0.5 + Math.random() * 0.3);
+    for (let i = 0; i < (heavy ? 3 : 1); i++) this.puff(feet, 0.5 + Math.random() * 0.3);
+  }
+
+  /** Dust kicked up at the feet (dodges, deaths, spawns); `amount` ~ the old particle count. */
+  dust(x: number, z: number, amount: number): void {
+    const at = new THREE.Vector3(x, 0.12, z);
+    const n = Math.max(1, Math.round(amount / 4));
+    for (let i = 0; i < n; i++) this.puff(at, 0.5 + Math.random() * 0.4 + amount * 0.02);
+  }
+
+  /** Fire landing at `at`: flash, a glowing shell, embers, sparks, dust and a scorch mark, sized to `radius`. */
+  fireBlast(x: number, z: number, radius: number): void {
+    this.explode(new THREE.Vector3(x, 0.5, z), radius);
   }
 
   /** A footstep / landing puff. */
@@ -382,7 +417,7 @@ export class FxWorld {
     s.scale.setScalar(size * 0.5);
     this.group.add(s);
     const v = new THREE.Vector3((Math.random() - 0.5) * 0.8, 0.35 + Math.random() * 0.3, (Math.random() - 0.5) * 0.8);
-    this.dust.push({ s, life: 0.9, max: 0.9, v, grow: size * 1.8 });
+    this.puffs.push({ s, life: 0.9, max: 0.9, v, grow: size * 1.8 });
   }
 
   /** Fireball from `from` to `to`; `onHit` fires when it lands. */
@@ -413,7 +448,7 @@ export class FxWorld {
         light.peak = 5;
         this.motes.emit(p, 5, hdr(FX.ember, 3), 0.8, 0.45, 0.15, 0.4);
         if (k >= 1) {
-          this.explode(to);
+          this.explode(to, 1);
           onHit();
           return false;
         }
@@ -426,7 +461,8 @@ export class FxWorld {
     });
   }
 
-  private explode(at: THREE.Vector3): void {
+  private explode(at: THREE.Vector3, radius: number): void {
+    const k0 = Math.max(1, radius * 0.55);
     const shell = new THREE.Mesh(
       new THREE.IcosahedronGeometry(1, 2),
       new THREE.MeshBasicMaterial({ color: hdr(FX.fire, 1.4), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),
@@ -438,7 +474,7 @@ export class FxWorld {
       update: (dt) => {
         t += dt;
         const k = t / 0.3;
-        shell.scale.setScalar(0.25 + Math.sqrt(k) * 0.85);
+        shell.scale.setScalar((0.25 + Math.sqrt(k) * 0.85) * k0);
         (shell.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - k) ** 2;
         return k < 1;
       },
@@ -448,12 +484,12 @@ export class FxWorld {
       },
     });
     this.flash(at, FX.fire, 10, 0.45);
-    this.motes.emit(at, 60, hdr(FX.ember, 3.5), 4, 0.8, 0.3, 1.2);
+    this.motes.emit(at, 60, hdr(FX.ember, 3.5), 4 * k0, 0.8, 0.3, 1.2);
     if (this.looks.impact) {
-      this.sparks.burst(at, 40, hdr(FX.fireCore, 5), 8, undefined, 0.6);
-      for (let i = 0; i < 5; i++) this.puff(at.clone().setY(0.2), 0.9 + Math.random() * 0.5);
+      this.sparks.burst(at, 40, hdr(FX.fireCore, 5), 8 * k0, undefined, 0.6);
+      for (let i = 0; i < 5; i++) this.puff(at.clone().setY(0.2), (0.9 + Math.random() * 0.5) * k0);
     }
-    this.mark(scorchTex, at.x, at.z, 2.2, 0.95, Math.random() * Math.PI * 2);
+    this.mark(scorchTex, at.x, at.z, 2.2 * k0, 0.95, Math.random() * Math.PI * 2);
   }
 
   /** Expanding ring of frost around `center`, ice shards pop up where it passes. */
@@ -668,6 +704,32 @@ export class FxWorld {
     this.mark(frostPatchTex, x, z, 1.6, 0.85, Math.random() * Math.PI * 2);
   }
 
+  /** Drops every running effect and mark (battle restart). */
+  clear(): void {
+    for (const t of this.transients) t.dispose();
+    this.transients = [];
+    for (const m of this.marks) {
+      this.group.remove(m.mesh);
+      m.mesh.geometry.dispose();
+      (m.mesh.material as THREE.Material).dispose();
+    }
+    this.marks = [];
+    for (const d of this.puffs) {
+      this.group.remove(d.s);
+      d.s.material.dispose();
+    }
+    this.puffs = [];
+    this.sparks.clear();
+    this.motes.clear();
+    for (const l of this.lights) l.life = 0;
+  }
+
+  dispose(): void {
+    this.clear();
+    this.sparks.dispose();
+    this.motes.dispose();
+  }
+
   update(dt: number): void {
     this.sparks.update(dt);
     this.motes.update(dt);
@@ -684,7 +746,7 @@ export class FxWorld {
       l.life = Math.max(0, l.life - dt);
       l.light.intensity = l.peak * (l.life / l.max);
     }
-    this.dust = this.dust.filter((d) => {
+    this.puffs = this.puffs.filter((d) => {
       d.life -= dt;
       const k = 1 - d.life / d.max;
       d.s.position.addScaledVector(d.v, dt);

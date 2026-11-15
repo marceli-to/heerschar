@@ -44,6 +44,10 @@ export class Post {
     this.composer.addPass(new OutputPass());
   }
 
+  dispose(): void {
+    this.composer.dispose();
+  }
+
   setSize(w: number, h: number): void {
     this.composer.setSize(w, h);
   }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { glowColor } from './palette';
 
 interface Particle {
   mesh: THREE.Mesh;
@@ -30,8 +31,10 @@ interface Ring {
 const MAX_PARTICLES = 700;
 
 /**
- * Hit sparks, dust and swing trails (after tin-wolf's render/effects). Purely visual:
- * uses Math.random, never the sim RNG.
+ * Ground rings, swing arcs and box particles for bursts and projectile trails (after tin-wolf's
+ * render/effects); magic colours burn above the bloom threshold (`GLOW`). Hits, dust, fire
+ * blasts, frost rings and ground marks are `FxWorld` (fx.ts). Purely visual: uses Math.random,
+ * never the sim RNG.
  */
 export class Effects {
   readonly group = new THREE.Group();
@@ -46,7 +49,7 @@ export class Effects {
   private mat(color: string): THREE.MeshBasicMaterial {
     let m = this.mats.get(color);
     if (!m) {
-      m = new THREE.MeshBasicMaterial({ color });
+      m = new THREE.MeshBasicMaterial({ color: glowColor(color) });
       this.mats.set(color, m);
     }
     return m;
@@ -134,7 +137,7 @@ export class Effects {
       this.rings.push(r);
       this.group.add(r.mesh);
     }
-    (r.mesh.material as THREE.MeshBasicMaterial).color.set(color);
+    glowColor(color, (r.mesh.material as THREE.MeshBasicMaterial).color);
     r.mesh.position.set(x, 0.06, z);
     r.mesh.visible = true;
     r.life = r.max = life;

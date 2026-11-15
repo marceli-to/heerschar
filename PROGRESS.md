@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); screenshots await Marcel's verdict. Next: 6b. |
+| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); screenshots of 6a and 6b await Marcel's verdict. Next: 6c. |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -161,6 +161,24 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - Player colours: Warrior cape crimson; Archer hood/cloak crimson, tunic deep red; Mage robe + hat deep red, cape crimson; Healer robe + hat cream, cape crimson. Companions' trim stays brown leather, the hero's is gold.
 - Healer orb: a small cream sphere in the right hand (glows once bloom comes in 6b).
 - Clips: Warrior chain = diagonal slice then overhead chop; AI melee = chop; Berserker = dual-wield chop; Shield Bash = `Block_Attack`; Whirlwind = `2H_Melee_Attack_Spinning`; Taunt / Rally (melee) = `Cheer` (skeletons `Taunt`); caster shots = `Spellcast_Shoot`; novas / heal circle / frost ring = two-handed chop with the staff; Rally / summon (casters) = `Spellcast_Raise`; skeletons die with `Death_C_Skeletons` (fall apart).
+
+## 6b as built (2026-11-15)
+
+- `src/look/post.ts` and `fx.ts` moved to `src/view/` (the spike imports them from there). `Post` (bloom 0.6 / radius 0.4 / threshold 1.3, warm grade pass, OutputPass; HalfFloat target, 4× MSAA) now renders the battle and `?lineup`; `Game.resize` sizes it.
+- **Grade:** the spike's scene settings are now the default in `createScene` (`GRADE` in `palette.ts`: fog `#e9dcc2` 32–175 m, sun `#ffe2b8`, shadow radius 7).
+- **Glow:** `hdr()` and a `GLOW` table (per FX colour) in `palette.ts`. `Effects` draws magic colours above the bloom threshold (particles and rings); projectiles (core ×4, halo ×1.5, holy streak ×2), shield bubble ×2.2, lock ring ×1.6, the code figures' glow orbs (bosses until 6c) ×3. Healer orb already glows (emissive 2.2). Area warnings and dust stay unglowed.
+- **Impacts:** `FxWorld` (`fx.ts`) in the game: hits = spark streaks + motes + a short flash light + dust puffs (light hits fewer); every `dust` (dodge, death, spawn, charge) = dust sprites. **Swing trail** (`SwingTrail`) per melee model body: `BodySpec.blade` names the main-hand blade, `ModelUnitView.weaponEdge()` gives its edge, the trail draws while in windup/recover and the tip moves > 5 m/s.
+- **Magic set pieces:** fireball landing = spike explosion scaled to the radius (`fireBlast`); Frost Ring / enemy Frost Nova = expanding ring with ice shards; Healing Circle and every shield on a player unit = column of holy light.
+- **Ground marks:** scorch after fireballs, hoarfrost ring after frost rings, frost patch under a frozen unit; fade over 11 s, cleared on restart.
+- 4 pooled point lights for flashes (fixed count, no shader recompiles).
+- Checked: typecheck, 210 tests, 60 fps (`tools/perf.mjs`, mage bot). Screenshots in `~/Downloads/heerschar-assets/fx-6b/` (mage: fire blast + scorch; healer: frost shards, holy bolt, holy light, orb in `lineup-player.png`; `warrior-trail.png`).
+
+## Made in 6b without asking (Marcel may veto)
+
+- The pale **swing arc crescent stays** next to the new blade trail (it shows the reach); could be dropped for model bodies.
+- Holy light also falls on the squad's **ward** shields (companion healers), not only Blessing.
+- Glow strengths per colour (`GLOW`), and the fireball's rally/shield gold sharing one strength (2.4) because they are the same hex.
+- Fire blast keeps the radius ring on top of the spike explosion; frost rings drop the old box-particle burst.
 
 ## Stage 6 breakdown (do in this order, commit after each)
 

@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 /** Colours of the "sunny meadow" look (approved 2026-11-14). View only. */
 export const MEADOW = {
   skyZenith: '#4f9be0',
@@ -72,6 +74,18 @@ export const ENEMY_COLORS: FigureColors = {
 };
 
 /** Effect colours (approved 2026-11-14: classic elemental). */
+/**
+ * The warm grade's scene settings (look spike, approved 2026-11-14): warmer sun, beige distance
+ * haze closer in, softer shadow edges. The colour part is the grade pass in `post.ts`.
+ */
+export const GRADE = {
+  fog: '#e9dcc2',
+  fogNear: 32,
+  fogFar: 175,
+  sun: '#ffe2b8',
+  shadowRadius: 7,
+} as const;
+
 export const FX = {
   fire: '#ff8a2a',
   fireCore: '#ffd36b',
@@ -134,3 +148,35 @@ export const MODEL_COLORS = {
   heroTrim: '#d4a338',
   healerOrb: '#fff2c4',
 } as const;
+
+/** Linear colour scaled above 1 so the bloom pass (threshold 1.3) picks it up. */
+export function hdr(hex: string, k: number): THREE.Color {
+  return new THREE.Color(hex).multiplyScalar(k);
+}
+
+/**
+ * How bright each magic colour burns when the effect layer draws it (multiplier on the linear
+ * colour). Colours not listed (dust, stone, arrows, warnings) stay below the bloom threshold.
+ */
+export const GLOW: Readonly<Record<string, number>> = {
+  [FX.fire]: 2.5,
+  // Also shieldPlayer and rally: one hex, one strength.
+  [FX.fireCore]: 2.4,
+  [FX.ember]: 2.5,
+  [FX.holy]: 2,
+  [FX.holyCore]: 2,
+  [FX.frost]: 2,
+  [FX.frostCore]: 2,
+  [FX.heal]: 2.2,
+  [FX.healCore]: 2,
+  [FX.poison]: 2,
+  [FX.poisonCore]: 2,
+  [FX.poisonRim]: 2,
+  [FX.boneGlow]: 2.2,
+  [FX.shieldEnemy]: 1.8,
+};
+
+/** A palette colour at its glow strength (see `GLOW`). */
+export function glowColor(hex: string, out = new THREE.Color()): THREE.Color {
+  return out.set(hex).multiplyScalar(GLOW[hex] ?? 1);
+}

@@ -3,6 +3,7 @@ import type { ActionId, ClassId, Team, UnitState } from '../../sim/types';
 import type { RegionId } from '../../data/campaign';
 import { createArena } from '../arena';
 import { createScene } from '../scene';
+import { Post } from '../post';
 import { createUnitView } from '../createView';
 import type { AnimInput, UnitView } from '../unitView';
 import { loadModels } from './assets';
@@ -64,6 +65,7 @@ export async function startLineup(host: HTMLElement): Promise<void> {
   });
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
+  const post = new Post(parts.renderer, parts.scene, camera);
   const cam = q.get('cam') ?? 'front';
   const depth = chosen.length > 1 ? -4 : 0;
   if (cam === 'side') camera.position.set(9, 2.2, depth + 2);
@@ -72,6 +74,7 @@ export async function startLineup(host: HTMLElement): Promise<void> {
   camera.lookAt(0, cam === 'game' ? 0 : 0.9, depth);
   const resize = (): void => {
     parts.renderer.setSize(window.innerWidth, window.innerHeight, false);
+    post.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
   };
@@ -86,7 +89,7 @@ export async function startLineup(host: HTMLElement): Promise<void> {
     last = now;
     t += dt;
     for (const v of views) v.animate(input(t), q.has('still') ? 0 : dt);
-    parts.renderer.render(parts.scene, camera);
+    post.render(0);
   };
   requestAnimationFrame(loop);
   (window as unknown as { __lineupReady: boolean }).__lineupReady = true;

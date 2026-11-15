@@ -41,6 +41,8 @@ export interface UnitView {
   flashHit(heavy: boolean): void;
   /** Height above the ground for the health bar and markers. */
   readonly barY: number;
+  /** World points along the main blade (inner edge, tip) for the swing trail; false if it has none. */
+  weaponEdge?(base: THREE.Vector3, tip: THREE.Vector3): boolean;
   dispose(): void;
 }
 

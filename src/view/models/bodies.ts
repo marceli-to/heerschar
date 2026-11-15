@@ -17,6 +17,8 @@ export interface BodySpec {
   style: BodyStyle;
   /** Skeletons fall apart when they die and taunt instead of cheering. */
   skeleton: boolean;
+  /** The main-hand blade whose swing leaves a trail (melee bodies only). */
+  blade?: string;
 }
 
 /** Where a battle takes place, as far as the look of its units goes. */
@@ -48,6 +50,7 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         model: 'Knight',
         hide: except(KNIGHT_PROPS, ['1H_Sword', team === 'player' ? 'Badge_Shield' : 'Round_Shield']),
         attach: [],
+        blade: '1H_Sword',
         swaps: [{ cell: [0, 1], color: c.main }, { cell: [6, 0], color: trim }],
         style: 'sword',
         skeleton: false,
@@ -57,6 +60,7 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         model: 'Knight',
         hide: except(KNIGHT_PROPS, ['1H_Sword', 'Rectangle_Shield']),
         attach: [],
+        blade: '1H_Sword',
         swaps: [{ cell: [0, 1], color: c.deep }, { cell: [6, 0], color: c.trim }],
         style: 'sword',
         skeleton: false,
@@ -66,6 +70,7 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         model: 'Barbarian',
         hide: except(BARBARIAN_PROPS, ['1H_Axe', '1H_Axe_Offhand']),
         attach: [],
+        blade: '1H_Axe',
         swaps: [{ cell: [0, 1], color: c.main }, { cell: [1, 1], color: c.main }, { cell: [6, 0], color: c.trim }],
         style: 'dual',
         skeleton: false,
@@ -110,11 +115,11 @@ function skeletonBody(classId: ClassId): BodySpec | null {
   const base = { hide: [], skeleton: true } as const;
   switch (classId) {
     case 'schildtraeger':
-      return { ...base, model: 'Skeleton_Warrior', attach: [{ weapon: 'Skeleton_Blade', bone: 'handslot.r' }, { weapon: 'Skeleton_Shield_Large_A', bone: 'handslot.l' }], swaps: cloak([2, 2]), style: 'sword' };
+      return { ...base, model: 'Skeleton_Warrior', attach: [{ weapon: 'Skeleton_Blade', bone: 'handslot.r' }, { weapon: 'Skeleton_Shield_Large_A', bone: 'handslot.l' }], swaps: cloak([2, 2]), style: 'sword', blade: 'Skeleton_Blade' };
     case 'krieger':
-      return { ...base, model: 'Skeleton_Warrior', attach: [{ weapon: 'Skeleton_Blade', bone: 'handslot.r' }, { weapon: 'Skeleton_Shield_Small_A', bone: 'handslot.l' }], swaps: cloak([2, 2]), style: 'sword' };
+      return { ...base, model: 'Skeleton_Warrior', attach: [{ weapon: 'Skeleton_Blade', bone: 'handslot.r' }, { weapon: 'Skeleton_Shield_Small_A', bone: 'handslot.l' }], swaps: cloak([2, 2]), style: 'sword', blade: 'Skeleton_Blade' };
     case 'berserker':
-      return { ...base, model: 'Skeleton_Minion', attach: [{ weapon: 'Skeleton_Axe', bone: 'handslot.r' }, { weapon: 'Skeleton_Axe', bone: 'handslot.l' }], swaps: cloak([5, 0]), style: 'dual' };
+      return { ...base, model: 'Skeleton_Minion', attach: [{ weapon: 'Skeleton_Axe', bone: 'handslot.r' }, { weapon: 'Skeleton_Axe', bone: 'handslot.l' }], swaps: cloak([5, 0]), style: 'dual', blade: 'Skeleton_Axe' };
     case 'bogenschuetze':
       return { ...base, model: 'Skeleton_Rogue', attach: [{ weapon: 'Skeleton_Crossbow', bone: 'handslot.r' }], swaps: cloak([2, 2]), style: 'crossbow' };
     case 'magier':

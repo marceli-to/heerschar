@@ -18,6 +18,8 @@ import { createScene, type SceneParts } from '../view/scene';
 import { createArena } from '../view/arena';
 import { CameraRig } from '../view/camera';
 import { Effects } from '../view/effects';
+import { FxWorld, SwingTrail } from '../view/fx';
+import { Post } from '../view/post';
 import { HealthBar } from '../view/markers';
 import { FX } from '../view/palette';
 import type { UnitView } from '../view/unitView';
@@ -152,7 +154,16 @@ interface UnitSlot {
   prev: Pose;
   /** Ground speed over the last tick, smoothed, for the walk cycle. */
   speed: number;
+  /** Melee model bodies: the ribbon behind the blade, and where its tip was last frame. */
+  trail: SwingTrail | null;
+  tipPrev: THREE.Vector3;
 }
+
+/** Blade tip speed (m/s) above which a swinging weapon leaves a trail. */
+const TRAIL_SPEED = 5;
+const TRAIL_COLOR = new THREE.Color('#fff4dc').multiplyScalar(1.6);
+const _base = new THREE.Vector3();
+const _tip = new THREE.Vector3();
 
 /** Edge markers: health fraction that counts as "in danger"; insets from the screen edges in px (clear of the HUD). */
 const EDGE = { danger: 0.3, side: 44, top: 90, bottom: 150 } as const;
@@ -178,6 +189,10 @@ export class Game {
   private kbm: KeyboardMouse;
   private heroInput: HeroInputSampler;
   private effects = new Effects();
+  /** Look-spike effects: sparks, dust, fire blasts, frost rings, holy light, ground marks, flash lights. */
+  private fx = new FxWorld({ glow: true, impact: true, grade: true, marks: true });
+  /** Bloom and warm grade after the scene render. */
+  private post: Post;
   private units = new Map<number, UnitSlot>();
   private ledger: Ledger = new Map();
   private unitLayer = new THREE.Group();
@@ -203,10 +218,12 @@ export class Game {
       this.unitLayer,
       this.projectiles.group,
       this.effects.group,
+      this.fx.group,
       this.lockRing.group,
       this.markBanner.group,
     );
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
+    this.post = new Post(this.parts.renderer, this.parts.scene, this.rig.camera);
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
     this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, lock: null, mark: null });
@@ -235,6 +252,7 @@ export class Game {
     this.seed = (this.seed * 1103515245 + 12345) >>> 0;
     this.battle = this.newBattle();
     this.buildUnits();
+    this.fx.clear();
     this.numbers.clear();
     this.heroInput.clear();
     if (this.bot) this.bot = createBot();
@@ -258,6 +276,8 @@ export class Game {
     for (const slot of this.units.values()) this.disposeSlot(slot);
     this.projectiles.dispose();
     this.areas.dispose();
+    this.fx.dispose();
+    this.post.dispose();
     this.lockRing.dispose();
     this.markBanner.dispose();
     this.numbers.dispose();
@@ -288,7 +308,9 @@ export class Game {
     const bar = u.isHero || isBoss(u) ? null : new HealthBar(u.team === 'player' ? '#d9a33a' : '#b8382a');
     this.unitLayer.add(view.root);
     if (bar) this.unitLayer.add(bar.group);
-    this.units.set(u.id, { view, bar, prev: { x: u.pos.x, z: u.pos.z, facing: u.facing }, speed: 0 });
+    const trail = view.weaponEdge?.(_base, _tip) ? new SwingTrail(TRAIL_COLOR) : null;
+    if (trail) this.fx.group.add(trail.mesh);
+    this.units.set(u.id, { view, bar, prev: { x: u.pos.x, z: u.pos.z, facing: u.facing }, speed: 0, trail, tipPrev: _tip.clone() });
   }
 
   /** Fixed lists for the HUD; `updateHud` only changes their values. */
@@ -309,6 +331,10 @@ export class Game {
   private disposeSlot(slot: UnitSlot): void {
     this.unitLayer.remove(slot.view.root);
     slot.view.dispose();
+    if (slot.trail) {
+      this.fx.group.remove(slot.trail.mesh);
+      slot.trail.dispose();
+    }
     if (slot.bar) {
       this.unitLayer.remove(slot.bar.group);
       slot.bar.dispose();
@@ -383,7 +409,8 @@ export class Game {
           const dx = target.pos.x - attacker.pos.x;
           const dz = target.pos.z - attacker.pos.z;
           const len = Math.hypot(dx, dz) || 1;
-          this.effects.hit(e.x, e.z, dx / len, dz / len, e.heavy);
+          _tip.set(dx / len, 0.35, dz / len);
+          this.fx.hit(_base.set(e.x - (dx / len) * 0.3, 1.1, e.z - (dz / len) * 0.3), _tip, e.heavy);
           // Only blows the hero lands or takes shake the camera; the squad's own fight stays calm.
           if (target.isHero) this.rig.shake(SHAKE.heroHit);
           else if (attacker.isHero) this.rig.shake(e.heavy ? SHAKE.heavy : SHAKE.light);
@@ -406,7 +433,7 @@ export class Game {
         const u = this.unit(e.unitId);
         if (!u) break;
         this.addUnit(u);
-        this.effects.dust(u.pos.x, u.pos.z, 10);
+        this.fx.dust(u.pos.x, u.pos.z, 10);
         break;
       }
       case 'raise': {
@@ -414,14 +441,19 @@ export class Game {
         if (!u) break;
         this.effects.burst(u.pos.x, 0.4, u.pos.z, [FX.boneGlow, '#e8f6ff'], 18, 2.5, 0.08, 0.7, -2);
         this.effects.ring(u.pos.x, u.pos.z, 0.2, 1.4, FX.boneGlow, 0.6);
-        this.effects.dust(u.pos.x, u.pos.z, 8);
+        this.fx.dust(u.pos.x, u.pos.z, 8);
         break;
       }
       case 'status': {
         const u = this.unit(e.unitId);
         if (!u || !e.on) break;
         if (e.kind === 'rallied') this.effects.ring(u.pos.x, u.pos.z, 0.3, 1.1, FX.rally, 0.6);
-        if (e.kind === 'frozen') this.effects.burst(u.pos.x, 1, u.pos.z, [FX.frost, FX.frostCore], 8, 2, 0.07, 0.5);
+        if (e.kind === 'frozen') {
+          this.effects.burst(u.pos.x, 1, u.pos.z, [FX.frost, FX.frostCore], 8, 2, 0.07, 0.5);
+          this.fx.frostPatch(u.pos.x, u.pos.z);
+        }
+        // Blessing (and the squad's wards): a column of light on the shielded ally.
+        if (e.kind === 'shielded' && u.team === 'player') this.fx.holyLight(new THREE.Vector3(u.pos.x, 0, u.pos.z));
         if (e.kind === 'shielded') this.effects.burst(u.pos.x, 1.1, u.pos.z, [u.team === 'player' ? FX.shieldPlayer : FX.shieldEnemy], 8, 1.5, 0.05, 0.4, 0);
         break;
       }
@@ -444,12 +476,12 @@ export class Game {
       }
       case 'dodge': {
         const u = this.unit(e.unitId);
-        if (u) this.effects.dust(u.pos.x, u.pos.z, 6);
+        if (u) this.fx.dust(u.pos.x, u.pos.z, 6);
         break;
       }
       case 'death': {
         const u = this.unit(e.unitId);
-        if (u) this.effects.dust(u.pos.x, u.pos.z, 14);
+        if (u) this.fx.dust(u.pos.x, u.pos.z, 14);
         break;
       }
       case 'release': {
@@ -460,7 +492,9 @@ export class Game {
           const a = HERO_ABILITIES[e.action];
           this.effects.swingArc(u.pos.x, u.pos.z, u.facing, a.reach, a.arc, true);
         } else if (e.action === 'rueckzug') {
-          this.effects.dust(u.pos.x, u.pos.z, 8);
+          this.fx.dust(u.pos.x, u.pos.z, 8);
+        } else if (e.action === 'heilkreis') {
+          this.fx.holyLight(new THREE.Vector3(u.pos.x, 0, u.pos.z));
         } else if (e.action === 'sammeln') {
           this.effects.ring(u.pos.x, u.pos.z, 0.5, 9, FX.rally, 0.8, 0.9);
         }
@@ -497,17 +531,26 @@ export class Game {
     if (absorbed > 0) this.numbers.spawn('absorbed', absorbed, target.pos.x + 0.3, y + 0.35, target.pos.z, 1);
   }
 
+  /** The blade leaves a ribbon while it moves fast in an attack (windup end and recover). */
+  private updateTrail(slot: UnitSlot, u: Unit, animTime: number): void {
+    if (!slot.trail || !slot.view.weaponEdge?.(_base, _tip)) return;
+    const speed = animTime > 0 ? _tip.distanceTo(slot.tipPrev) / animTime : 0;
+    slot.tipPrev.copy(_tip);
+    const attacking = u.state === 'windup' || u.state === 'recover';
+    if (animTime > 0) slot.trail.update(animTime, attacking && speed > TRAIL_SPEED, _base, _tip);
+  }
+
   private areaBurst(kind: AreaKind, x: number, z: number, radius: number, angle: number): void {
     switch (kind) {
       case 'sweep':
         this.effects.swingArc(x, z, angle, radius, BOSS_ACTIONS.sweep.arc, true);
-        this.effects.dust(x + Math.sin(angle) * radius * 0.6, z - Math.cos(angle) * radius * 0.6, 10);
+        this.fx.dust(x + Math.sin(angle) * radius * 0.6, z - Math.cos(angle) * radius * 0.6, 10);
         this.rig.shake(0.15);
         break;
       case 'slam':
         this.effects.burst(x, 0.2, z, ['#8a8178', '#a39a90', '#6f6a5f'], 18, radius * 1.6, 0.14, 0.6);
         this.effects.ring(x, z, radius * 0.3, radius, FX.warningRim, 0.4);
-        this.effects.dust(x, z, 8);
+        this.fx.dust(x, z, 8);
         this.rig.shake(0.2);
         break;
       case 'poison':
@@ -517,15 +560,13 @@ export class Game {
       case 'charge':
         break;
       case 'fireball':
-        this.effects.burst(x, 0.4, z, [FX.fireCore, FX.fire, FX.ember, FX.fire], 34, 5, 0.13, 0.55);
-        this.effects.burst(x, 0.6, z, ['#8a8178', '#a39a90'], 6, 1.2, 0.16, 0.6, -1);
+        this.fx.fireBlast(x, z, radius);
         this.effects.ring(x, z, radius * 0.3, radius, FX.fire, 0.4);
         this.rig.shake(0.18);
         break;
       case 'frostNova':
       case 'frostring':
-        this.effects.burst(x, 0.3, z, [FX.frost, FX.frostCore, '#ffffff'], 30, radius * 1.4, 0.09, 0.5, 4);
-        this.effects.ring(x, z, radius * 0.2, radius, FX.frost, 0.45);
+        this.fx.frostRing(new THREE.Vector3(x, 0, z), radius);
         break;
       case 'heilkreis':
         this.effects.rise(x, z, radius, [FX.heal, FX.healCore], 10);
@@ -545,11 +586,12 @@ export class Game {
       const z = lerp(slot.prev.z, u.pos.z, a);
       slot.view.setPose(x, z, lerpAngle(slot.prev.facing, u.facing, a));
       // A charging boss kicks up dust along its run.
-      if (animTime > 0 && u.action === 'charge' && u.state === 'recover' && u.stateTime <= BOSS_ACTIONS.charge.dash) this.effects.dust(x, z, 2);
+      if (animTime > 0 && u.action === 'charge' && u.state === 'recover' && u.stateTime <= BOSS_ACTIONS.charge.dash) this.fx.dust(x, z, 2);
       slot.view.animate(
         { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded'), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2 },
         animTime,
       );
+      if (slot.trail) this.updateTrail(slot, u, animTime);
       if (slot.bar) {
         slot.bar.group.visible = u.state !== 'dead';
         slot.bar.update(x, slot.view.barY, z, u.hp / u.stats.maxHp, this.rig.camera, frameTime);
@@ -567,7 +609,8 @@ export class Game {
     if (hero && lock && this.hud.phase === 'playing') this.rig.steerYaw(angleTo(hero.pos, lock.pos), frameTime);
     this.rig.update(heroPos, frameTime);
     this.effects.update(animTime);
-    this.parts.renderer.render(this.parts.scene, this.rig.camera);
+    this.fx.update(animTime);
+    this.post.render(frameTime);
     this.numbers.update(this.rig.camera, this.canvas.clientWidth, this.canvas.clientHeight, animTime);
     this.updateHud();
   }
@@ -677,6 +720,7 @@ export class Game {
     const h = this.canvas.clientHeight;
     if (w === 0 || h === 0) return;
     this.parts.renderer.setSize(w, h, false);
+    this.post.setSize(w, h);
     this.rig.setAspect(w / h);
   }
 }

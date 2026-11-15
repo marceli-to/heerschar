@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { ClassId } from '../sim/types';
-import { BOSS_COLORS, FX, type FigureColors } from './palette';
+import { BOSS_COLORS, FX, hdr, type FigureColors } from './palette';
 
 /** How a figure moves its arms: sword-style swings, bow draws, or staff/orb casts. */
 export type PoseStyle = 'melee' | 'archer' | 'caster';
@@ -89,10 +89,10 @@ class Builder {
 /** An unlit, bright mesh for glowing bits (orbs, crystals), with an additive halo. */
 function glow(color: string, core: string, r: number): THREE.Group {
   const g = new THREE.Group();
-  const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), new THREE.MeshBasicMaterial({ color: core }));
+  const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), new THREE.MeshBasicMaterial({ color: hdr(core, 3) }));
   const halo = new THREE.Mesh(
     new THREE.IcosahedronGeometry(r * 1.9, 1),
-    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: hdr(color, 1.5), transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }),
   );
   g.add(inner, halo);
   return g;

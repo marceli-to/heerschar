@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MEADOW } from './palette';
+import { GRADE, MEADOW } from './palette';
 
 export interface SceneParts {
   renderer: THREE.WebGLRenderer;
@@ -7,7 +7,7 @@ export interface SceneParts {
   sun: THREE.DirectionalLight;
 }
 
-/** Renderer, sky dome, fog and lights. Shadows only cover the arena so the map stays sharp. */
+/** Renderer, sky dome, fog and lights (with the warm grade's haze and sun). Shadows only cover the arena so the map stays sharp. */
 export function createScene(canvas: HTMLCanvasElement): SceneParts {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -18,14 +18,14 @@ export function createScene(canvas: HTMLCanvasElement): SceneParts {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(MEADOW.fog, 70, 190);
+  scene.fog = new THREE.Fog(GRADE.fog, GRADE.fogNear, GRADE.fogFar);
   scene.add(createSky());
 
   const hemi = new THREE.HemisphereLight(MEADOW.hemiSky, MEADOW.hemiGround, 1.1);
   scene.add(hemi);
 
   // Afternoon sun from the south-west, high enough that shadows stay short and readable.
-  const sun = new THREE.DirectionalLight(MEADOW.sun, 2.4);
+  const sun = new THREE.DirectionalLight(GRADE.sun, 2.4);
   sun.position.set(-28, 42, 22);
   sun.target.position.set(0, 0, 0);
   sun.castShadow = true;
@@ -39,7 +39,7 @@ export function createScene(canvas: HTMLCanvasElement): SceneParts {
   s.far = 110;
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.03;
-  sun.shadow.radius = 3;
+  sun.shadow.radius = GRADE.shadowRadius;
   scene.add(sun, sun.target);
 
   return { renderer, scene, sun };

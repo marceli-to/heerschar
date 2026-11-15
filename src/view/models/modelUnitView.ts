@@ -53,6 +53,10 @@ export class ModelUnitView implements UnitView {
   private readonly baseEmissive: THREE.Color[] = [];
   private readonly bubble: ShieldBubble;
   private readonly orb: THREE.Mesh | null = null;
+  /** The swinging blade and its edge (base, tip) in the blade's own space, for the swing trail. */
+  private readonly blade: THREE.Object3D | null = null;
+  private readonly edgeBase = new THREE.Vector3();
+  private readonly edgeTip = new THREE.Vector3();
 
   private cur: Pose = { clip: BASE_CLIPS.idle, time: 0 };
   private prev: Pose | null = null;
@@ -74,8 +78,12 @@ export class ModelUnitView implements UnitView {
     this.model.rotation.y = Math.PI;
     for (const a of body.attach) {
       const bone = this.model.getObjectByName(nodeName(a.bone));
-      bone?.add(weaponTemplate(a.weapon).clone());
+      const weapon = weaponTemplate(a.weapon).clone();
+      bone?.add(weapon);
+      if (a.weapon === body.blade && a.bone === 'handslot.r') this.blade = weapon;
     }
+    if (body.blade && !this.blade) this.blade = this.model.getObjectByName(nodeName(body.blade)) ?? null;
+    if (this.blade) this.measureBlade(this.blade);
     if (body.style === 'orb') {
       this.orb = new THREE.Mesh(
         new THREE.IcosahedronGeometry(0.16, 2),
@@ -93,6 +101,36 @@ export class ModelUnitView implements UnitView {
     this.bubble = new ShieldBubble(team, { x: 0.8, y: 1.05, z: 0.8 }, 0.95);
     this.root.add(this.bubble.mesh);
     this.applyPose(1, 0);
+  }
+
+  /**
+   * The edge runs along the blade's longest axis: the tip at its far end, the trail's inner edge
+   * a third of the way back towards the grip (the grip sits near the hand slot's origin).
+   */
+  private measureBlade(blade: THREE.Object3D): void {
+    blade.updateMatrixWorld(true);
+    const inv = blade.matrixWorld.clone().invert();
+    const box = new THREE.Box3();
+    blade.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      m.geometry.computeBoundingBox();
+      box.union(m.geometry.boundingBox!.clone().applyMatrix4(inv.clone().multiply(m.matrixWorld)));
+    });
+    if (box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3());
+    const axis = size.x > size.y ? (size.x > size.z ? 'x' : 'z') : size.y > size.z ? 'y' : 'z';
+    const far = Math.abs(box.max[axis]) > Math.abs(box.min[axis]) ? box.max[axis] : box.min[axis];
+    this.edgeTip.set(0, 0, 0)[axis] = far;
+    this.edgeBase.set(0, 0, 0)[axis] = far * 0.65;
+  }
+
+  weaponEdge(base: THREE.Vector3, tip: THREE.Vector3): boolean {
+    if (!this.blade) return false;
+    this.root.updateMatrixWorld(true);
+    this.blade.localToWorld(base.copy(this.edgeBase));
+    this.blade.localToWorld(tip.copy(this.edgeTip));
+    return true;
   }
 
   /** Hides unused props, turns on shadows, gives the unit its own (recoloured) materials. */

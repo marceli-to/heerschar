@@ -4,8 +4,8 @@ import { createScene } from '../view/scene';
 import { createArena } from '../view/arena';
 import { MEADOW } from '../view/palette';
 import { Actor, Dummy, type FigureSpec } from './actors';
-import { FxWorld, SwingTrail, type Looks } from './fx';
-import { Post } from './post';
+import { FxWorld, SwingTrail, type Looks } from '../view/fx';
+import { Post } from '../view/post';
 
 /**
  * Look spike (?look): a KayKit Adventurers pair and a KayKit Skeletons pair on the meadow, each hitting a

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { FX } from './palette';
+import { FX, hdr } from './palette';
 
 /** Lock-on: a thin gold ring on the ground with four inward ticks, slowly turning. */
 export class LockRing {
   readonly group = new THREE.Group();
   private readonly spinner = new THREE.Group();
-  private readonly mat = new THREE.MeshBasicMaterial({ color: FX.lock, transparent: true, opacity: 0.9, depthWrite: false, fog: false });
+  private readonly mat = new THREE.MeshBasicMaterial({ color: hdr(FX.lock, 1.6), transparent: true, opacity: 0.9, depthWrite: false, fog: false });
   private readonly geos: THREE.BufferGeometry[] = [];
   private time = 0;
 

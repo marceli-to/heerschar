@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { FX } from './palette';
+import { FX, hdr } from './palette';
 import type { Team } from '../sim/types';
 
 /** Shield bubble: bright at the rim, nearly clear in the middle, so the figure stays readable. */
 function shieldMaterial(color: string): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
-    uniforms: { color: { value: new THREE.Color(color) }, opacity: { value: 0 } },
+    uniforms: { color: { value: hdr(color, 2.2) }, opacity: { value: 0 } },
     vertexShader: `
       varying vec3 vNormal;
       varying vec3 vView;

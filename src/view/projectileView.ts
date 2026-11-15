@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { lerp } from '../sim/math';
 import type { Battle, Projectile } from '../sim/types';
 import type { Effects } from './effects';
-import { FX } from './palette';
+import { FX, hdr } from './palette';
 
 const SHOT_Y = 1.35;
 const ARC = { fromY: 1.9, toY: 0.25, apex: 2.4 } as const;
@@ -33,7 +33,7 @@ export class ProjectileLayer {
     head: new THREE.MeshLambertMaterial({ color: '#c4c8cf', flatShading: true }),
     fletch: new THREE.MeshBasicMaterial({ color: '#efe8d8' }),
     streak: new THREE.MeshBasicMaterial({ color: FX.arrowStreak, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
-    streakStrong: new THREE.MeshBasicMaterial({ color: FX.holy, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }),
+    streakStrong: new THREE.MeshBasicMaterial({ color: hdr(FX.holy, 2), transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }),
   };
 
   constructor(private readonly effects: Effects) {}
@@ -138,10 +138,10 @@ export class ProjectileLayer {
     }
     const size = look === 'fireball' ? 0.24 : look === 'hex' ? 0.16 : 0.13;
     const [halo, core] = look === 'holy' ? [FX.holy, FX.holyCore] : look === 'hex' ? [FX.poison, FX.poisonCore] : [FX.fire, FX.fireCore];
-    const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 1), new THREE.MeshBasicMaterial({ color: core }));
+    const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 1), new THREE.MeshBasicMaterial({ color: hdr(core, 4) }));
     const outer = new THREE.Mesh(
       new THREE.IcosahedronGeometry(size * 1.8, 1),
-      new THREE.MeshBasicMaterial({ color: halo, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color: hdr(halo, 1.5), transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }),
     );
     g.add(inner, outer);
     return g;
