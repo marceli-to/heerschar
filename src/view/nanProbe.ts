@@ -88,6 +88,12 @@ export class NanProbe extends Pass {
     if (this.searching || this.reports.length >= MAX_REPORTS) return;
     const hits = this.scan(renderer, read.texture);
     if (!hits) return;
+    // Re-render with the scene target's MSAA: edge pixels are shaded from varyings extrapolated past
+    // the triangle, which is where values like a dot product of normals overshoot.
+    if (this.probe.samples !== read.samples) {
+      this.probe.samples = read.samples;
+      this.probe.dispose();
+    }
     this.searching = true;
     try {
       this.report(renderer, hits, read.width, read.height);
