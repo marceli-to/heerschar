@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { NanProbe } from './nanProbe';
 
 /**
  * Warm grade in linear HDR, before tone mapping: warmer gain, a touch of lift in the shadows,
@@ -32,11 +33,16 @@ export class Post {
   readonly bloom: UnrealBloomPass;
   readonly grade: ShaderPass;
 
-  constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
+  /** Debug only: watches the scene buffer for NaN / Infinity pixels (see `nanProbe.ts`). */
+  readonly nanProbe: NanProbe | null;
+
+  constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, opts: { nanProbe?: boolean } = {}) {
     const size = renderer.getSize(new THREE.Vector2());
     const target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
     this.composer = new EffectComposer(renderer, target);
     this.composer.addPass(new RenderPass(scene, camera));
+    this.nanProbe = opts.nanProbe ? new NanProbe(scene, camera) : null;
+    if (this.nanProbe) this.composer.addPass(this.nanProbe);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.6, 0.4, 1.3);
     this.composer.addPass(this.bloom);
     this.grade = new ShaderPass(GradeShader);

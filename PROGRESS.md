@@ -23,6 +23,13 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look (lock ring and mark banner now Storybook too, see "6i-6"; credits sheet now tabs and map seal notes above the ribbons, see "6i-7", approved). Then the Stage 6 gate (his full playtest). |
 | 7 | not started |
 
+## Open bug: black rectangle at battle start (reported 2026-11-15)
+
+Marcel saw a black rectangle in the top left (about 1/4 of the screen) roughly a second after a battle started; it went away again. **Not reproduced**: a few games with `?debug` did not show it. Marcel is watching for it (quality setting, browser, fullscreen, whether it lines up with pointer lock).
+- Main theory: a NaN pixel in the HalfFloat scene buffer that `UnrealBloomPass` smears into a black box (separable blur over 5 mips; the smallest mip's reach is about ±350 px). On Metal, values over the half-float max clamp instead of becoming Infinity, so overflow is unlikely; a NaN is the suspect. Other candidate: the browser's own pointer-lock notice.
+- **Tool:** `src/view/nanProbe.ts`, only with `?debug` (pass after the RenderPass in `post.ts`). Each frame it checks the scene buffer in 8×8 blocks for NaN / Inf; on a hit it bisects the visible renderables via camera layer 31 and logs `[nan] …` with the culprit object(s) (name, path, material, scale, position), also in `window.__nan` (max 6 reports per battle). Checked on the M1 GPU with a planted NaN texture: it names the planted mesh. Note: a NaN produced by shader arithmetic (`0/0`, NaN constants) is unreliable on Metal fast-math and SwiftShader, so plant NaNs through texture data. Headless Chrome uses the real GPU with `--use-angle=metal --enable-gpu --ignore-gpu-blocklist`.
+- **Next:** when it shows up again, read the `[nan]` warning (or confirm no warning, then the theory is wrong) and fix the source.
+
 ## Combat punch (2026-11-15, Marcel: "abilities should hit harder, dodging through enemies should hurt, heroes deal more damage")
 
 Agreed numbers, built, **approved by Marcel's playtest ("feels fine", 2026-11-15)**:

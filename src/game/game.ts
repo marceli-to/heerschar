@@ -268,7 +268,7 @@ export class Game {
       this.runeRings.group,
     );
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
-    this.post = new Post(this.parts.renderer, this.parts.scene, this.rig.camera);
+    this.post = new Post(this.parts.renderer, this.parts.scene, this.rig.camera, { nanProbe: opts.debug });
     this.post.grade.uniforms['uAmount']!.value = REGION_LOOKS[this.spec.region].grade;
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
