@@ -667,6 +667,7 @@ export class Game {
     this.hud.outcome = this.battle.outcome;
     this.hud.ledger = this.ledgerRows();
     this.hud.phase = 'ended';
+    this.battle.settled = true;
     if (this.kbm.locked) document.exitPointerLock();
   }
 

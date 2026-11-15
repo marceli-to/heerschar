@@ -61,6 +61,7 @@ export function createBattle(setup: BattleSetup): Battle {
     countdown: COUNTDOWN,
     outcome: 'running',
     passiveEnemies: setup.passiveEnemies ?? false,
+    settled: false,
     reserves: { ...setup.reserves },
   };
 }
@@ -73,6 +74,17 @@ export function heroOf(battle: Battle): Unit | undefined {
  * Advances the battle by one fixed tick. Depends only on the battle state,
  * the hero input and the seeded RNG held in the state.
  */
+/** A living unit after the battle has settled: drops whatever it was doing and stands idle. */
+function standDown(unit: Unit, dt: number): void {
+  if (unit.state !== 'idle') {
+    unit.state = 'idle';
+    unit.stateTime = 0;
+    unit.action = null;
+    unit.chain = 0;
+  }
+  unit.stateTime += dt;
+}
+
 export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[] {
   const events: BattleEvent[] = [];
   // After the outcome the battle runs on as an aftermath (falls finish, shots land) for the
@@ -105,7 +117,8 @@ export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[
         applyKnockback(unit, dt);
         continue;
       }
-      if (unit.isHero) updateHero(battle, unit, input, dt, events);
+      if (battle.settled) standDown(unit, dt);
+      else if (unit.isHero) updateHero(battle, unit, input, dt, events);
       else if (!(battle.passiveEnemies && unit.team === 'enemy')) updateAi(battle, unit, dt, events);
       else unit.stateTime += dt;
     } else {

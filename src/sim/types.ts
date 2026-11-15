@@ -279,6 +279,11 @@ export interface Battle {
   outcome: Outcome;
   /** Debug (`?peaceful`): enemies stand still and never act. */
   passiveEnemies: boolean;
+  /**
+   * Set by the game once the end screen is up: the living stop acting and stand idle, while the
+   * dead finish falling and shots in flight land.
+   */
+  settled: boolean;
   /** Stats of the units a boss may summon, by class (set up from the encounter). */
   reserves: Partial<Record<ClassId, Stats>>;
 }

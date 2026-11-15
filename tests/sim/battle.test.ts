@@ -246,3 +246,16 @@ describe('determinism', () => {
     expect(JSON.parse(first).tick).toBeGreaterThan(seconds(COUNTDOWN + 5));
   });
 });
+
+describe('settled battle (end screen up)', () => {
+  it('the living stop acting and stand idle', () => {
+    const b = battleWith([hero(), enemy(1.4)]);
+    run(b, seconds(0.3), {});
+    b.settled = true;
+    const hp = heroOf(b)!.hp;
+    const events = run(b, seconds(3), { moveX: 1, attack: true, dodge: true });
+    expect(events.some((e) => e.type === 'hit' || e.type === 'swing' || e.type === 'dodge')).toBe(false);
+    expect(heroOf(b)!.hp).toBe(hp);
+    expect(b.units.every((u) => u.state === 'idle')).toBe(true);
+  });
+});
