@@ -48,6 +48,12 @@ As built: the design system is documented at the top of `src/style.css` (type sc
 - Map colours per region (Greenmarch light green, Darkwood moss green, Barrowlands grey with violet-grey patches), glyph fills (fields yellow, trees green, cottages cream with red roofs, stones grey).
 - Lock ring and mark banner: Marcel said yes to the chunky style (2026-11-15), built as 6i-6.
 
+## 6i-7 credits tabs and map note fix (2026-11-15)
+
+- Marcel chose **tabs, no scroll** for the credits sheet and kept the red Done on the right. `CreditsSheet.vue`: tabs Music · Art · Sound · Fonts (same `.cap` tabs as Settings), one well per tab with a row per work (label for what it is used for, work in bold, "by" author, source lines beneath; Kevin MacLeod's required wording on its own line), licence chip on the right (gold = attribution licence, silver = CC0). Every tab has the Music tab's height, so the sheet does not jump. Data: `STRINGS.credits.tabs` with `CreditLine` (`what`, `work`, `by`, `licence`, `source`).
+- Made without asking: chip colours, "Art" as the tab name for Characters & Scenery, Fonts labelled Headings / Text, the third sound line credited to "various authors".
+- Map: a hovered seal now sits above the region ribbons (`hover:z-20`), so its note is no longer hidden behind them.
+
 ## 6i-6 lock ring and mark banner (2026-11-15)
 
 - `view/targetMarkers.ts`: both drawn once on canvas textures (`toneMapped: false`, no bloom glow any more). Lock ring = fat gold band (0.70–0.84 m) with an ink outline and a pale shine stripe, four chunky gold triangles pointing in, same spin and pulse. Mark banner = gold pole with an ink outline and a coin knob, red swallow-tail cloth (gradient) with an ink outline, gold trim stripe under the top edge and a shine stripe; still waves, turns with the camera, seen through figures. Unused old `Effects.lockRing` removed from `fx.ts`.

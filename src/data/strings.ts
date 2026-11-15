@@ -1,5 +1,14 @@
 import type { ControlRow } from '../settings/settings';
 
+/** One credited work on the Credits sheet. */
+export interface CreditLine {
+  what: string;
+  work: string;
+  by: string;
+  licence: string;
+  source: string;
+}
+
 /** Every interface string. English (approved 2026-11-14). */
 export const STRINGS = {
   title: 'Heerschar',
@@ -261,48 +270,52 @@ export const STRINGS = {
       },
     },
   },
-  /** Credits sheet on the title (6h): CC BY attribution must be visible to players. */
+  /**
+   * Credits sheet on the title (6h, tabs 6i): CC BY attribution must be visible to players. One tab per
+   * group; each line = what it is used for, the work, its author, a licence chip, where it comes from,
+   * and optional fine print (Kevin MacLeod's required wording).
+   */
   credits: {
     open: 'Credits',
     title: 'Credits',
     done: 'Done',
-    sections: [
+    tabs: [
       {
-        heading: 'Music',
+        tab: 'Music',
         lines: [
-          ['War table', '“Medieval: The Old Tower Inn” by RandomMind', 'CC0 1.0 · opengameart.org/content/medieval-the-old-tower-inn'],
-          ['Greenmarch', '“Ringing of Steel” by Alexandr Zhelanov', 'CC BY 4.0 · opengameart.org/content/ringing-of-steel'],
-          ['Darkwood', '“Celtic Impulse” by Kevin MacLeod (incompetech.com)', 'Licensed under Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/'],
-          ['Barrowlands', '“Unholy Knight” by Kevin MacLeod (incompetech.com)', 'Licensed under Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/'],
-          ['Victory', '“VICTORY” from “Fanfares” by Spring Spring', 'CC BY 4.0 · opengameart.org/content/fanfares'],
-          ['Defeat', '“sadending1” from “Game Over Sad Short Music Clips” by Robin Lamb', 'CC0 1.0 · opengameart.org/content/game-over-sad-short-music-clips'],
+          { what: 'War table', work: 'Medieval: The Old Tower Inn', by: 'RandomMind', licence: 'CC0', source: 'opengameart.org/content/medieval-the-old-tower-inn' },
+          { what: 'Greenmarch', work: 'Ringing of Steel', by: 'Alexandr Zhelanov', licence: 'CC BY 4.0', source: 'opengameart.org/content/ringing-of-steel' },
+          { what: 'Darkwood', work: 'Celtic Impulse', by: 'Kevin MacLeod (incompetech.com)', licence: 'CC BY 4.0', source: 'Licensed under Creative Commons: By Attribution 4.0 License · creativecommons.org/licenses/by/4.0/' },
+          { what: 'Barrowlands', work: 'Unholy Knight', by: 'Kevin MacLeod (incompetech.com)', licence: 'CC BY 4.0', source: 'Licensed under Creative Commons: By Attribution 4.0 License · creativecommons.org/licenses/by/4.0/' },
+          { what: 'Victory', work: 'VICTORY, from Fanfares', by: 'Spring Spring', licence: 'CC BY 4.0', source: 'opengameart.org/content/fanfares' },
+          { what: 'Defeat', work: 'sadending1, from Game Over Sad Short Music Clips', by: 'Robin Lamb', licence: 'CC0', source: 'opengameart.org/content/game-over-sad-short-music-clips' },
         ],
         note: 'Tracks trimmed, loudness-normalised and re-encoded.',
       },
       {
-        heading: 'Characters & Scenery',
+        tab: 'Art',
         lines: [
-          ['Characters', 'KayKit Adventurers and Skeletons character packs by Kay Lousberg', 'CC0 1.0 · kaylousberg.com'],
-          ['Scenery', 'KayKit Medieval Hexagon Pack and Halloween Bits by Kay Lousberg', 'CC0 1.0 · kaylousberg.com'],
-          ['Wolf', 'Wolf by Quaternius', 'CC0 1.0 · quaternius.com'],
+          { what: 'Characters', work: 'KayKit Adventurers and Skeletons', by: 'Kay Lousberg', licence: 'CC0', source: 'kaylousberg.com' },
+          { what: 'Scenery', work: 'KayKit Medieval Hexagon Pack and Halloween Bits', by: 'Kay Lousberg', licence: 'CC0', source: 'kaylousberg.com' },
+          { what: 'Wolf', work: 'Wolf', by: 'Quaternius', licence: 'CC0', source: 'quaternius.com' },
         ],
       },
       {
-        heading: 'Sound',
+        tab: 'Sound',
         lines: [
-          ['Effects', 'Kenney: RPG Audio, Impact Sounds, Interface Sounds', 'CC0 1.0 · kenney.nl'],
-          ['', 'rubberduck: 80 RPG, 100 SFX, 80 creature SFX', 'CC0 1.0 · opengameart.org'],
-          ['', 'Swishes Sound Pack, 150 Combat Sound Effects, Cure Magic, Ice spells, Freeze Spell, Magic Words + Healing', 'CC0 1.0 · opengameart.org'],
+          { what: 'Effects', work: 'RPG Audio, Impact Sounds, Interface Sounds', by: 'Kenney', licence: 'CC0', source: 'kenney.nl' },
+          { what: 'Effects', work: '80 RPG, 100 SFX, 80 creature SFX', by: 'rubberduck', licence: 'CC0', source: 'opengameart.org' },
+          { what: 'Spells', work: 'Swishes Sound Pack, 150 Combat Sound Effects, Cure Magic, Ice spells, Freeze Spell, Magic Words + Healing', by: 'various authors', licence: 'CC0', source: 'opengameart.org' },
         ],
       },
       {
-        heading: 'Fonts',
+        tab: 'Fonts',
         lines: [
-          ['', 'Lilita One by Juan Montoreano', 'SIL Open Font License 1.1'],
-          ['', 'Nunito by the Nunito Project Authors', 'SIL Open Font License 1.1'],
+          { what: 'Headings', work: 'Lilita One', by: 'Juan Montoreano', licence: 'OFL 1.1', source: 'SIL Open Font License' },
+          { what: 'Text', work: 'Nunito', by: 'the Nunito Project Authors', licence: 'OFL 1.1', source: 'SIL Open Font License' },
         ],
       },
-    ] as { heading: string; lines: [string, string, string][]; note?: string }[],
+    ] as { tab: string; lines: CreditLine[]; note?: string }[],
   },
   restart: 'Fight again',
   restartHint: 'or press Enter',

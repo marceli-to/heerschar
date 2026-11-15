@@ -155,7 +155,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
           <div
             v-for="n in nodes"
             :key="n.id"
-            class="absolute z-[1] -translate-x-1/2 -translate-y-1/2 hover:z-[2]"
+            class="absolute z-[1] -translate-x-1/2 -translate-y-1/2 hover:z-20"
             :style="{
               left: `${(toSheet(n).x / SHEET_W) * 100}%`,
               top: `${(toSheet(n).y / SHEET_H) * 100}%`,
