@@ -9,9 +9,10 @@ const RUNS = 20;
 
 /**
  * The battles at the levels they had in Stage 3 (the campaign places them later), for a level 1
- * squad, at strengths where the base squad wins most of the time (pinned: the campaign strengths move).
+ * squad, at strengths where the base squad wins at least half the time (pinned: the campaign strengths
+ * move). Skirmish 1.9 → 2.5 with the harder-hitting hero (2026-11-15): at 1.9 every variant won.
  */
-const STAGE3: Partial<Record<EncounterId, { level: number; strength: number }>> = { skirmish: { level: 1, strength: 1.9 }, shieldWall: { level: 2, strength: 1.8 } };
+const STAGE3: Partial<Record<EncounterId, { level: number; strength: number }>> = { skirmish: { level: 1, strength: 2.5 }, shieldWall: { level: 2, strength: 1.8 } };
 
 function play(encounter: EncounterId, change: (s: SquadState) => void): { winRate: number; seconds: number } {
   let wins = 0;

@@ -5,7 +5,7 @@ import { computeDamage } from '../../src/sim/combat';
 import { nextFloat } from '../../src/sim/rng';
 import { trialSetup } from '../../src/data/encounters';
 import type { HeroInput } from '../../src/sim/types';
-import { battleWith, enemy, hero, input, run, seconds } from './helpers';
+import { battleWith, enemy, hero, hold, input, run, seconds } from './helpers';
 
 describe('countdown', () => {
   it('holds everyone still for the countdown, then the fight runs', () => {
@@ -56,6 +56,16 @@ describe('dodge', () => {
     const events = run(b, 6, { moveZ: 1, dodge: true });
     expect(events.some((ev) => ev.type === 'evade')).toBe(true);
     expect(heroOf(b)!.hp).toBe(heroOf(b)!.stats.maxHp);
+  });
+
+  it('grazes an enemy it passes through once, pushes it aside and gives energy', () => {
+    const b = battleWith([hero(), enemy(2)]);
+    hold(b, 2);
+    const energy = heroOf(b)!.energy;
+    const events = run(b, seconds(HERO.dodge.duration) + 1, { moveX: 1, dodge: true });
+    expect(events.filter((e) => e.type === 'hit' && e.attackerId === 1 && e.targetId === 2)).toHaveLength(1);
+    expect(heroOf(b)!.pos.x).toBeGreaterThan(b.units[1]!.pos.x);
+    expect(heroOf(b)!.energy).toBeGreaterThan(energy + HERO.dodgeStrike.energy - 1);
   });
 });
 

@@ -60,6 +60,12 @@ export const HERO = {
   dodgeBuffer: 0.25,
   abilityBuffer: 0.3,
   dodge: { distance: 4, duration: 0.35, invulnerable: 0.25, cooldown: 1.2 },
+  /**
+   * Dodging through enemies grazes them: each enemy the hero's body passes is hit once per dodge
+   * for `multiplier` × power, pushed aside, and gives the hero `energy`. `contact` is added to both
+   * body radii.
+   */
+  dodgeStrike: { multiplier: 0.5, contact: 0.2, knockback: 3, hitstop: 0.04, energy: 8 },
   /** Melee aim assist: snap the swing to an enemy this close and within this angle. */
   aimAssist: { range: 3.2, angle: 55 * DEG },
   /** Seconds into a recover after which a queued chain step starts. */
@@ -199,11 +205,11 @@ export const HERO_SELF_HEAL = 0.5;
  */
 export const HERO_ABILITIES = {
   /** Krieger: shield bash, stuns everyone in a cone (ignores poise). */
-  schildstoss: { cost: 30, cooldown: 6, windup: 0.22, recover: 0.38, multiplier: 0.6, reach: 2.6, arc: 110 * DEG, knockback: 6, stun: 1.2, lunge: 0.5, hitstop: 0.08 },
+  schildstoss: { cost: 30, cooldown: 6, windup: 0.22, recover: 0.38, multiplier: 1.5, reach: 2.6, arc: 110 * DEG, knockback: 8, stun: 1.2, lunge: 0.5, hitstop: 0.12 },
   /** Krieger: spin, damages and staggers everyone around. */
-  wirbel: { cost: 45, cooldown: 9, windup: 0.28, recover: 0.45, multiplier: 1.4, reach: 2.6, arc: 2 * Math.PI, knockback: 5, stagger: 0.4, lunge: 0, hitstop: 0.1 },
-  /** Bogenschuetze: three arrows in a fan. */
-  salve: { cost: 30, cooldown: 5, windup: 0.3, recover: 0.35, multiplier: 1.0, arrows: 3, spread: 12 * DEG, speed: 30, radius: 0.3 },
+  wirbel: { cost: 45, cooldown: 9, windup: 0.28, recover: 0.45, multiplier: 2.5, reach: 2.6, arc: 2 * Math.PI, knockback: 8, stagger: 0.4, lunge: 0, hitstop: 0.14 },
+  /** Bogenschuetze: three arrows in a fan that pass through everyone in their way. */
+  salve: { cost: 30, cooldown: 5, windup: 0.3, recover: 0.35, multiplier: 1.5, arrows: 3, spread: 12 * DEG, speed: 30, radius: 0.3 },
   /** Bogenschuetze: slows enemies in front, then leaps back (invulnerable like a dodge). */
   rueckzug: { cost: 35, cooldown: 8, windup: 0.12, recover: 0.2, reach: 4.5, arc: 100 * DEG, slow: 3, distance: 5, duration: 0.35 },
   /** Heiler: a ground circle at the hero's feet that heals allies inside over time. */
@@ -211,9 +217,9 @@ export const HERO_ABILITIES = {
   /** Heiler: shields the ally with the lowest health fraction in range. */
   segen: { cost: 30, cooldown: 6, windup: 0.3, recover: 0.3, range: 12, shield: 2.5, duration: 8 },
   /** Magier: arcing fireball, damage in a circle where it lands. */
-  feuerball: { cost: 40, cooldown: 6, windup: 0.4, recover: 0.35, multiplier: 1.6, radius: 2.5, speed: 14, minFlight: 0.5, maxFlight: 1.1, range: 14, fallback: 10 },
+  feuerball: { cost: 40, cooldown: 6, windup: 0.4, recover: 0.35, multiplier: 2.5, radius: 2.5, speed: 14, minFlight: 0.5, maxFlight: 1.1, range: 14, fallback: 10 },
   /** Magier: freezes and lightly damages everyone around the hero. */
-  frostring: { cost: 45, cooldown: 12, windup: 0.25, recover: 0.35, multiplier: 0.5, radius: 4, freeze: 2.5 },
+  frostring: { cost: 45, cooldown: 12, windup: 0.25, recover: 0.35, multiplier: 1.0, radius: 4, freeze: 2.5 },
   /** Leader ability, every class: all companions are rallied. */
   sammeln: { cost: 50, cooldown: 20, windup: 0.3, recover: 0.3, duration: 6 },
 } as const;

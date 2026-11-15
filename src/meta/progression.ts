@@ -1,4 +1,4 @@
-import { HERO_GUARD, playerSlotStats } from '../data/encounters';
+import { HERO_DAMAGE, HERO_GUARD, playerSlotStats } from '../data/encounters';
 import { itemById, type Item, type ItemSlot } from '../data/items';
 import { EFFECT_CAPS, LEVEL_CAP, OFFER_SIZE, PATH_LEVEL, statsAtLevel, sumEffects, xpToNext, type Effect } from '../data/progression';
 import { FILLER_UPGRADE, pathById, pathsOf, upgradeById, UPGRADES, type PathId, type Upgrade } from '../data/upgrades';
@@ -56,7 +56,7 @@ export function characterStats(c: Character): Stats {
 /** The battle mods a character takes into battle. */
 export function characterMods(c: Character): UnitMods {
   const mods = effectMods(characterEffect(c));
-  return c.isHero ? { ...mods, damageTaken: mods.damageTaken * HERO_GUARD[c.classId] } : mods;
+  return c.isHero ? { ...mods, damage: mods.damage * HERO_DAMAGE, damageTaken: mods.damageTaken * HERO_GUARD[c.classId] } : mods;
 }
 
 // ---------------------------------------------------------------------------------------------

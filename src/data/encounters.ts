@@ -32,6 +32,12 @@ export const COMPANION_POWER = 1.6;
 export const HERO_POWER: Record<PlayableClassId, number> = { krieger: 1, bogenschuetze: 1.8, heiler: 2.2, magier: 1.6 };
 
 /**
+ * Hero damage (Marcel, 2026-11-15: heroes should hit harder in general): a factor on all damage the
+ * hero deals, every class, on top of `HERO_POWER`. Healing is unaffected.
+ */
+export const HERO_DAMAGE = 1.3;
+
+/**
  * Hero guard (Marcel, 5f): the frail hero classes take less damage, a hidden passive on top of
  * any toughness. A factor on damage taken. Health alone does not save them: once a battle is hard
  * enough the shooters collapse a back-row hero all at once while the Warrior's armour holds.

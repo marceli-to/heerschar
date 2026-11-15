@@ -1,8 +1,9 @@
 import { ENERGY, HERO, HERO_ABILITIES, heroAttack } from './balance';
-import { gainEnergy, resolveMelee } from './combat';
+import { bodyRadius } from './body';
+import { applyDamage, computeDamage, gainEnergy, isAlive, push, resolveMelee } from './combat';
 import { abilityAim, chainLength, fireBasic, heroActionTiming, heroKit, isHeroAbility, isRangedHero, meleeAim, rangedAim, releaseAbility } from './heroAbilities';
 import { lockTarget } from './heroTargeting';
-import { angleTo } from './math';
+import { angleDiff, angleTo, dist } from './math';
 import { moveDir, turnTowards } from './movement';
 import { moveFactor } from './statuses';
 import type { AbilityId, Battle, BattleEvent, HeroAbilityId, HeroInput, Unit } from './types';
@@ -93,7 +94,27 @@ function startDodge(hero: Unit, input: HeroInput, events: BattleEvent[]): void {
   hero.dodgeBuffer = 0;
   hero.chain = 0;
   hero.chainQueued = false;
+  hero.hitIds = [];
   events.push({ type: 'dodge', unitId: hero.id });
+}
+
+/**
+ * Dodging through enemies grazes them (`HERO.dodgeStrike`): every enemy the hero's body touches is
+ * hit once per dodge, pushed aside off the dodge line, and gives the hero energy.
+ */
+function dodgeStrike(battle: Battle, hero: Unit, events: BattleEvent[]): void {
+  const s = HERO.dodgeStrike;
+  const reach = bodyRadius(hero) + s.contact;
+  for (const u of battle.units) {
+    if (u.team === hero.team || !isAlive(u) || hero.hitIds.includes(u.id)) continue;
+    if (dist(hero.pos, u.pos) > reach + bodyRadius(u)) continue;
+    hero.hitIds.push(u.id);
+    const side = angleDiff(hero.dodgeAngle, angleTo(hero.pos, u.pos)) >= 0 ? 1 : -1;
+    push(u, hero.dodgeAngle + (side * Math.PI) / 2, s.knockback);
+    u.hitstop = Math.max(u.hitstop, s.hitstop);
+    gainEnergy(hero, s.energy);
+    applyDamage(hero, u, computeDamage(battle, hero.stats.power, s.multiplier, u, 'physical', hero), false, events);
+  }
 }
 
 function toIdle(hero: Unit): void {
@@ -200,6 +221,7 @@ export function updateHero(battle: Battle, hero: Unit, input: HeroInput, dt: num
       // Fast start easing into run speed: v = D/T × (1.5 − t), which integrates to D over T.
       const speed = (distance / duration) * (1.5 - t);
       moveDir(hero, Math.sin(hero.dodgeAngle), -Math.cos(hero.dodgeAngle), speed, dt);
+      if (!leap) dodgeStrike(battle, hero, events);
       if (hero.stateTime >= duration) toIdle(hero);
       break;
     }

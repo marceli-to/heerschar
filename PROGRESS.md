@@ -23,6 +23,15 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look (lock ring and mark banner now Storybook too, see "6i-6"; credits sheet now tabs and map seal notes above the ribbons, see "6i-7", approved). Then the Stage 6 gate (his full playtest). |
 | 7 | not started |
 
+## Combat punch (2026-11-15, Marcel: "abilities should hit harder, dodging through enemies should hurt, heroes deal more damage")
+
+Agreed numbers, built, **waiting for Marcel's playtest**:
+- Abilities (`HERO_ABILITIES`): Shield Bash 0.6 → 1.5× (knockback 6 → 8, hit freeze 0.08 → 0.12), Whirlwind 1.4 → 2.5× (knockback 5 → 8, hit freeze 0.10 → 0.14), Volley 1.0 → 1.5× per arrow and the arrows pass through enemies, Fireball 1.6 → 2.5×, Frost Ring 0.5 → 1.0×.
+- **Dodge strike** (`HERO.dodgeStrike`, `dodgeStrike` in `heroControl.ts`), every class: each enemy the hero's body passes during a dodge is hit once per dodge (0.5× physical), pushed aside off the dodge line (3 m/s), and gives +8 energy. Not on the Archer's Fall Back leap.
+- **Hero damage** `HERO_DAMAGE` 1.3 in `encounters.ts`, applied as `mods.damage` in `characterMods` (all classes, healing unaffected).
+- Tests: `prepMatters` Skirmish fixture strength 1.9 → 2.5 (at 1.9 every variant won); new dodge-strike test. Campaign strengths **not** retuned: bots will now find the campaign easier; retune with the difficulty setting.
+- **Next:** Marcel playtests. Then step 2: better ability animations for all four classes (mockups / options first, design approval).
+
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
 
 Marcel: "better but far from perfect", asked for consistency. Decisions: **labels = small Lilita, normal case** (no spaced capitals); **buttons = two sizes, one red main action per screen, yellow = other actions, Back / Leave / Cancel always a text link** (blue dropped); **no italics anywhere**.

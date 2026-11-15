@@ -205,7 +205,7 @@ export function releaseAbility(battle: Battle, hero: Unit, id: HeroAbilityId, in
       const reach = hero.stats.range * BEHAVIOUR.projectileRangeFactor;
       for (let i = 0; i < s.arrows; i++) {
         const angle = hero.facing + (i - (s.arrows - 1) / 2) * s.spread;
-        fireStraight(battle, hero, { kind: 'arrow', at: ahead(hero, angle, reach), speed: s.speed, radius: s.radius, range: reach, multiplier: s.multiplier, damageType: 'physical', pierce: false }, events);
+        fireStraight(battle, hero, { kind: 'arrow', at: ahead(hero, angle, reach), speed: s.speed, radius: s.radius, range: reach, multiplier: s.multiplier, damageType: 'physical', pierce: true }, events);
       }
       return false;
     }

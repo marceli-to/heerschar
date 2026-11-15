@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CLASS_STATS } from '../../src/data/classes';
-import { encounterById, playerSlotStats } from '../../src/data/encounters';
+import { encounterById, HERO_DAMAGE, playerSlotStats } from '../../src/data/encounters';
 import { SANDBOX_COMPANIONS, newSquad } from '../../src/data/roster';
 import { ITEMS, itemById } from '../../src/data/items';
 import { LEVEL_CAP, PATH_LEVEL, statsAtLevel, xpToNext } from '../../src/data/progression';
@@ -40,7 +40,7 @@ describe('levels and stats', () => {
   it('a fresh character has neutral mods and fights with its sheet stats', () => {
     const s = game();
     const hero = characterOf(s, HERO_ID);
-    expect(characterMods(hero)).toEqual(NEUTRAL_MODS);
+    expect(characterMods(hero)).toEqual({ ...NEUTRAL_MODS, damage: HERO_DAMAGE });
     hero.level = 4;
     takeUpgrade(hero, 'stout');
     hero.trinket = 'luckyCoin';
