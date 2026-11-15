@@ -17,9 +17,9 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 2 Squad battle | done, committed. **Gate passed**: headless tests (winnable, deterministic, bot cannot win alone) and Marcel's playtest ("works great"). |
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
-| Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
+| Look spike | **done, code removed in 6h**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a–6d done and approved (2026-11-15); 6e built (camera moments, see "6e as built"); **6f done** (sound effects approved by Marcel: "effects are perfect"; music = the recommended tracks, see "6f as built"). Marcel's playtest still finds battles hard; difficulty levels wanted later. **6g built** (settings, see "6g as built"; screenshots for Marcel). Next: Marcel checks 6g, then **6h** gate. |
+| 6 Presentation | **gate pending**: 6a–6g done and approved (6g approved 2026-11-15); **6h built** (credits sheet, look spike removed, fps and run-through checked, see "6h as built"). Waiting for **Marcel's full playtest and verdict** ("presentable to a newcomer"). Battles still feel hard to him; difficulty levels wanted later. |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -143,6 +143,14 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Both sides recoloured** by swapping swatches in the KayKit texture: player warm (crimson capes / hats / cloaks, gold trim), enemies cold blue / steel.
 - **Enemy bodies:** Greenmarch + Darkwood: Shieldbearer = Knight with rectangle shield + 1H sword, Berserker = Barbarian (bear hat, beard) with two 1H axes and the dual-wield attacks. Barrowlands: Shieldbearer = Skeleton Warrior + large shield + blade, Berserker = Skeleton Minion + two skeleton axes.
 - **Hero mark:** gold trim swatch on the hero; companions keep the plain team trim.
+
+## 6h as built (2026-11-15)
+
+- Marcel: credits = parchment sheet like Settings (approved option). `src/ui/settings/CreditsSheet.vue`, content in `STRINGS.credits.sections` (Music with per-track licence and source, Characters & Scenery, Sound, Fonts); **Credits** button under Settings on the title; sheet scrolls when the window is short. `CREDITS.md` now points to it. Screenshots in `~/Downloads/heerschar-assets/credits-6h/`.
+- Look spike removed: `src/look/`, `public/look/`, the `?look` branch in `main.ts`, its `CREDITS.md` entry.
+- fps (headless Chrome, 1280×800 at 2× DPR, bot battles Raiders / Iron Warlord / Wolf Pack / Fen Witch / Bone Legion / Bone King): Medium and Low hold 60 everywhere; High holds 60 except short dips to ~43–56 in Raiders (Greenmarch, busiest scenery) and Bone Legion; the very first battle after a cold load dips once (shader warm-up).
+- Run-through (headless, scripted clicks): title → New Game → class select → map → Squad → Formation → battle (bot) → level-up picks → Spoils → map with the won node ticked; defeat → war table; no page errors. Typecheck, 225 tests, build pass.
+- Gate still needs Marcel's own playtest and his verdict.
 
 ## 6g decisions (Marcel, 2026-11-15)
 
@@ -333,7 +341,7 @@ Files: OGA = `https://opengameart.org/sites/default/files/<file>`, Kevin MacLeod
 - ~~**6e**~~ Built (see "6e as built"); Marcel plays.
 - ~~**6f**~~ Done (see "6f as built").
 - ~~**6g**~~ Built (see "6g as built"); Marcel checks.
-- **6h** Gate: in-game credits page (CC BY music attribution), full run-through, fps, remove the `?look` spike (`src/look/`, `public/look/`), Marcel's verdict ("presentable to a newcomer").
+- ~~**6h**~~ Built (see "6h as built"); open: Marcel's verdict ("presentable to a newcomer").
 - 5f balance stays parked (see "5f third session"); pick it up after 6h unless Marcel says otherwise.
 
 ## 5f third session (2026-11-15): walk vs snapshots, parked for Stage 6

@@ -36,9 +36,4 @@ Music (trimmed, loudness-normalised and re-encoded to AAC by `tools/music.mjs`; 
 - Victory: "VICTORY" from "Fanfares" by Spring Spring, CC BY 4.0 (opengameart.org/content/fanfares).
 - Defeat: "sadending1" from "Game Over Sad Short Music Clips" by Robin Lamb, CC0 1.0 (opengameart.org/content/game-over-sad-short-music-clips).
 
-The CC BY tracks need this attribution shown to players too (an in-game credits page, still to do).
-
-Look spike only (`?look`, `public/look/`, not used by the game):
-
-- KayKit Adventurers Character Pack 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Knight.glb, Mage.glb; licence in `public/look/kaykit/LICENSE.txt`.
-- KayKit Character Pack : Skeletons 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Skeleton_Warrior.glb, Skeleton_Mage.glb, Skeleton_Blade / Shield_Large_A / Staff; licence in `public/look/kaykit-skeletons/LICENSE.txt`.
+The same attribution is shown to players on the Credits sheet (title screen).

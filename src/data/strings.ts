@@ -261,6 +261,49 @@ export const STRINGS = {
       },
     },
   },
+  /** Credits sheet on the title (6h): CC BY attribution must be visible to players. */
+  credits: {
+    open: 'Credits',
+    title: 'Credits',
+    done: 'Done',
+    sections: [
+      {
+        heading: 'Music',
+        lines: [
+          ['War table', '“Medieval: The Old Tower Inn” by RandomMind', 'CC0 1.0 · opengameart.org/content/medieval-the-old-tower-inn'],
+          ['Greenmarch', '“Ringing of Steel” by Alexandr Zhelanov', 'CC BY 4.0 · opengameart.org/content/ringing-of-steel'],
+          ['Darkwood', '“Celtic Impulse” by Kevin MacLeod (incompetech.com)', 'Licensed under Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/'],
+          ['Barrowlands', '“Unholy Knight” by Kevin MacLeod (incompetech.com)', 'Licensed under Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/'],
+          ['Victory', '“VICTORY” from “Fanfares” by Spring Spring', 'CC BY 4.0 · opengameart.org/content/fanfares'],
+          ['Defeat', '“sadending1” from “Game Over Sad Short Music Clips” by Robin Lamb', 'CC0 1.0 · opengameart.org/content/game-over-sad-short-music-clips'],
+        ],
+        note: 'Tracks trimmed, loudness-normalised and re-encoded.',
+      },
+      {
+        heading: 'Characters & Scenery',
+        lines: [
+          ['Characters', 'KayKit Adventurers and Skeletons character packs by Kay Lousberg', 'CC0 1.0 · kaylousberg.com'],
+          ['Scenery', 'KayKit Medieval Hexagon Pack and Halloween Bits by Kay Lousberg', 'CC0 1.0 · kaylousberg.com'],
+          ['Wolf', 'Wolf by Quaternius', 'CC0 1.0 · quaternius.com'],
+        ],
+      },
+      {
+        heading: 'Sound',
+        lines: [
+          ['Effects', 'Kenney: RPG Audio, Impact Sounds, Interface Sounds', 'CC0 1.0 · kenney.nl'],
+          ['', 'rubberduck: 80 RPG, 100 SFX, 80 creature SFX', 'CC0 1.0 · opengameart.org'],
+          ['', 'Swishes Sound Pack, 150 Combat Sound Effects, Cure Magic, Ice spells, Freeze Spell, Magic Words + Healing', 'CC0 1.0 · opengameart.org'],
+        ],
+      },
+      {
+        heading: 'Fonts',
+        lines: [
+          ['', 'Cinzel by the Cinzel Project Authors', 'SIL Open Font License 1.1'],
+          ['', 'EB Garamond by the EB Garamond Project Authors', 'SIL Open Font License 1.1'],
+        ],
+      },
+    ] as { heading: string; lines: [string, string, string][]; note?: string }[],
+  },
   restart: 'Fight again',
   restartHint: 'or press Enter',
   victory: 'Victory',
