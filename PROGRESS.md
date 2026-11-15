@@ -41,13 +41,13 @@ Options were asked per class; Marcel chose all four recommended directions. No n
 - **Mage "charge-up + ice spikes":** Fireball = flames gather into a growing ball at the staff tip during the windup, thrust throws it; bigger blast with shockwave ring and camera kick. Frost Ring = staff slams, ice spikes burst out in a ring, stay a moment, then shatter.
 - Order: anim-1 Warrior, anim-2 Archer, anim-3 Healer, anim-4 Mage; commit + screenshots after each.
 
-**anim-1 Warrior: built, committed, waiting for Marcel's look.** Screenshots in `~/Downloads/heerschar-assets/anim/warrior/` (`bash-sheet`, `bash-close`, `whirl-sheet`).
+**anim-1 Warrior: done, approved by Marcel (2026-11-15), short 0.5 m dash accepted.** Screenshots in `~/Downloads/heerschar-assets/anim/warrior/` (`bash-sheet`, `bash-close`, `whirl-sheet`).
 - `clips.ts`: `Segment.wrap` / `easeOut`; Whirlwind = two turns of `2H_Melee_Attack_Spinning` (one turn = 0.67 s; hit after the first). `modelUnitView.ts` honours both.
 - `fx.ts`: `WhirlRing` (ring at blade height, head follows the blade via `weaponEdge`), `FxWorld.dustRing`, `shockArc`, `glint`. New `view/stunStars.ts` (Storybook stars on stuns >= 0.9 s, `STARS_FROM` in `game.ts`).
 - `game.ts`: Shield Bash release = glint + gold shock arc + dust + `SHAKE.heavy`, dust streak while dashing; Whirlwind release = dust ring + light shake; `updateWhirl`; `debugTimeScale` (slow motion via `__game`).
 - **Sim unchanged; the dash stays at 0.5 m.** A longer lunge (0.8 / 1.0 / 1.1 / 1.3 m), and even a "stop in front of a foe" rule at 0.5 m, each flipped one or two statistical gates (`bot.test` never-dodges / hero-alone, `prepMatters` hero-in-back-row). The gates are chaotic, so tuning against them is noise. If Marcel wants a longer visible dash, it needs a gate retune (maybe together with the difficulty setting).
 - Capturing: `/tmp/heer-anim/burst.mjs` + `setup-melee.js` (dev server `npx vite --port 5191`, URL `?hero=krieger&debug&peaceful&seed=3`). The setup must fake pointer lock (`Object.defineProperty(g.kbm, "locked", { get: () => true })`), or `HeroInputSampler` drops every input. Abilities aim along the camera yaw, so set `g.rig.yaw` = hero facing. Headless Chrome stalls the loop without `--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows` (in burst.mjs; `tools/shot.mjs` lacks them).
-- **Next:** Marcel's verdict on the Warrior, then anim-2 Archer.
+- **Next:** anim-2 Archer.
 
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
 
