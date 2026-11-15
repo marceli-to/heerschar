@@ -1,11 +1,11 @@
 import { ENERGY, HERO, HERO_ABILITIES, heroAttack } from './balance';
 import { bodyRadius } from './body';
-import { applyDamage, computeDamage, gainEnergy, isAlive, push, resolveMelee } from './combat';
+import { applyDamage, computeDamage, gainEnergy, isAlive, push, resolveMelee, stun } from './combat';
 import { abilityAim, chainLength, fireBasic, heroActionTiming, heroDodge, heroKit, isHeroAbility, isRangedHero, meleeAim, rangedAim, releaseAbility } from './heroAbilities';
 import { lockTarget } from './heroTargeting';
 import { angleDiff, angleTo, dist } from './math';
 import { moveDir, turnTowards } from './movement';
-import { moveFactor } from './statuses';
+import { hasStatus, moveFactor } from './statuses';
 import type { AbilityId, Battle, BattleEvent, HeroAbilityId, HeroInput, Unit } from './types';
 
 const DODGE_OPTS = { invulnerableTime: HERO.dodge.invulnerable };
@@ -100,7 +100,7 @@ function startDodge(hero: Unit, input: HeroInput, events: BattleEvent[]): void {
 
 /**
  * Dodging through enemies grazes them (`HERO.dodgeStrike`): every enemy the hero's body touches is
- * hit once per dodge, pushed aside off the dodge line, and gives the hero energy.
+ * hit once per dodge, pushed aside off the dodge line, briefly stunned, and gives the hero energy.
  */
 function dodgeStrike(battle: Battle, hero: Unit, events: BattleEvent[]): void {
   const s = HERO.dodgeStrike;
@@ -113,7 +113,8 @@ function dodgeStrike(battle: Battle, hero: Unit, events: BattleEvent[]): void {
     push(u, hero.dodgeAngle + (side * Math.PI) / 2, s.knockback);
     u.hitstop = Math.max(u.hitstop, s.hitstop);
     gainEnergy(hero, s.energy);
-    applyDamage(hero, u, computeDamage(battle, hero.stats.power, s.multiplier, u, 'physical', hero), false, events);
+    if (applyDamage(hero, u, computeDamage(battle, hero.stats.power, s.multiplier, u, 'physical', hero), false, events)) continue;
+    if (!hasStatus(u, 'frozen')) stun(u, s.stun);
   }
 }
 

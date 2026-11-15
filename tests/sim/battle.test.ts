@@ -75,6 +75,18 @@ describe('dodge', () => {
     expect(heroOf(b)!.pos.x).toBeGreaterThan(b.units[1]!.pos.x);
     expect(heroOf(b)!.energy).toBeGreaterThan(energy + HERO.dodgeStrike.energy - 1);
   });
+
+  it('briefly stuns an enemy it passes through, but not a frozen one', () => {
+    const b = battleWith([hero(), enemy(2)]);
+    run(b, seconds(0.2), { moveX: 1, dodge: true });
+    expect(b.units[1]!.state).toBe('stunned');
+    expect(b.units[1]!.stunDuration).toBe(HERO.dodgeStrike.stun);
+
+    const held = battleWith([hero(), enemy(2)]);
+    hold(held, 2);
+    run(held, seconds(0.2), { moveX: 1, dodge: true });
+    expect(held.units[1]!.state).not.toBe('stunned');
+  });
 });
 
 describe('attack chain', () => {

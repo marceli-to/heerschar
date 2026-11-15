@@ -36,6 +36,8 @@ Agreed numbers, built, **approved by Marcel's playtest ("feels fine", 2026-11-15
 
 Built, **waiting for Marcel's playtest**: Archer, Mage and Healer dodge 6 m in 0.40 s (`HERO.rangedDodge`, `heroDodge(hero)` in `heroAbilities.ts`); the Warrior keeps 4 m in 0.35 s. Pose length follows the hero's dodge (`AnimInput.dodgeDuration`; Fall Back's leap keeps the old one). Why not every class (Marcel chose this): a 6 m Warrior dodge made the bot warrior strong enough alone that `prepMatters` (healer at home / hero in the back row ≥ 20 points fewer wins) failed at every Skirmish strength 2.0–3.1, also with a bot that dodges through attackers or only at low HP.
 
+**Dodge strike stuns** (2026-11-15, Marcel: "dodging through an enemy should stun him shortly"). Built, waiting for his playtest: every enemy the dodge passes through is stunned 0.3 s (`HERO.dodgeStrike.stun`, every class; not bosses, not frozen enemies, no stagger immunity given). 0.3 s is the longest that keeps the bot tests: at 0.5 s the Warrior bot wins alone (10 %) and the hero in the back row stops costing battles; at 0.4 s the Shield Wall mage test fails by a hair.
+
 ## Ability animations (decided by Marcel 2026-11-15, done and approved)
 
 Options were asked per class; Marcel chose all four recommended directions. No new clips packs (crossbow stays; KayKit Character Animations 1.1 and Adventurers 2.0 with a bow are on disk in `/tmp/anim-compare/dl/` but unused, rig untested).

@@ -68,10 +68,10 @@ export const HERO = {
   rangedDodge: { distance: 6, duration: 0.4 },
   /**
    * Dodging through enemies grazes them: each enemy the hero's body passes is hit once per dodge
-   * for `multiplier` × power, pushed aside, and gives the hero `energy`. `contact` is added to both
-   * body radii.
+   * for `multiplier` × power, pushed aside, stunned for `stun` seconds (Marcel, 2026-11-15; not
+   * bosses, not frozen enemies), and gives the hero `energy`. `contact` is added to both body radii.
    */
-  dodgeStrike: { multiplier: 0.5, contact: 0.2, knockback: 3, hitstop: 0.04, energy: 8 },
+  dodgeStrike: { multiplier: 0.5, contact: 0.2, knockback: 3, hitstop: 0.04, energy: 8, stun: 0.3 },
   /** Melee aim assist: snap the swing to an enemy this close and within this angle. */
   aimAssist: { range: 3.2, angle: 55 * DEG },
   /** Seconds into a recover after which a queued chain step starts. */
