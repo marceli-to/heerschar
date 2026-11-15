@@ -152,6 +152,10 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - Run-through (headless, scripted clicks): title → New Game → class select → map → Squad → Formation → battle (bot) → level-up picks → Spoils → map with the won node ticked; defeat → war table; no page errors. Typecheck, 225 tests, build pass.
 - Gate still needs Marcel's own playtest and his verdict.
 
+## Made in 6h without asking (Marcel may veto)
+
+- Credits wording, section order (Music first), the region / slot label in italics left of each line, licence + source in small type beneath; clicking beside the sheet closes it.
+
 ## 6g decisions (Marcel, 2026-11-15)
 
 - Settings open from the **title** (button under Continue / New Game) and the **pause panel** (under Resume); not from the war-table screens.
