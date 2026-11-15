@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { GRADE, MEADOW } from './palette';
+import type { RegionId } from '../data/campaign';
+import { GRADE } from './palette';
+import { REGION_LOOKS, type RegionLook } from './scenery/looks';
 
 export interface SceneParts {
   renderer: THREE.WebGLRenderer;
@@ -7,26 +9,27 @@ export interface SceneParts {
   sun: THREE.DirectionalLight;
 }
 
-/** Renderer, sky dome, fog and lights (with the warm grade's haze and sun). Shadows only cover the arena so the map stays sharp. */
-export function createScene(canvas: HTMLCanvasElement): SceneParts {
+/** Renderer, sky dome, fog and lights in the region's look (6d). Shadows only cover the arena so the map stays sharp. */
+export function createScene(canvas: HTMLCanvasElement, region: RegionId = 'greenmarch'): SceneParts {
+  const look = REGION_LOOKS[region];
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = look.exposure;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(GRADE.fog, GRADE.fogNear, GRADE.fogFar);
-  scene.add(createSky());
+  scene.fog = new THREE.Fog(look.fog.color, look.fog.near, look.fog.far);
+  scene.add(createSky(look));
 
-  const hemi = new THREE.HemisphereLight(MEADOW.hemiSky, MEADOW.hemiGround, 1.1);
+  const hemi = new THREE.HemisphereLight(look.hemi.sky, look.hemi.ground, look.hemi.intensity);
   scene.add(hemi);
 
-  // Afternoon sun from the south-west, high enough that shadows stay short and readable.
-  const sun = new THREE.DirectionalLight(GRADE.sun, 2.4);
-  sun.position.set(-28, 42, 22);
+  // Greenmarch: afternoon sun from the south-west, high enough that shadows stay short and readable.
+  const sun = new THREE.DirectionalLight(look.sun.color, look.sun.intensity);
+  sun.position.set(...look.sun.position);
   sun.target.position.set(0, 0, 0);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -45,15 +48,15 @@ export function createScene(canvas: HTMLCanvasElement): SceneParts {
   return { renderer, scene, sun };
 }
 
-function createSky(): THREE.Mesh {
+function createSky(look: RegionLook): THREE.Mesh {
   const geo = new THREE.SphereGeometry(400, 32, 16);
   const mat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     fog: false,
     uniforms: {
-      zenith: { value: new THREE.Color(MEADOW.skyZenith) },
-      horizon: { value: new THREE.Color(MEADOW.skyHorizon) },
+      zenith: { value: new THREE.Color(look.sky.zenith) },
+      horizon: { value: new THREE.Color(look.sky.horizon) },
     },
     vertexShader: /* glsl */ `
       varying vec3 vDir;

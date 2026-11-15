@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './ui/App.vue';
 import { loadModels } from './view/models/assets';
+import { loadScenery } from './view/scenery/props';
 import './style.css';
 
 if (new URLSearchParams(location.search).has('look')) {
@@ -11,5 +12,6 @@ if (new URLSearchParams(location.search).has('look')) {
   void import('./view/models/lineup').then((m) => m.startLineup(document.getElementById('app')!));
 } else {
   void loadModels();
+  void loadScenery();
   createApp(App).mount('#app');
 }

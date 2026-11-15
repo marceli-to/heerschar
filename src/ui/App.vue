@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ENCOUNTERS, type EncounterId } from '../data/encounters';
-import type { CampId } from '../data/campaign';
+import { REGIONS, type CampId } from '../data/campaign';
 import { STRINGS } from '../data/strings';
 import { encounterSpec, trialSpec } from '../game/specs';
 import { heroOfSquad } from '../meta/squad';
@@ -24,6 +24,8 @@ const params = new URLSearchParams(location.search);
 const heroParam = HERO_CLASSES.find((c) => c === params.get('hero'));
 const battleParam = ENCOUNTERS.find((e) => e.id === params.get('battle'))?.id;
 const trial = params.has('trial');
+/** Dev: `?region=` shows any battle in another region's arena. */
+const regionParam = REGIONS.find((r) => r === params.get('region'));
 const flags = {
   debug: params.has('debug'),
   peaceful: params.has('peaceful'),
@@ -44,9 +46,11 @@ const spec = computed(() => {
   if (!squad) return null;
   if (trial) {
     const hero = heroOfSquad(squad);
-    return trialSpec(hero.classId, hero.name);
+    const t = trialSpec(hero.classId, hero.name);
+    return regionParam ? { ...t, region: regionParam } : t;
   }
-  return encounterSpec(squad, session.encounterId);
+  const e = encounterSpec(squad, session.encounterId);
+  return regionParam ? { ...e, region: regionParam } : e;
 });
 
 /** `?seed=` fixes the first battle's seed; otherwise every battle gets a fresh one. */

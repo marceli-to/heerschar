@@ -21,7 +21,7 @@ export async function startLineup(host: HTMLElement): Promise<void> {
   canvas.style.cssText = 'display:block;width:100vw;height:100vh';
   host.appendChild(canvas);
   const parts = createScene(canvas);
-  parts.scene.add(createArena(44, 30));
+  parts.scene.add(createArena(44, 30).group);
   await loadModels();
 
   type Row = { team: Team; region: RegionId; z: number; units: [ClassId, boolean][] };

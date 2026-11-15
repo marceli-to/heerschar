@@ -14,7 +14,12 @@ Characters (CC0 1.0, licences in `public/models/*/LICENSE.txt`; copied and trimm
 
 - Wolf by Quaternius (quaternius.com), CC0 1.0, via poly.pizza/m/P1gU3Qkr9r; licence note in `public/models/quaternius/LICENSE.txt`; trimmed to the clips the game plays by `tools/wolf.mjs`.
 
-The bosses' and the Shaman's extra props (horns, crown, rags, mask, antlers, totem), the arena and effects are built in code.
+Scenery (CC0 1.0, licences in `public/models/scenery/LICENSE-*.txt`; the props used are packed into one GLB per pack by `tools/scenery.mjs`):
+
+- KayKit Medieval Hexagon Pack 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Trees, stumps, rocks, clouds, windmill, houses, well, grain field, fences, flags, tents and farm props (github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0).
+- KayKit Halloween Bits 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Pines (recoloured green), dead trees, graves, iron fence and gate, crypt, lantern posts, skulls and bones (github.com/KayKit-Game-Assets/KayKit-Halloween-Bits-1.0).
+
+The bosses' and the Shaman's extra props (horns, crown, rags, mask, antlers, totem), the arena ground, stone ring, barrows, standing stones and effects are built in code.
 
 Look spike only (`?look`, `public/look/`, not used by the game):
 

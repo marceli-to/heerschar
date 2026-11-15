@@ -136,7 +136,7 @@ export async function startLookSpike(host: HTMLElement): Promise<void> {
   const hud = createHud(host);
 
   const { renderer, scene, sun } = createScene(canvas);
-  scene.add(createArena(44, 30));
+  scene.add(createArena(44, 30).group);
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;

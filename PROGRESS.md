@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); screenshots of 6a, 6b and 6c await Marcel's verdict. Next: 6d (ask scenery mood first). |
+| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); 6d done (region scenery, see "6d as built"); screenshots of 6a–6d await Marcel's verdict. Next: 6e (camera moments). |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -135,7 +135,7 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Player classes:** Krieger = Knight, Magier = Mage, Bogenschuetze = Rogue Hooded, Heiler = **recoloured Mage with a glowing orb** (light robes; colour separates it from the Magier).
 - **Enemies: mix by region.** Adventurers bodies in cold colours in Greenmarch and Darkwood, KayKit Skeletons in the Barrowlands.
 - **Missing types:** bosses = scaled KayKit bodies with the signature props from the Stage 5 decisions (Iron Warlord horned helm + two-handed axe, Fen Witch rag robe + green-glowing crooked staff, Bone King crown + greatsword + blue eyes); Schamane = Mage variant with totem / mask; wolves from another CC0 pack (verify licence, record in `CREDITS.md`).
-- **Still open (ask at 6d / 6f):** sound style (synthesised like tin-wolf vs. CC0 samples) and music (one loop per region?); scenery mood per region.
+- **Still open (ask at 6f):** sound style (synthesised like tin-wolf vs. CC0 samples) and music (one loop per region?).
 
 ## 6a decisions (Marcel, 2026-11-15)
 
@@ -143,6 +143,31 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Both sides recoloured** by swapping swatches in the KayKit texture: player warm (crimson capes / hats / cloaks, gold trim), enemies cold blue / steel.
 - **Enemy bodies:** Greenmarch + Darkwood: Shieldbearer = Knight with rectangle shield + 1H sword, Berserker = Barbarian (bear hat, beard) with two 1H axes and the dual-wield attacks. Barrowlands: Shieldbearer = Skeleton Warrior + large shield + blade, Berserker = Skeleton Minion + two skeleton axes.
 - **Hero mark:** gold trim swatch on the hero; companions keep the plain team trim.
+
+## 6d decisions (Marcel, 2026-11-15)
+
+- **Greenmarch = sunny farmland:** the approved meadow light, farm outside the stones (fences, grain, windmill, farmhouses).
+- **Darkwood = misty forest clearing:** dense dark pines, cool green-grey fog close in, muted light, mossy ground, stumps.
+- **Barrowlands = cold dusk moor:** grey moor, barrows, standing stones, graves, low blue-violet dusk light, cold fog, still readable.
+- **Build:** ground, hills, sky, light and the stone ring in code; props from CC0 KayKit packs (Medieval Hexagon + Halloween Bits, licences in `CREDITS.md`).
+
+## 6d as built (2026-11-15)
+
+- `src/view/scenery/looks.ts`: `REGION_LOOKS` per region (sky gradient, fog, sun colour / strength / direction, hemisphere light, exposure, warm-grade strength, ground + stone colours, hill height, swatch swaps of the prop textures). Greenmarch keeps the approved meadow + grade numbers.
+- `src/view/scenery/layouts.ts`: `layoutFor(region)`, fixed seeds per region: prop placements, barrows (`Mound`) and standing stones (`Menhir`). Angle 0 = −z, π/2 = +x = beyond the enemy side, where the camera starts. Greenmarch: farm with windmill, three houses, well, three grain fields with fences beyond the enemies, small farmstead behind the player side, tents + weapon rack on the near side, red flags by every other big ring stone, groves of KayKit trees, clouds. Darkwood: ~300 pines from e 1.6, young trees at the clearing's edge, pine clusters, dead trees, stumps, logs, mossy rocks. Barrowlands: graveyard (rows of graves, iron fence with arch gate, crypt, two lantern posts) beyond the enemies, seven barrows with stone doors, two stone circles + stray menhirs, lantern posts by the ring, bones, dead trees.
+- `src/view/scenery/props.ts`: `loadScenery()` (started in `main.ts`, awaited with the models in `BattleView`); each prop baked into one geometry (instanced per kind), windmill sails split off as a spinner, lantern glass spots found by their swatch cell (glow spheres for bloom). `sceneryMaterial(pack, region)` = Lambert with the recoloured atlas (`recolor.ts`).
+- `src/view/arena.ts`: `Arena` class (`group`, `update(dt)` turns the sails, `dispose()`); `createArena(w, d, region)`; code ground / ring / barrows / menhirs per look; the old code cone trees only while / if the props fail to load. `groundHeight(x, z, hills)`.
+- `createScene(canvas, region)`; `Game` builds the region's arena, sets the grade strength, updates and disposes the arena.
+- Assets: `public/models/scenery/{medieval,halloween}.glb` (1.1 MB) by `node tools/scenery.mjs <medieval hexagon repo> <halloween bits repo>`; source clones in `~/Downloads/heerschar-assets/scenery-src/`.
+- Dev: `?region=greenmarch|darkwood|barrowlands` shows any battle in that region's arena. Note: The Skirmish (the dev default battle) is a Darkwood node.
+- Checked: typecheck, 210 tests, build, 60 fps in all three regions (`perf.mjs`; its ticks/s reads ±10 because the debug tick only refreshes every 0.5 s). Screenshots in `~/Downloads/heerschar-assets/scenery-6d/` (`<region>-front|back|far|boss.png`).
+
+## Made in 6d without asking (Marcel may veto)
+
+- Darkwood: sun `#eef2d8` 1.55, fog `#a3b0a0` 16–95 m, grade 0.55; mossy ring stones; pines are the Halloween pines recoloured dark green, wood swatches darkened.
+- Barrowlands: zenith `#2c3358` → horizon `#a8899c` (dusk rose), low sun from the west `#ffc8b0`, fog `#6f7690` 22–125 m, grade 0.3; ground grey-green dead grass; **lanterns glow cold cyan** (grave lights) instead of warm.
+- Greenmarch: farm buildings in the pack's red roofs (matches the player side); grain fields flattened to waist height; tents are the pack's open canopy tents.
+- Prop scales: Hexagon buildings ×7 (houses ~6 m, windmill ~13 m), Halloween props at the characters' 0.82.
 
 ## 6c decisions (Marcel, 2026-11-15)
 
@@ -211,7 +236,7 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **6a** `ModelUnitView` behind `UnitView`: KayKit `.glb`, weapons on `handslot.r/l`, clips mapped to sim states (idle, walk, windup/attack synced to hit frames, hit, dodge, cast, death), hit flash + frozen tint; code figures stay as fallback. Move models from `public/look/` to a real asset folder, update `CREDITS.md`. Screenshots for Marcel.
 - **6b** Port the four effects from `src/look/` (bloom 1.3 / 0.6, sparks + dust + trails, grade + haze + soft shadows, ground marks 11 s). Screenshots.
 - **6c** Bosses, Schamane, wolves as decided. Screenshots.
-- **6d** Region scenery (ground, bounds, trees, hills, banners, sky, light per region). Ask mood first.
+- ~~**6d** Region scenery~~ Done (see "6d as built").
 - **6e** Camera moments: countdown orbit, slow motion on the final blow. Marcel plays.
 - **6f** Sound and music from sim events. Ask style first; licences in `CREDITS.md`.
 - **6g** Settings: volumes, key remapping, camera sensitivity, quality; saved locally. Ask about the screen's look.
@@ -517,7 +542,7 @@ PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s,
 ## Verify
 
 - `npm test` (210 tests; bot battles in `tests/sim/bot.test.ts`: squad win ≥ 60 %, solo < 5 %, mark order, whole kit + replay per hero class; per-class and per-enemy-type behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
-- URL params: `?seed=`, `?zoom=0..1`, `?debug` (overlay + `window.__game`; shows lock and mark ids), `?bot` (bot plays the hero), `?hero=krieger|bogenschuetze|heiler|magier` (hero class), `?peaceful` (enemies stand still and never act, for trying abilities), `?trial` (Stage 1 hero-alone fight instead of the squad battle). Keys: Q/E abilities, R Sammeln, Tab / Shift+Tab lock, F mark.
+- URL params: `?seed=`, `?zoom=0..1`, `?debug` (overlay + `window.__game`; shows lock and mark ids), `?bot` (bot plays the hero), `?hero=krieger|bogenschuetze|heiler|magier` (hero class), `?peaceful` (enemies stand still and never act, for trying abilities), `?trial` (Stage 1 hero-alone fight instead of the squad battle). `?region=` (arena look of another region, 6d). Keys: Q/E abilities, R Sammeln, Tab / Shift+Tab lock, F mark.
 - Posing check: with `?debug&peaceful`, move units into a row and set `u.state = 'windup'`, `u.stateTime`, `u.action` from `__game` during the intro (no ticks run, so poses hold); set each slot's `prev` to the new position. Infinite `energy` for tests: set `hero.energy = 100` inside an injected `heroInput.sample`.
 - Driving the real game headless: with `?debug`, set `__game.hud.phase = 'playing'` and override `__game.heroInput.sample = (yaw) => ({...})` to inject presses.
 - Headless checks (Chrome, needs the dev server): `node tools/shot.mjs "<url>" out.png '[{"wait":4500,"shot":"a.png"}]'` for screenshots (combat: `?bot&seed=5&zoom=0.2`), `node tools/perf.mjs "<url>"` for fps and the background-tab test. The T3 preview pane runs no animation frames, so use these instead.

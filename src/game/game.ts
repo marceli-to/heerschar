@@ -15,7 +15,8 @@ import { botInput, createBot, type BotState } from '../sim/bot';
 import { KeyboardMouse } from '../input/keyboardMouse';
 import { HeroInputSampler } from '../input/heroInput';
 import { createScene, type SceneParts } from '../view/scene';
-import { createArena } from '../view/arena';
+import { createArena, type Arena } from '../view/arena';
+import { REGION_LOOKS } from '../view/scenery/looks';
 import { CameraRig } from '../view/camera';
 import { Effects } from '../view/effects';
 import { FxWorld, SwingTrail } from '../view/fx';
@@ -193,6 +194,8 @@ export class Game {
   private fx = new FxWorld({ glow: true, impact: true, grade: true, marks: true });
   /** Bloom and warm grade after the scene render. */
   private post: Post;
+  /** The region's ground, ring and scenery. */
+  private arena: Arena;
   private units = new Map<number, UnitSlot>();
   private ledger: Ledger = new Map();
   private unitLayer = new THREE.Group();
@@ -209,11 +212,12 @@ export class Game {
     this.spec = opts.spec;
     this.battle = this.newBattle();
     const hero = heroOf(this.battle);
-    this.parts = createScene(canvas);
+    this.parts = createScene(canvas, this.spec.region);
+    this.arena = createArena(this.battle.arena.width, this.battle.arena.depth, this.spec.region);
     this.projectiles = new ProjectileLayer(this.effects);
     this.numbers = new DamageNumbers(canvas.parentElement ?? document.body);
     this.parts.scene.add(
-      createArena(this.battle.arena.width, this.battle.arena.depth),
+      this.arena.group,
       this.areas.group,
       this.unitLayer,
       this.projectiles.group,
@@ -224,6 +228,7 @@ export class Game {
     );
     this.rig = new CameraRig(1, opts.zoom ?? 0.25);
     this.post = new Post(this.parts.renderer, this.parts.scene, this.rig.camera);
+    this.post.grade.uniforms['uAmount']!.value = REGION_LOOKS[this.spec.region].grade;
     this.kbm = new KeyboardMouse(canvas);
     this.heroInput = new HeroInputSampler(this.kbm);
     this.debug = reactive({ visible: opts.debug ?? false, fps: 0, tick: 0, units: 0, zoom: this.rig.zoomLevel, lock: null, mark: null });
@@ -278,6 +283,7 @@ export class Game {
     this.areas.dispose();
     this.fx.dispose();
     this.post.dispose();
+    this.arena.dispose();
     this.lockRing.dispose();
     this.markBanner.dispose();
     this.numbers.dispose();
@@ -610,6 +616,7 @@ export class Game {
     this.rig.update(heroPos, frameTime);
     this.effects.update(animTime);
     this.fx.update(animTime);
+    this.arena.update(frameTime);
     this.post.render(frameTime);
     this.numbers.update(this.rig.camera, this.canvas.clientWidth, this.canvas.clientHeight, animTime);
     this.updateHud();
