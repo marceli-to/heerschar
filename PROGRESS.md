@@ -259,6 +259,8 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 **Marcel's playtest feel (2026-11-15), take into the retune:**
 - Either player damage is too low or enemy health too high: **the first battle is already hard to beat**. (Bots say the walk is easy; a human finds the opening hard, so the tuner's bot hero is probably stronger than a player. Look at the first battles' numbers, not just the bosses.)
 - The cooldown abilities ("extras" like Whirlwind, Shield Bash / shield) should **hit much harder**: they only come every cooldown, so each use should feel big.
+- Quick test (2026-11-15, reverted): Warrior hero damage ×2 in the campaign (`characterMods`), Shield Bash 0.6 → 0.9 and Whirlwind 1.4 → 2.1. Marcel won the first battle and lost the second, so more hero damage alone did not fix it ("not sure if it's me or the game"). Back to the defaults.
+- **Wanted later: a difficulty setting (Easy / Intermediate / Hard)** chosen by the player. Natural place: a factor on hero damage and enemy strength through the existing hero mods (`characterMods`, next to `HERO_GUARD`) and the encounter strengths. Tune the retune for Intermediate, then derive Easy and Hard from it. Ask Marcel where it is chosen (new game, options, or both) and whether it can be changed mid-campaign.
 
 ## 5e decisions (Marcel, 2026-11-14)
 
