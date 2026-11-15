@@ -363,7 +363,7 @@ const fresnelVertex = /* glsl */ `
   }`;
 
 /**
- * Everything the spike spawns: magic (fireball, frost ring, holy light, shields, lock ring),
+ * Everything the spike spawns: magic (fireball, frost ring, holy light, shields),
  * impacts (sparks, dust, trails), ground marks and a small pool of flash lights.
  * Light count is fixed up front so adding a flash never recompiles shaders.
  */
@@ -667,32 +667,6 @@ export class FxWorld {
     return () => {
       mat.uniforms.uPulse!.value = 1;
     };
-  }
-
-  /** Thin gold ground ring with four inward ticks, slowly turning (lock-on marker). */
-  lockRing(target: THREE.Object3D): void {
-    const gold = new THREE.MeshBasicMaterial({ color: hdr(FX.lock, 1.6), transparent: true, opacity: 0.95, depthWrite: false, side: THREE.DoubleSide });
-    const ring = new THREE.Group();
-    const band = new THREE.Mesh(new THREE.RingGeometry(0.62, 0.68, 64), gold);
-    ring.add(band);
-    for (let i = 0; i < 4; i++) {
-      const tick = new THREE.Mesh(new THREE.CircleGeometry(0.1, 3), gold);
-      const a = (i / 4) * Math.PI * 2;
-      tick.position.set(Math.cos(a) * 0.55, Math.sin(a) * 0.55, 0);
-      tick.rotation.z = a + Math.PI;
-      tick.scale.set(1, 0.6, 1);
-      ring.add(tick);
-    }
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.03;
-    target.add(ring);
-    this.transients.push({
-      update: (dt) => {
-        ring.rotation.z += dt * 0.8;
-        return true;
-      },
-      dispose: () => target.remove(ring),
-    });
   }
 
   private mark(tex: THREE.Texture, x: number, z: number, size: number, peak: number, rot: number): void {

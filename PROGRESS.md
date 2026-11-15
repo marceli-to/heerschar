@@ -20,7 +20,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | Look spike | **done, code removed in 6h**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
 | 6 Presentation | **gate pending**: 6a–6g done and approved (6g approved 2026-11-15); **6h built** (credits sheet, look spike removed, fps and run-through checked, see "6h as built"). Waiting for **Marcel's full playtest and verdict** ("presentable to a newcomer"). Battles still feel hard to him; difficulty levels wanted later. |
-| 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look; open question whether the in-world lock ring and mark banner should get the chunky style too. Then the Stage 6 gate (his full playtest). |
+| 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look (lock ring and mark banner now Storybook too, see "6i-6"). Then the Stage 6 gate (his full playtest). |
 | 7 | not started |
 
 ## 6i consistency pass (Marcel, 2026-11-15, via /ui)
@@ -46,7 +46,12 @@ As built: the design system is documented at the top of `src/style.css` (type sc
 - Italics dropped for flavour lines on panels (intro, end text, role line); kept for small notes (bench, replay, item "fits").
 - Formation board = light grass green with an ink outline; enemy slots tinted red.
 - Map colours per region (Greenmarch light green, Darkwood moss green, Barrowlands grey with violet-grey patches), glyph fills (fields yellow, trees green, cottages cream with red roofs, stones grey).
-- Lock ring and mark banner in the world not touched (approved 2d looks; say if they should follow).
+- Lock ring and mark banner: Marcel said yes to the chunky style (2026-11-15), built as 6i-6.
+
+## 6i-6 lock ring and mark banner (2026-11-15)
+
+- `view/targetMarkers.ts`: both drawn once on canvas textures (`toneMapped: false`, no bloom glow any more). Lock ring = fat gold band (0.70–0.84 m) with an ink outline and a pale shine stripe, four chunky gold triangles pointing in, same spin and pulse. Mark banner = gold pole with an ink outline and a coin knob, red swallow-tail cloth (gradient) with an ink outline, gold trim stripe under the top edge and a shine stripe; still waves, turns with the camera, seen through figures. Unused old `Effects.lockRing` removed from `fx.ts`.
+- Made without asking: tick shape and size, shine stripes, cloth gradient `#ff6a52` → banner red. Screenshot `~/Downloads/heerschar-assets/ui-restyle/markers/isolated.png` (plus in-battle `ring.png`).
 
 ## 6i decisions (Marcel, 2026-11-15)
 
@@ -526,7 +531,7 @@ Goal: show Marcel what Stage 6 can look like before Stage 5 builds on the curren
 
 - **Packs: both, side by side.** One KayKit figure (chunky, polished; KayKit Adventurers) next to one Quaternius figure (closer to heroic proportions), same arena, same effects. Verify each licence first (both are expected to be CC0) and record it in `CREDITS.md`. If a download cannot be scripted (itch.io / Google Drive), ask Marcel to download the zip and say where it is. Put downloads in their own new directory (untrusted data rule).
 - **Downloads (checked 2026-11-14):** KayKit Adventurers 1.0 is on GitHub (`KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0`, CC0 per its LICENSE.txt; rigged `.glb` characters Knight, Barbarian, Mage, Rogue, RogueHooded under `addons/kaykit_character_pack_adventures/Characters/gltf/`), so it can be fetched by script. Quaternius **"RPG Character Pack"** (https://quaternius.com/packs/rpgcharacters.html; 6 animated fantasy characters, glTF, CC0 per the site; check its License.txt) is only on Google Drive, so **Marcel downloaded it by hand** (2026-11-14); he attaches it in the new session or it lies in `~/Downloads/heerschar-assets/quaternius/`. Ask him where if it is not there. Not this one: "Ultimate Modular Men" (modern people: suits, punks, spacesuits; only King / Adventurer fit) is also in that folder as `individual-characters.zip`, kept for now, not for the spike.
-- **Effects: all four.** (1) Glow on magic (bloom on fireball, frost, holy light, shields, lock ring); (2) hit sparks + dust and a bright swing trail; (3) light and colour grade (warmer grade, slight distance haze, softer shadows); (4) ground marks (scorch after fire, frost on the grass).
+- **Effects: all four.** (1) Glow on magic (bloom on fireball, frost, holy light, shields); (2) hit sparks + dust and a bright swing trail; (3) light and colour grade (warmer grade, slight distance haze, softer shadows); (4) ground marks (scorch after fire, frost on the grass).
 - Engineering (no need to ask): behind a URL flag (e.g. `?look`), so normal play and tests are untouched; models loaded with `GLTFLoader` and played with `AnimationMixer` (idle / walk / attack / hit / death); a simple scripted loop (the two figures attack dummies, cast a fireball and a frost ring) so screenshots and a short recording are easy. Check fps stays at 60 on desktop.
 - Deliverable: screenshots (and a short recording if possible) for Marcel, then his verdict on pack and style. That also settles the open theme question (medieval vs. stylised fantasy) and the hero proportions.
 
