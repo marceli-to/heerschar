@@ -8,7 +8,7 @@ import { updateAreas, updateProjectiles } from './projectiles';
 import { seedState } from './rng';
 import { hasStatus, tickStatuses } from './statuses';
 import { createUnit, type UnitSetup } from './units';
-import type { Battle, BattleEvent, ClassId, HeroInput, Stats, Team, Unit, UnitMods } from './types';
+import { emptyInput, type Battle, type BattleEvent, type ClassId, type HeroInput, type Stats, type Team, type Unit, type UnitMods } from './types';
 
 export type { UnitSetup } from './units';
 
@@ -75,7 +75,10 @@ export function heroOf(battle: Battle): Unit | undefined {
  */
 export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[] {
   const events: BattleEvent[] = [];
-  if (battle.outcome !== 'running') return events;
+  // After the outcome the battle runs on as an aftermath (falls finish, shots land) for the
+  // view's final-blow slow motion: no hero input, and the outcome is never reported again.
+  const aftermath = battle.outcome !== 'running';
+  if (aftermath) input = emptyInput();
   battle.tick++;
 
   if (battle.countdown > 0) {
@@ -118,6 +121,7 @@ export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[
   separate(battle);
   for (const unit of battle.units) keepInBounds(battle, unit);
 
+  if (aftermath) return events;
   if (!hero || !isAlive(hero)) {
     battle.outcome = 'lost';
     events.push({ type: 'outcome', outcome: 'lost' });

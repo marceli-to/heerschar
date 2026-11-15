@@ -176,6 +176,21 @@ describe('outcome', () => {
     expect(lost.outcome).toBe('lost');
   });
 
+  it('runs on as an aftermath: the fall plays, no input, the outcome is not reported again', () => {
+    const b = battleWith([hero(), enemy(1.5)]);
+    b.units[1]!.hp = 1;
+    run(b, seconds(0.5), { attack: true, aimAngle: Math.PI / 2 });
+    expect(b.outcome).toBe('won');
+    const h = heroOf(b)!;
+    const pos = { ...h.pos };
+    const fallen = b.units[1]!.stateTime;
+    const later = run(b, seconds(1), { moveX: 1, attack: true });
+    expect(later.some((e) => e.type === 'outcome')).toBe(false);
+    expect(b.outcome).toBe('won');
+    expect(b.units[1]!.stateTime).toBeGreaterThan(fallen);
+    expect(h.pos.x).toBeCloseTo(pos.x, 1);
+  });
+
   it('a standing-still hero loses the trial', () => {
     const b = createBattle(trialSetup(3));
     for (let i = 0; i < seconds(120) && b.outcome === 'running'; i++) step(b, input(), DT);

@@ -31,7 +31,10 @@ export interface LoopCallbacks {
   /** Once per animation frame, before any ticks. */
   frameStart(frameTime: number): void;
   tick(): void;
-  render(alpha: number, frameTime: number): void;
+  /** `frameTime` is game time (scaled by `timeScale`), `realTime` the wall-clock frame time. */
+  render(alpha: number, frameTime: number, realTime: number): void;
+  /** Game speed for slow motion; 1 = normal. Read once per frame. */
+  timeScale?(): number;
 }
 
 export interface RunningLoop {
@@ -48,9 +51,10 @@ export function startLoop(dt: number, cb: LoopCallbacks): RunningLoop {
     const frameTime = Math.max(0, (now - last) / 1000);
     last = now;
     cb.frameStart(frameTime);
-    const { steps, alpha } = advanceLoop(state, frameTime, dt);
+    const gameTime = frameTime * (cb.timeScale?.() ?? 1);
+    const { steps, alpha } = advanceLoop(state, gameTime, dt);
     for (let i = 0; i < steps; i++) cb.tick();
-    cb.render(alpha, frameTime);
+    cb.render(alpha, gameTime, frameTime);
     handle = requestAnimationFrame(frame);
   };
   // A backgrounded tab gets no frames. On return, restart the clock instead of

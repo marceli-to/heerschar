@@ -54,6 +54,11 @@ export class KeyboardMouse {
     return this.pressedThisFrame.has(code);
   }
 
+  /** Any key or mouse button went down this frame. */
+  anyPressed(): boolean {
+    return this.pressedThisFrame.size > 0 || this.buttonsPressedThisFrame.size > 0;
+  }
+
   mouseDown(button: number): boolean {
     return this.buttons.has(button);
   }

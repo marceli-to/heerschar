@@ -17,7 +17,7 @@ import { HeroInputSampler } from '../input/heroInput';
 import { createScene, type SceneParts } from '../view/scene';
 import { createArena, type Arena } from '../view/arena';
 import { REGION_LOOKS } from '../view/scenery/looks';
-import { CameraRig } from '../view/camera';
+import { CameraRig, CAMERA, type OrbitShot } from '../view/camera';
 import { Effects } from '../view/effects';
 import { FxWorld, SwingTrail } from '../view/fx';
 import { Post } from '../view/post';
@@ -30,6 +30,7 @@ import { AreaLayer } from '../view/areaView';
 import { LockRing, MarkBanner } from '../view/targetMarkers';
 import { DamageNumbers } from '../view/damageNumbers';
 import { startLoop, type RunningLoop } from './loop';
+import { FINALE, ORBIT_SKIP_MOUSE, finaleCloseIn, finaleTimeScale, orbitProgress } from './cinematics';
 
 export interface DebugStats {
   visible: boolean;
@@ -203,6 +204,13 @@ export class Game {
   private fpsFrames = 0;
   private fpsTime = 0;
   private resizeObserver: ResizeObserver;
+  /** Countdown sweep: centre and start angle (set per battle), skipped by a key / mouse move, blend weight. */
+  private orbit = { centerX: 0, centerZ: 0, startAngle: 0, skipped: false, weight: 1 };
+  private orbitShot: OrbitShot = { centerX: 0, centerZ: 0, startAngle: 0, p: 0, weight: 1 };
+  /** Final-blow slow motion: wall-clock seconds since the blow, and who fell (`null` = none seen). */
+  private finale: { t: number; victimId: number | null } | null = null;
+  /** The last unit that died in the tick being handled (the final blow's victim). */
+  private tickDeathId: number | null = null;
   /** Debug: when set, the scripted bot plays the hero (`?bot`). */
   bot: BotState | null = null;
 
@@ -248,7 +256,8 @@ export class Game {
     this.loop = startLoop(DT, {
       frameStart: (frameTime) => this.frameStart(frameTime),
       tick: () => this.tick(),
-      render: (alpha, frameTime) => this.render(alpha, frameTime),
+      render: (alpha, frameTime, realTime) => this.render(alpha, frameTime, realTime),
+      timeScale: () => (this.finale ? finaleTimeScale(this.finale.t) : 1),
     });
   }
 
@@ -262,6 +271,8 @@ export class Game {
     this.heroInput.clear();
     if (this.bot) this.bot = createBot();
     this.ledger = new Map();
+    this.finale = null;
+    this.rig.closeIn = 0;
     this.hud.ledger = [];
     this.hud.outcome = 'running';
     this.hud.phase = 'playing';
@@ -292,7 +303,8 @@ export class Game {
   }
 
   private onLockChange = (): void => {
-    if (this.hud.phase === 'ended' || this.bot) return;
+    // The final-blow slow motion plays out even if the pointer is let go.
+    if (this.hud.phase === 'ended' || this.bot || this.finale) return;
     if (this.kbm.locked) this.hud.phase = 'playing';
     else if (this.hud.phase === 'playing') this.hud.phase = 'paused';
   };
@@ -304,7 +316,21 @@ export class Game {
     // Start behind the hero, looking across the field at the enemy.
     const hero = heroOf(this.battle);
     if (hero) this.rig.yaw = hero.facing;
+    this.setupOrbit();
     this.buildHudLists();
+  }
+
+  /** The countdown sweep starts beyond the enemies, looking back over the field's centre. */
+  private setupOrbit(): void {
+    const all = this.battle.units;
+    const foes = all.filter((u) => u.team === 'enemy');
+    const mean = (us: Unit[], k: 'x' | 'z'): number => us.reduce((sum, u) => sum + u.pos[k], 0) / Math.max(1, us.length);
+    const o = this.orbit;
+    o.centerX = mean(all, 'x');
+    o.centerZ = mean(all, 'z');
+    o.startAngle = Math.atan2(mean(foes, 'x') - o.centerX, mean(foes, 'z') - o.centerZ);
+    o.skipped = false;
+    o.weight = 1;
   }
 
   /** A view and health bar for a unit (at the start, or when a boss summons it). */
@@ -355,13 +381,20 @@ export class Game {
     // While locked on, the camera frames the target itself.
     const mouse = k.consumeMouse();
     if (this.battle.lockTargetId === null) this.rig.addYaw(mouse.dx);
+    // Any key, click or real mouse move during the countdown sweep hands the camera back.
+    if (this.hud.phase === 'playing' && this.battle.countdown > 0 && (k.anyPressed() || Math.abs(mouse.dx) + Math.abs(mouse.dy) > ORBIT_SKIP_MOUSE)) this.orbit.skipped = true;
+    if (this.finale) {
+      this.finale.t += frameTime;
+      if (this.finale.t >= FINALE.duration && this.hud.phase === 'playing') this.endBattle();
+    }
     this.heroInput.collect();
     k.endFrame();
     this.countFps(frameTime);
   }
 
   private tick(): void {
-    if (this.hud.phase !== 'playing') return;
+    // After the outcome the sim runs on as an aftermath behind the end screen (falls finish).
+    if (this.hud.phase !== 'playing' && this.hud.phase !== 'ended') return;
     for (const u of this.battle.units) {
       const slot = this.units.get(u.id);
       if (!slot) continue;
@@ -379,6 +412,8 @@ export class Game {
       slot.speed += (v - slot.speed) * 0.25;
     }
     tallyEvents(this.ledger, events);
+    this.tickDeathId = null;
+    for (const e of events) if (e.type === 'death') this.tickDeathId = e.unitId;
     for (const e of events) this.onEvent(e);
   }
 
@@ -507,10 +542,8 @@ export class Game {
         break;
       }
       case 'outcome':
-        this.hud.outcome = e.outcome;
-        this.hud.ledger = this.ledgerRows();
-        this.hud.phase = 'ended';
-        if (this.kbm.locked) document.exitPointerLock();
+        // The final blow: slow motion first, the end screen after (`frameStart`).
+        this.finale = { t: 0, victimId: this.tickDeathId };
         break;
       case 'countdown':
       case 'attackStart':
@@ -522,6 +555,13 @@ export class Game {
       case 'mark':
         break;
     }
+  }
+
+  private endBattle(): void {
+    this.hud.outcome = this.battle.outcome;
+    this.hud.ledger = this.ledgerRows();
+    this.hud.phase = 'ended';
+    if (this.kbm.locked) document.exitPointerLock();
   }
 
   private barY(id: number): number {
@@ -580,7 +620,8 @@ export class Game {
     }
   }
 
-  private render(alpha: number, frameTime: number): void {
+  /** `frameTime` is game time (slowed in the finale); the camera moves in `realTime`. */
+  private render(alpha: number, frameTime: number, realTime: number): void {
     // While paused the sim is frozen, so hold the interpolation where it stopped.
     const a = this.hud.phase === 'playing' || this.hud.phase === 'ended' ? alpha : 1;
     const animTime = this.hud.phase === 'paused' || this.hud.phase === 'intro' ? 0 : frameTime;
@@ -612,14 +653,33 @@ export class Game {
     this.areas.sync(this.battle, animTime);
     const hero = heroOf(this.battle);
     const lock = this.battle.units.find((u) => u.id === this.battle.lockTargetId);
-    if (hero && lock && this.hud.phase === 'playing') this.rig.steerYaw(angleTo(hero.pos, lock.pos), frameTime);
-    this.rig.update(heroPos, frameTime);
+    const victim = this.finale?.victimId != null ? this.unit(this.finale.victimId) : undefined;
+    if (this.finale) {
+      this.rig.closeIn = finaleCloseIn(this.finale.t);
+      // Turn to frame the falling unit (unless it is the hero itself, the camera is behind it).
+      if (hero && victim && victim !== hero) this.rig.steerYaw(angleTo(hero.pos, victim.pos), realTime, CAMERA.finale.turnRate);
+    } else if (hero && lock && this.hud.phase === 'playing') this.rig.steerYaw(angleTo(hero.pos, lock.pos), realTime);
+    this.rig.update(heroPos, realTime, this.orbitFrame(a, realTime));
     this.effects.update(animTime);
     this.fx.update(animTime);
     this.arena.update(frameTime);
     this.post.render(frameTime);
     this.numbers.update(this.rig.camera, this.canvas.clientWidth, this.canvas.clientHeight, animTime);
     this.updateHud();
+  }
+
+  /** This frame's countdown sweep, or `null` once it is over. */
+  private orbitFrame(alpha: number, realTime: number): OrbitShot | null {
+    const o = this.orbit;
+    if (this.battle.countdown <= 0) return null;
+    if (o.skipped) o.weight *= Math.exp(-CAMERA.orbit.skipRate * realTime);
+    const shot = this.orbitShot;
+    shot.centerX = o.centerX;
+    shot.centerZ = o.centerZ;
+    shot.startAngle = o.startAngle;
+    shot.p = orbitProgress(this.battle.countdown, this.hud.phase === 'playing' ? alpha : 0);
+    shot.weight = o.weight;
+    return shot;
   }
 
   private updateHud(): void {

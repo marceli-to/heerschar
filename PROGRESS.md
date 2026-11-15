@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); 6d done (region scenery, see "6d as built"); screens of 6a–6d approved by Marcel (2026-11-15). Marcel's playtest still finds battles hard; a quick hero-damage test did not settle it (reverted, see "Marcel's playtest feel"); difficulty levels wanted later. Next: 6e (camera moments). |
+| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); 6d done (region scenery, see "6d as built"); screens of 6a–6d approved by Marcel (2026-11-15); 6e built (camera moments, see "6e as built"), **waiting for Marcel to play it**. Marcel's playtest still finds battles hard; a quick hero-damage test did not settle it (reverted, see "Marcel's playtest feel"); difficulty levels wanted later. Next: Marcel's verdict on 6e, then 6f (sound: ask style first). |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -144,6 +144,30 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Enemy bodies:** Greenmarch + Darkwood: Shieldbearer = Knight with rectangle shield + 1H sword, Berserker = Barbarian (bear hat, beard) with two 1H axes and the dual-wield attacks. Barrowlands: Shieldbearer = Skeleton Warrior + large shield + blade, Berserker = Skeleton Minion + two skeleton axes.
 - **Hero mark:** gold trim swatch on the hero; companions keep the plain team trim.
 
+## 6e decisions (Marcel, 2026-11-15)
+
+- **Countdown orbit = sweep, then settle:** starts high and wide beyond the enemy side, swings about a half circle over the field, lands behind the hero exactly at "go".
+- Plays **every battle**; any key or mouse movement skips to the hero view (the countdown still runs).
+- **Final blow:** ~1.5 s at 25 % speed, then eases back and the end screen appears.
+- Camera during it **eases in on the victim**: stays behind the hero, zooms in a bit and turns to frame the falling unit.
+
+## 6e as built (2026-11-15)
+
+- **Sim aftermath:** `step()` no longer stops at the outcome; it runs on with empty input and never reports the outcome twice, so the final fall plays out (test in `battle.test.ts`). Headless loops still stop at the outcome.
+- `game/loop.ts`: optional `timeScale()` callback scales the time fed to the accumulator; `render(alpha, gameTime, realTime)`.
+- `game/cinematics.ts`: `FINALE` (1.5 s, 25 %, ease in 0.08 s, ease out over the last 0.4 s, close-in 0.6 s), `finaleTimeScale`, `finaleCloseIn`, `orbitProgress` (tests in `tests/sim/cinematics.test.ts`).
+- `view/camera.ts`: `update(target, dt, orbit)` blends an `OrbitShot` in polar coordinates about the field centre, landing exactly on the hero view; `CAMERA.orbit` (start 26 m out, 15 m up, gaze turns from the centre after 45 %, height drops after 40 % so it clears the Darkwood pines), `closeIn` scales the zoom down to 0.65× in the finale, `steerYaw(angle, dt, rate)`.
+- `game/game.ts`: orbit centre = mean of all units, start angle towards the enemies' mean (`setupOrbit`, per battle and restart). Skip = any key / click or > 4 px mouse while playing in the countdown; the orbit then fades out (`skipRate` 7/s). The intro panel shows the orbit's start pose behind it. On `outcome` the finale starts (victim = last `death` that tick); camera turns to the victim at `CAMERA.finale.turnRate` unless the victim is the hero; after 1.5 s `endBattle()` shows the end screen. Ticks keep running in `ended` (aftermath behind the end screen). Losing pointer lock in the finale does not pause.
+- `KeyboardMouse.anyPressed()`.
+- Checked: typecheck, 214 tests, build. Frames in `~/Downloads/heerschar-assets/camera-6e/` (`sheet-<region>.png` = orbit at countdown 3 / 2.4 / 1.8 / 1.2 / 0.6 / 0; `sheet-finale.png`).
+
+## Made in 6e without asking (Marcel may veto)
+
+- The intro panel now sits over the orbit's start view (high, behind the enemy line) instead of the hero view.
+- The sweep always turns the same way round when the start and end are about opposite.
+- After the finale the camera stays closed in and turned during the end screen; restart resets it.
+- In a defeat, the battle runs on behind the end screen (remaining companions may still fight).
+
 ## 6d decisions (Marcel, 2026-11-15)
 
 - **Greenmarch = sunny farmland:** the approved meadow light, farm outside the stones (fences, grain, windmill, farmhouses).
@@ -237,7 +261,7 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - ~~**6b**~~ Done. Port the four effects from `src/look/` (bloom 1.3 / 0.6, sparks + dust + trails, grade + haze + soft shadows, ground marks 11 s). Screenshots.
 - ~~**6c**~~ Done. Bosses, Schamane, wolves as decided. Screenshots.
 - ~~**6d** Region scenery~~ Done (see "6d as built").
-- **6e** Camera moments: countdown orbit, slow motion on the final blow. Marcel plays.
+- ~~**6e**~~ Built (see "6e as built"); Marcel plays.
 - **6f** Sound and music from sim events. Ask style first; licences in `CREDITS.md`.
 - **6g** Settings: volumes, key remapping, camera sensitivity, quality; saved locally. Ask about the screen's look.
 - **6h** Gate: full run-through, fps, remove the `?look` spike (`src/look/`, `public/look/`), Marcel's verdict ("presentable to a newcomer").
