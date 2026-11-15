@@ -433,6 +433,29 @@ export const STRINGS = {
     guardShield: 'Taunt and Shield Bash shield self ({v}× power)',
     selfRally: 'Taunt and Whirlwind rally self for {v} s',
   },
+  /** Short names of what an effect changes, for "before → after" rows on the spoils cards. */
+  effectNames: {
+    hp: 'Health',
+    power: 'Power',
+    armor: 'Armour',
+    resist: 'Resist',
+    speed: 'Speed',
+    haste: 'Attack speed',
+    range: 'Range',
+    damage: 'Damage',
+    toughness: 'Damage taken',
+    healing: 'Healing',
+    cooldown: 'Cooldowns',
+    lifesteal: 'Lifesteal',
+    crit: 'Critical chance',
+    control: 'Control',
+    slowOnHit: 'Arrow slow',
+    area: 'Area size',
+    guardShield: 'Guard shield',
+    selfRally: 'Self rally',
+    /** Companions attack on an interval: shown as the seconds between attacks. */
+    attackInterval: 'Attacks every',
+  },
   /** Stage 4c spoils page after a first win. Draft copy, not yet approved by Marcel. */
   spoils: {
     title: 'Spoils',
@@ -444,6 +467,9 @@ export const STRINGS = {
     choosePath: 'Choose a path',
     pathKind: 'Path',
     pickCount: (n: number, of: number) => `Pick ${n} of ${of}`,
+    /** How many of an upgrade the character already has, of the most there can be. */
+    stack: (has: number, max: number) => `${has} / ${max}`,
+    keyHint: (n: number) => (n === 2 ? 'or press 1 or 2' : 'or press 1, 2 or 3'),
     lootHint: 'Choose one to keep. It goes to the company’s baggage.',
     weapon: (cls: string) => `${cls} weapon`,
     trinket: 'Trinket, for anyone',

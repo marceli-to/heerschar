@@ -5,6 +5,7 @@ import { xpAt } from '../../meta/describe';
 import { characterOf, choose, currentChoice, takeLoot, type Choice, type GameState } from '../../meta/game';
 import { isFielded } from '../../meta/squad';
 import ClassMedallion from '../hud/ClassMedallion.vue';
+import FigurePreview from './FigurePreview.vue';
 import ItemCard from './ItemCard.vue';
 import UpgradeCard from './UpgradeCard.vue';
 import WarTable from './WarTable.vue';
@@ -66,6 +67,16 @@ onMounted(() => {
   raf = requestAnimationFrame(tick);
 });
 onBeforeUnmount(() => cancelAnimationFrame(raf));
+
+/** Number keys pick a card on a pick page. */
+function onKey(e: KeyboardEvent): void {
+  if (e.repeat || page.value !== 'choice' || !choice.value?.options) return;
+  const n = Number(e.key);
+  const id = choice.value.options[n - 1];
+  if (Number.isInteger(n) && id) pick(choice.value, id);
+}
+window.addEventListener('keydown', onKey);
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 
 // ---------------------------------------------------------------------------------------------
 // Picks
@@ -133,18 +144,35 @@ function keep(itemId: string): void {
       </ScreenFrame>
 
       <!-- Upgrade or path pick -->
-      <ScreenFrame v-else-if="page === 'choice' && choice && picker" :key="`choice-${pickNumber}`" :title="T.title" :subtitle="T.pickCount(pickNumber, totalPicks)">
-        <div class="flex items-center gap-4">
-          <ClassMedallion :class-id="picker.classId" :size="52" />
-          <div>
-            <h3 class="heading-screen text-left">{{ picker.name }}</h3>
-            <p class="table-text text-lg">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
+      <ScreenFrame v-else-if="page === 'choice' && choice && picker" key="choice" :title="T.title">
+        <div class="panel w-[min(860px,94vw)] px-8 pt-4 pb-9">
+          <div class="flex items-center gap-6">
+            <FigurePreview :class-id="picker.classId" :hero="picker.isHero" class="-my-4 h-48 w-48 shrink-0" />
+            <Transition name="swap" mode="out-in">
+              <div :key="picker.id" class="min-w-0 flex-1">
+                <div class="flex items-center gap-3">
+                  <ClassMedallion :class-id="picker.classId" :size="40" />
+                  <h3 class="heading-2 truncate" :class="{ 'text-blood': picker.isHero }">{{ picker.name }}</h3>
+                </div>
+                <p class="label mt-1 text-lg">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
+                <p class="heading-3 mt-3">{{ choice.kind === 'path' ? T.choosePath : T.chooseUpgrade }}</p>
+              </div>
+            </Transition>
+            <div class="flex shrink-0 flex-col items-end gap-2 self-start pt-2">
+              <ol class="flex gap-1.5" :aria-label="T.pickCount(pickNumber, totalPicks)">
+                <li v-for="n in totalPicks" :key="n" class="pip" :class="{ done: n < pickNumber, now: n === pickNumber }" />
+              </ol>
+              <p class="label tabular-nums">{{ T.pickCount(pickNumber, totalPicks) }}</p>
+            </div>
           </div>
+          <div class="rule mt-3 mb-5" />
+          <Transition name="swap" mode="out-in">
+            <div :key="`cards-${pickNumber}`" class="flex flex-wrap items-stretch justify-center gap-6">
+              <UpgradeCard v-for="(id, i) in choice.options" :key="id" :kind="choice.kind" :id="id" :character="picker" :hotkey="i + 1" @click="pick(choice, id)" />
+            </div>
+          </Transition>
         </div>
-        <p class="table-text font-display text-2xl">{{ choice.kind === 'path' ? T.choosePath : T.chooseUpgrade }}</p>
-        <div class="mt-2 flex flex-wrap justify-center gap-8">
-          <UpgradeCard v-for="id in choice.options" :key="id" :kind="choice.kind" :id="id" @click="pick(choice, id)" />
-        </div>
+        <p class="table-text -mt-1">{{ T.keyHint(choice.options?.length ?? 3) }}</p>
       </ScreenFrame>
 
       <!-- Loot -->
@@ -171,6 +199,31 @@ function keep(itemId: string): void {
     transform: scale(1);
     opacity: 1;
   }
+}
+.pip {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2.5px solid var(--color-ink);
+  background: var(--color-cream-dark);
+}
+.pip.done {
+  background: var(--color-gold);
+}
+.pip.now {
+  background: var(--color-blood-light);
+  transform: scale(1.2);
+}
+.swap-enter-active,
+.swap-leave-active {
+  transition: opacity 160ms, transform 160ms;
+}
+.swap-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.swap-leave-to {
+  opacity: 0;
 }
 .page-enter-active,
 .page-leave-active {

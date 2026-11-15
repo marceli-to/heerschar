@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../../src/data/items';
 import { LEVEL_CAP, xpToNext } from '../../src/data/progression';
 import { PATHS, UPGRADES } from '../../src/data/upgrades';
-import { effectLines, formatPlayTime, upgradeTally, xpAt } from '../../src/meta/describe';
+import { effectChanges, effectLines, formatPlayTime, upgradeTally, xpAt } from '../../src/meta/describe';
+import { characterStats } from '../../src/meta/progression';
+import { SANDBOX_COMPANIONS, newSquad } from '../../src/data/roster';
 import type { XpGain } from '../../src/meta/game';
 
 describe('effect lines', () => {
@@ -61,5 +63,27 @@ describe('play time', () => {
     expect(formatPlayTime(42 * 60000 + 20000)).toBe('42 min');
     expect(formatPlayTime(60 * 60000)).toBe('1 h 00 min');
     expect(formatPlayTime((2 * 60 + 5) * 60000)).toBe('2 h 05 min');
+  });
+});
+
+describe('effect changes (spoils cards)', () => {
+  const maren = () => newSquad('krieger', 'Hero', SANDBOX_COMPANIONS).roster.find((c) => c.name === 'Maren')!;
+
+  it('shows stats as fought before and after', () => {
+    const c = maren();
+    const now = characterStats(c);
+    expect(effectChanges(c, { range: 2 })).toEqual([{ label: 'Range', from: `${now.range.toFixed(0)} m`, to: `${(now.range + 2).toFixed(0)} m` }]);
+    expect(effectChanges(c, { hp: 0.12 })[0]).toMatchObject({ label: 'Health', from: now.maxHp.toFixed(0) });
+  });
+
+  it('shows other effects as running totals, capped', () => {
+    const c = maren();
+    expect(effectChanges(c, { cooldown: 0.12 })).toEqual([]);
+    c.upgrades.push('serenity');
+    expect(effectChanges(c, { cooldown: 0.12 })).toEqual([{ label: 'Cooldowns', from: '−12%', to: '−24%' }]);
+    c.upgrades.push('serenity', 'serenity', 'serenity');
+    expect(effectChanges(c, { cooldown: 0.12 })).toEqual([{ label: 'Cooldowns', from: '−48%', to: '−50%' }]);
+    c.upgrades.push('serenity');
+    expect(effectChanges(c, { cooldown: 0.12 })).toEqual([]);
   });
 });
