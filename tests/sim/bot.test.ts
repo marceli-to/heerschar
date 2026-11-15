@@ -52,7 +52,8 @@ describe('5-against-6 squad battle with the bot hero', () => {
     it(`${c}: the hero alone does not win`, () => {
       let wins = 0;
       for (let seed = 1; seed <= RUNS; seed++) if (playHeadless(soloSetup(seed, c)).outcome === 'won') wins++;
-      expect(wins / RUNS).toBeLessThan(0.05);
+      // At most one win in 20 (Marcel, 2026-11-15: accepted with the 1 s dodge stun).
+      expect(wins / RUNS).toBeLessThanOrEqual(0.05);
     });
   }
 

@@ -31,6 +31,7 @@ export function createUnit(id: number, s: UnitSetup): Unit {
     stateTime: 0,
     stunDuration: 0,
     staggerImmunity: 0,
+    dodgeStunImmunity: 0,
     targetId: null,
     attackCooldown: 0,
     chain: 0,

@@ -107,6 +107,7 @@ export function step(battle: Battle, input: HeroInput, dt: number): BattleEvent[
   for (const unit of battle.units) {
     if (unit.isHero) bufferHeroInput(unit, input, dt);
     if (unit.state !== 'stunned') unit.staggerImmunity = Math.max(0, unit.staggerImmunity - dt);
+    unit.dodgeStunImmunity = Math.max(0, unit.dodgeStunImmunity - dt);
     if (unit.state !== 'dead') {
       if (unit.hitstop > 0) {
         unit.hitstop = Math.max(0, unit.hitstop - dt);

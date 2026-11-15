@@ -100,7 +100,7 @@ function startDodge(hero: Unit, input: HeroInput, events: BattleEvent[]): void {
 
 /**
  * Dodging through enemies grazes them (`HERO.dodgeStrike`): every enemy the hero's body touches is
- * hit once per dodge, pushed aside off the dodge line, briefly stunned, and gives the hero energy.
+ * hit once per dodge, pushed aside off the dodge line, stunned (at most once per `stunCooldown` per enemy), and gives the hero energy.
  */
 function dodgeStrike(battle: Battle, hero: Unit, events: BattleEvent[]): void {
   const s = HERO.dodgeStrike;
@@ -114,7 +114,11 @@ function dodgeStrike(battle: Battle, hero: Unit, events: BattleEvent[]): void {
     u.hitstop = Math.max(u.hitstop, s.hitstop);
     gainEnergy(hero, s.energy);
     if (applyDamage(hero, u, computeDamage(battle, hero.stats.power, s.multiplier, u, 'physical', hero), false, events)) continue;
-    if (!hasStatus(u, 'frozen')) stun(u, s.stun);
+    // The stun is long, so the same enemy cannot be kept down by dodging back and forth through it.
+    if (!hasStatus(u, 'frozen') && u.dodgeStunImmunity <= 0) {
+      stun(u, s.stun);
+      u.dodgeStunImmunity = s.stunCooldown;
+    }
   }
 }
 

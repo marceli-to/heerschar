@@ -149,6 +149,8 @@ export interface Unit {
   stunDuration: number;
   /** Seconds left in which the unit cannot be staggered again. */
   staggerImmunity: number;
+  /** Seconds left in which a dodge strike cannot stun the unit again (`HERO.dodgeStrike.stunCooldown`). */
+  dodgeStunImmunity: number;
   targetId: number | null;
   /** Seconds until the next basic attack may start (AI units). */
   attackCooldown: number;

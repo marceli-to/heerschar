@@ -87,6 +87,18 @@ describe('dodge', () => {
     run(held, seconds(0.2), { moveX: 1, dodge: true });
     expect(held.units[1]!.state).not.toBe('stunned');
   });
+
+  it('does not stun an enemy again within the cooldown, but still hits it', () => {
+    const b = battleWith([hero(), enemy(2)]);
+    run(b, seconds(0.2), { moveX: 1, dodge: true });
+    expect(b.units[1]!.dodgeStunImmunity).toBeGreaterThan(HERO.dodgeStrike.stunCooldown - 0.3);
+
+    const again = battleWith([hero(), enemy(2)]);
+    again.units[1]!.dodgeStunImmunity = 1;
+    const events = run(again, seconds(0.2), { moveX: 1, dodge: true });
+    expect(events.some((e) => e.type === 'hit' && e.attackerId === 1 && e.targetId === 2)).toBe(true);
+    expect(again.units[1]!.state).not.toBe('stunned');
+  });
 });
 
 describe('attack chain', () => {
