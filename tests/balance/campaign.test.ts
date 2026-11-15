@@ -1,6 +1,6 @@
 /**
  * Campaign balance report (PLAN section 13), not a test:
- * `REPORT=1 [RUNS=200] [WALKS=4] [HEROES=krieger,…] [ONLY=raiders,…] npx vitest run tests/balance/campaign.test.ts`
+ * `REPORT=1 [RUNS=200] [WALKS=8] [HEROES=krieger,…] [ONLY=raiders,…] npx vitest run tests/balance/campaign.test.ts`
  *
  * Each encounter is played by the bot with the squad a player brings there (`snapshots`: the map
  * walked in order, every node once), `RUNS` battles spread over `WALKS` walks per hero class.
@@ -18,7 +18,7 @@ import type { GameState } from '../../src/meta/game';
 import { snapshots } from './walk';
 
 const RUNS = Number(process.env.RUNS ?? 40);
-const WALKS = Number(process.env.WALKS ?? 4);
+const WALKS = Number(process.env.WALKS ?? 8);
 const HEROES = (process.env.HEROES?.split(',') ?? ['krieger', 'bogenschuetze', 'heiler', 'magier']) as PlayableClassId[];
 const MAX_SECONDS = 240;
 /** `STRS=raiders=1.4,farmstead=1.5` tries other strengths without editing the data. */

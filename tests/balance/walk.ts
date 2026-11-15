@@ -1,12 +1,12 @@
 import { NODES, REGIONS, regionNodes, type CampId, type CampaignNode } from '../../src/data/campaign';
 import type { EncounterId } from '../../src/data/encounters';
 import { itemById } from '../../src/data/items';
-import { characterOf, choose, currentChoice, equip, isNodeOpen, newGame, passCamp, recordBattle, recruit, takeLoot, type GameState } from '../../src/meta/game';
+import { campOffers, characterOf, choose, currentChoice, equip, isNodeOpen, newGame, passCamp, recordBattle, recruit, takeLoot, type GameState } from '../../src/meta/game';
 import type { PlayableClassId } from '../../src/sim/types';
 
 /**
  * Shared by the balance reports: how a player walks the campaign map. Nodes in map order (left to
- * right within each region, first open one first), camps take one of the two offers, level-ups a
+ * right within each region, first open one first), camps take the offer rarest in the field, level-ups a
  * seeded pick, loot the rarest item, equipped on the first fielded character it improves.
  */
 
@@ -41,8 +41,16 @@ export function nextNode(s: GameState, done: ReadonlySet<string>): CampaignNode 
   return null;
 }
 
+/**
+ * Takes the offer whose class is rarest in the field, as a player keeping a mixed company would
+ * (blind picks stacked three healers in some walks, which then stall against shamans); `pick`
+ * breaks a tie.
+ */
 export function visitCamp(s: GameState, id: CampId, pick: number): void {
-  if (!recruit(s, id, pick % 2)) passCamp(s, id);
+  const count = (k: string) => s.squad.fielded.filter((f) => characterOf(s, f).classId === k).length;
+  const offers = campOffers(s, id);
+  const a = count(offers[0]!.classId), b = count(offers[1]!.classId);
+  if (!recruit(s, id, a === b ? pick % 2 : a < b ? 0 : 1)) passCamp(s, id);
 }
 
 /**

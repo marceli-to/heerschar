@@ -18,7 +18,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: suite + strengths + class spread done; matchup decisions taken (see "5f matchup decisions"), being built; then the map walk and the 5f gate. PLAN sections 10, 13, 14. |
+| 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
 | 6–7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -126,7 +126,20 @@ The rest is **matchups**, not class strength (the averages are even), and number
 
 Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 9, Healer 9, Mage 11 of 12 (before: 5, 5, 4, 7). Stuck runs are spread out (Archer still twice at the Iron Warlord).
 
-**Open (next session starts here):** the two halves of criterion A pull apart, because **walk squads do clearly worse than `snapshots` squads at the same strength** (Fen Witch at 3.3: walk 15–33 %, snapshots 25–65 %; at 2.8: walk 50–92 %, snapshots 70–100 %). With the eased strengths the walk passes, but `campaign.test` (snapshots) now reads too easy: bosses 70–100 % (band 35–60), many standard battles > 90 %. The tuner on snapshots puts strengths back near the old values (Fen Witch ~3.3, Wolf Pack ~4.3, Bone King ~3.3), where the walk only finishes 4–7 / 12. Next: find why walk squads are weaker (lost elites skipped = less XP? camp picks? loot?) and make both measures agree, then tune once. Also: the hero guard pushed solo up (Burning Field ~21 %, Raiders 8–15 %, Ambush 6 %; target < 5 %) and the hero damage share up (often 55–95 %, target 35–50 %).
+**Was open:** the two halves of criterion A pull apart, because **walk squads do clearly worse than `snapshots` squads at the same strength** (Fen Witch at 3.3: walk 15–33 %, snapshots 25–65 %; at 2.8: walk 50–92 %, snapshots 70–100 %). With the eased strengths the walk passes, but `campaign.test` (snapshots) now reads too easy: bosses 70–100 % (band 35–60), many standard battles > 90 %. The tuner on snapshots puts strengths back near the old values (Fen Witch ~3.3, Wolf Pack ~4.3, Bone King ~3.3), where the walk only finishes 4–7 / 12. Next: find why walk squads are weaker (lost elites skipped = less XP? camp picks? loot?) and make both measures agree, then tune once. Also: the hero guard pushed solo up (Burning Field ~21 %, Raiders 8–15 %, Ambush 6 %; target < 5 %) and the hero damage share up (often 55–95 %, target 35–50 %).
+
+## 5f third session (2026-11-15): walk vs snapshots, parked for Stage 6
+
+- **Cause found:** walk squads are *not* weaker than `snapshots` squads. At the same node they are the same company (same levels, upgrade counts, items, battles won), and they win at the same rate. The gap is the **spread between companies**: at Fen Witch (3.35) Healer-hero companies range 0–100 % depending on who the camps brought (e.g. a second Warrior instead of a second Archer = 0–10 %). The snapshot average hides it; the walk stalls on the weak companies, and by Fen Witch the roster has six, all fielded, so there is no bench to swap.
+- **Walk recruits sensibly now** (`visitCamp` in `walk.ts`): the offer whose class is rarest in the field, the seed breaks ties. Blind picks had stacked three healers; with this rule Fen Witch at 2.8 went from 5–100 % per walk to 60–100 %. `snapshots`, `campaign.test`, `chain.test` and `tune.test` all use it.
+- `tune.test`: 16 runs over 8 walks per class (was 12 over 4); `MIN=1` aims the **weakest hero class** at the target instead of the average and prints the win rate per class. `campaign.test` defaults to 8 walks.
+- Two tunings tried, neither kept: (a) average at band middle (Iron Warlord 2.05, Fen Witch 3.4, Bone King 3.35, …): walk finishes Warrior 7, Archer 4, Healer 2, Mage 3 of 12 (Iron Warlord is 98 % for the Warrior hero, ~20 % for Archer / Healer); (b) weakest class at 70 / 45 / 45 % (`MIN=1 AIM=0.7,0.45,0.45`: archerLine 1.9, shieldWall 3.0, ironWarlord 1.8, wolfPack 4.15, fenWitch 3.35, ironColumn 3.45, boneKing 3.0, others within 0.1 of (a)): walk finishes 6–7 / 12 per class.
+- **Kept: the eased strengths** of the second session. With the new recruiting rule the walk finishes **Warrior 10, Archer 10, Healer 11, Mage 11 of 12**. `campaign.test` reads easy there (bosses ~70–100 %).
+- Stalls: boss losses of the ranged heroes are mostly 240 s timeouts where every companion is dead and the guarded hero survives alone without the damage to finish. A human would lose slowly the same way.
+
+**Open for Marcel (when balance comes back, after or during Stage 6):**
+1. Is it fine that camp picks can make a boss near-impossible (a "wrong" company is walled), or should the game soften it (more recruits / a bench before the bosses, bosses less dependent on composition, offers that fill gaps)?
+2. With that settled, retune once (`tune.test` with `MIN=1`) and run the 5f gate. Still off target too: solo wins (Burning Field ~20 %, Raiders ~15 %), hero damage share 55–95 % (target 35–50 %), Shield Wall / boss timeouts.
 
 ## 5e decisions (Marcel, 2026-11-14)
 
