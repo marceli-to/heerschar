@@ -18,7 +18,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 3 Preparation | done, committed. **Gate passed**: headless `prepMatters` test and Marcel's playtest ("feels alright, but quite hard to win"). |
 | 4 Progression | **in progress**: 4a–4e done; next the **gate playtest** (see "Stage 4 breakdown"). PLAN sections 4, 10, 12, 14. |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
-| 5 Campaign | **in progress**: 5a–5e done (5c, 5d, 5e waiting for Marcel's look at the screenshots); 5f balance half done (suite + strengths; next: the class spread and the map walk, see "5f as built"). PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
+| 5 Campaign | **in progress**: 5a–5e done (5c, 5d, 5e waiting for Marcel's look at the screenshots); 5f balance: suite + strengths done, class spread worked on (see "5f second session"); **waiting for Marcel's call on the matchup questions there** before the map walk can pass. PLAN sections 10, 13, 14. The Stage 4 gate playtest can still happen any time alongside. |
 | 6–7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -83,6 +83,29 @@ Report at 40 runs per class (`REPORT=1 RUNS=40`), overall win in band everywhere
 1. **Class spread** (PLAN: no composition > 15 points above average) is far off: the Warrior hero is weakest at the start (Raiders / Farmstead ~50 %) and strongest late; the Archer hero falls behind on armour and bosses (Iron Warlord 13 %, Wolf Pack 28 %); the Healer hero on Shield Wall / Fen Witch. A per-class constant cannot fix both ends; look at how upgrades and items scale per class, and at the Archer vs armour.
 2. **Map walk** (`chain.test.ts`, 6 runs): finishes 1–2 / 6 per hero class; stuck mostly at Iron Warlord (Archer, Mage) and at early battles (Warrior). Comes from 1.
 3. Hero share 76–88 % in the first three battles (squad of three with a healer; drops to 45–60 % later). Solo ≥ 5 % on Raiders 8, Ambush 13, Burning Field 15, Crypt Road 8. Several standard battles under 45 s (Archer Line, Berserker Rush, Grave Watch).
+
+## 5f second session (2026-11-15): class spread
+
+Kept (engineering, made without asking; Marcel may veto):
+- **Hero curve** `HERO_CURVE` in `encounters.ts`: a further factor on the hero's health and power, per class at level 1 and 18, linear between (Warrior 1.07 → 0.77, Archer 0.88 → 1.03, Healer 1.1 → 1.2, Mage 0.97 → 1.07). Found with `tests/balance/heroTune.test.ts` (bisects a hero factor per class and battle to the band middle; a line per class through those). `playerSlotStats(classId, isHero, level = 1)`. It fixed the Warrior's weak start (Raiders / Farmstead 50 → 75–85 %), and the class averages over the campaign now sit within ±8.
+- **Bot** (`bot.ts`): marks shooters after healers (`MARK_PRIORITY` schamane, heiler, bogenschuetze, magier); a ranged bot hero shoots the mark whenever it is within its range (before: only when ≤ 4 m farther than the nearest). Reason: in losses the hero dies, ~90 % of the damage from enemy archers; with a Warrior hero those archers die first (he walks through and cuts them down), with a ranged hero they never died. Archer hero vs Iron Warlord 10 → 55 % with this alone.
+- Strengths retuned with `tune.test.ts` (Iron Warlord kept at 1.75: the tuner raised it on the Warrior's numbers).
+- Tests: `prepMatters` healer test now asks ≥ 20 points (was 30; the healer is worth ~20 at every strength now that the bot thins the back row); bot kit test uses seed 5 (Heilkreis needs two hurt allies together).
+- `tests/balance/diag.test.ts`: per class and battle the hero's level and stats, who lands the killing blow, when, and how much enemy health is left.
+
+Tried and dropped: a ranged bot hero staying out of reach of enemy shooters no companion is in (no effect: archers walk after the nearest foe); the walk recruiting toward a 3 Warrior + 1 of each line (Healer-hero squads then stall against shamans, ~100 timeouts on Shield Wall / Fen Witch / Bone Legion); more hero health or +50/+100 armour for the fragile heroes at the Warlord (barely moves it).
+
+Where it stands (40 runs per class): mean class deviation from the battle's average 13.9 → ~12 points (noise alone ~5–6); battles with a class > 15 above average 16 → 10–13. Map walk (`chain.test.ts`, 6 runs): finished Warrior 2, Archer 2, Healer 1, Mage 3.
+
+The rest is **matchups**, not class strength (the averages are even), and numbers alone do not close it because hero death ends the battle (a threshold: past a strength the fragile heroes collapse while the Warrior's armour holds):
+- Warrior hero beats the Iron Warlord ~95 %, the others 25–55 % (they block the walk there).
+- Archer hero loses Wolf Pack (~10 %): berserkers dive the back row, and the hero stands in it.
+- Healer hero: weak against berserkers (Berserker Rush, Wolf Pack) and stalls against shamans (Shield Wall, Fen Witch, Bone Legion).
+
+**Questions for Marcel** (next session starts here):
+1. Accept the per-battle spread and judge class balance on the region averages plus "every hero class can finish the walk"? Or must every battle meet the PLAN rule?
+2. Should enemies single out the hero less (berserkers diving the back row, archers on the lone hero), or is "protect the hero" part of the game?
+3. Or class-side help for the fragile heroes: e.g. a Healer hero escape, a hero damage reduction for the ranged classes, a gentler Warlord escort (one archer instead of two)?
 
 ## 5e decisions (Marcel, 2026-11-14)
 
@@ -365,7 +388,7 @@ PLAN targets still missed (for Stage 5): squad win 70–90 %, length 45–150 s,
 
 ## Verify
 
-- `npm test` (206 tests; bot battles in `tests/sim/bot.test.ts`: squad win ≥ 60 %, solo < 5 %, mark order, whole kit + replay per hero class; per-class and per-enemy-type behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
+- `npm test` (210 tests; bot battles in `tests/sim/bot.test.ts`: squad win ≥ 60 %, solo < 5 %, mark order, whole kit + replay per hero class; per-class and per-enemy-type behaviour in `tests/sim/squad.test.ts`, hero kit/lock/mark and full-kit determinism per hero class in `tests/sim/hero.test.ts`, test helpers `unit()`, `hold()`, `hero(x, z, classId)` in `tests/sim/helpers.ts`), `npm run typecheck`, `npm run build`. Dev server: `npm run dev` → http://localhost:5190.
 - URL params: `?seed=`, `?zoom=0..1`, `?debug` (overlay + `window.__game`; shows lock and mark ids), `?bot` (bot plays the hero), `?hero=krieger|bogenschuetze|heiler|magier` (hero class), `?peaceful` (enemies stand still and never act, for trying abilities), `?trial` (Stage 1 hero-alone fight instead of the squad battle). Keys: Q/E abilities, R Sammeln, Tab / Shift+Tab lock, F mark.
 - Posing check: with `?debug&peaceful`, move units into a row and set `u.state = 'windup'`, `u.stateTime`, `u.action` from `__game` during the intro (no ticks run, so poses hold); set each slot's `prev` to the new position. Infinite `energy` for tests: set `hero.energy = 100` inside an injected `heroInput.sample`.
 - Driving the real game headless: with `?debug`, set `__game.hud.phase = 'playing'` and override `__game.heroInput.sample = (yaw) => ({...})` to inject presses.

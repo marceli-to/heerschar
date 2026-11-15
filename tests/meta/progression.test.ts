@@ -48,7 +48,7 @@ describe('levels and stats', () => {
     const unit = battle.units.find((u) => u.isHero)!;
     expect(unit.stats).toEqual(characterStats(hero));
     expect(unit.mods.crit).toBeCloseTo(0.05, 5);
-    expect(characterStats(hero).maxHp).toBeCloseTo(statsAtLevel(playerSlotStats('krieger', true), 'krieger', 4).maxHp * 1.12, 5);
+    expect(characterStats(hero).maxHp).toBeCloseTo(statsAtLevel(playerSlotStats('krieger', true, 4), 'krieger', 4).maxHp * 1.12, 5);
   });
 
   it('enemies grow with the encounter level', () => {

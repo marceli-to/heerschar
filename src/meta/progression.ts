@@ -50,7 +50,7 @@ export function effectMods(e: Effect): UnitMods {
 
 /** The stats a character takes into battle (what the character sheet shows). */
 export function characterStats(c: Character): Stats {
-  return applyEffectToStats(statsAtLevel(playerSlotStats(c.classId, c.isHero), c.classId, c.level), characterEffect(c));
+  return applyEffectToStats(statsAtLevel(playerSlotStats(c.classId, c.isHero, c.level), c.classId, c.level), characterEffect(c));
 }
 
 /** The battle mods a character takes into battle. */

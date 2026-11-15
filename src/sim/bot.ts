@@ -25,9 +25,15 @@ export function createBot(): BotState {
   return { pressDelay: 0, abilityDelay: 0 };
 }
 
-/** Who the bot marks first, most wanted first. */
-const MARK_PRIORITY: readonly ClassId[] = ['schamane', 'heiler'];
-/** Prefer the marked enemy over the nearest one while it is at most this much farther away. */
+/**
+ * Who the bot marks first, most wanted first: healers, then shooters (companions take the mark
+ * when they can reach it, so the squad brings the back row down instead of trading with the front).
+ */
+const MARK_PRIORITY: readonly ClassId[] = ['schamane', 'heiler', 'bogenschuetze', 'magier'];
+/**
+ * Prefer the marked enemy over the nearest one while it is at most this much farther away
+ * (a ranged hero also whenever the mark is within its range).
+ */
 const MARK_PREFERENCE = 4;
 /** Ranged hero classes try to stay this far from the nearest enemy. */
 const KITE_DISTANCE = 6;
@@ -173,7 +179,9 @@ export function botInput(battle: Battle, bot: BotState): HeroInput {
   bot.abilityDelay = Math.max(0, bot.abilityDelay - 1);
 
   const marked = enemies.find((u) => u.id === battle.markTargetId) ?? null;
-  const target = marked && dist(hero.pos, marked.pos) <= dist(hero.pos, close.pos) + MARK_PREFERENCE ? marked : close;
+  const ranged = isRangedHero(hero);
+  const markReach = Math.max(dist(hero.pos, close.pos) + MARK_PREFERENCE, ranged ? hero.stats.range : 0);
+  const target = marked && dist(hero.pos, marked.pos) <= markReach ? marked : close;
   const toTarget = angleTo(hero.pos, target.pos);
   input.aimAngle = toTarget;
 
@@ -194,7 +202,6 @@ export function botInput(battle: Battle, bot: BotState): HeroInput {
     return input;
   }
 
-  const ranged = isRangedHero(hero);
   const reach = ranged ? hero.stats.range : heroAttack(0).reach;
   const d = dist(hero.pos, target.pos);
   if (ranged && dist(hero.pos, close.pos) < KITE_DISTANCE) {

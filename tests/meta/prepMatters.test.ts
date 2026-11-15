@@ -36,7 +36,7 @@ describe('preparation changes the battle', () => {
   it('skirmish: leaving the healer at home loses far more often', () => {
     const base = play('skirmish', () => {});
     const noHealer = play('skirmish', (s) => swap(s, 'Maren', 'Ansel'));
-    expect(base.winRate - noHealer.winRate).toBeGreaterThanOrEqual(0.3);
+    expect(base.winRate - noHealer.winRate).toBeGreaterThanOrEqual(0.2);
   }, 120_000);
 
   it('skirmish: putting the hero in the back row costs battles', () => {
