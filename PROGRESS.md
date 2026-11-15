@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a done (KayKit models in battle, see "6a as built"); 6b done (the four look-spike effects in the game, see "6b as built"); 6c done (bosses, Shaman, wolves as models, see "6c as built"); 6d done (region scenery, see "6d as built"); screens of 6a–6d approved by Marcel (2026-11-15); 6e built (camera moments, see "6e as built"), **waiting for Marcel to play it**. Marcel's playtest still finds battles hard; a quick hero-damage test did not settle it (reverted, see "Marcel's playtest feel"); difficulty levels wanted later. Next: Marcel's verdict on 6e, then 6f (sound: ask style first). |
+| 6 Presentation | **in progress**: 6a–6d done and approved (2026-11-15); 6e built (camera moments, see "6e as built"); **6f first half built** (sound effects, see "6f as built"): Marcel to listen (`?sounds` board + a battle) and pick music from the shortlist ("6f music shortlist"). Marcel's playtest still finds battles hard; difficulty levels wanted later. Next: Marcel's SFX verdict + music picks, then 6f second half (music player, stings). |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -144,6 +144,41 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Enemy bodies:** Greenmarch + Darkwood: Shieldbearer = Knight with rectangle shield + 1H sword, Berserker = Barbarian (bear hat, beard) with two 1H axes and the dual-wield attacks. Barrowlands: Shieldbearer = Skeleton Warrior + large shield + blade, Berserker = Skeleton Minion + two skeleton axes.
 - **Hero mark:** gold trim swatch on the hero; companions keep the plain team trim.
 
+## 6f decisions (Marcel, 2026-11-15)
+
+- **SFX = CC0 samples** (Kenney RPG Audio, Impact Sounds, Interface Sounds; others only if CC0 and verified).
+- **Music = free recorded tracks**, CC0 preferred, CC-BY allowed with credit in `CREDITS.md`. **Shortlist to Marcel before anything goes in.**
+- **Loops:** one battle loop per region (Greenmarch, Darkwood, Barrowlands) + one calm loop for title / war table; short victory and defeat stings.
+- **Mix = hero-focused:** hero's hits, casts, dodges loud and always; others quieter and capped (few overlapping); every death and big area blast still audible.
+
+## 6f as built (first half, 2026-11-15)
+
+- **Sources** (all CC0, licences checked on the pages): Kenney RPG Audio / Impact Sounds / Interface Sounds; rubberduck 80 RPG, 100 SFX, 80 creature; Swishes; 150 Combat Sound Effects (CC0 compilation, `LICENSES.txt` lists sources); Cure Magic; Ice spells; Freeze Spell; Magic Words + Healing. Unzipped in `~/Downloads/heerschar-assets/audio-6f/x/`.
+- `tools/audio.mjs <sources dir>`: decodes in headless Chrome, mono 44.1 kHz, trims silence, caps length, normalises to -1 dBFS, encodes AAC `.m4a` with `afconvert` → `public/audio/sfx/<name>-<i>.m4a` + `index.json`. 43 sounds / 182 variants / 1.9 MB; all decode in Chrome, median start delay 2 ms. (ffmpeg not needed. On this Mac the working one is `/opt/homebrew/bin/ffmpeg`, linked from `~/.local/bin`; the Intel `/usr/local` one is broken.)
+- `src/audio/engine.ts`: `audio` singleton, buses master / sfx / ui / music (`audio.volume`, for 6g), random variant ± 5 % pitch, ≤ 3 voices per sound and 24 total (hero / always cues steal the oldest), unlock on first key / pointer press.
+- `src/audio/battleCues.ts` (pure, tested): event → cues with priority `hero` / `crowd` / `always`. Hit sound by attacker (blade / heavy plate, wolf punch, crossbow wood thunk, fire / light / hex spell impacts), bone rattle on skeletons, glass ping for absorbed hits; swings; shots (crossbow latch, fire, light, hex); areas (explosion, ice blast, heal circle, sweep, charge, slam, poison); heals; freeze, ward; taunt (shield bang), howl (Fen Witch summon), raise; hero releases (Shield Bash, Whirlwind, Volley, Fall Back, Healing Circle / Blessing, Rally = gong); dodge cloth; death = body fall + armour clatter / bones / wolf whimper; countdown drum, bell at go; lock tick, mark cloth flap.
+- `src/audio/battleSound.ts`: levels hero 1 / always 0.85 / crowd 0.4, at most 2 crowd cues and 2 of one sound per tick; called from `Game.tick()`.
+- `src/audio/uiSound.ts`: click on any enabled button; screen change = page turn, battle = seal, spoils = coins.
+- `?sounds`: sound board (one button per sound, random variant).
+- Tests `tests/audio/battleCues.test.ts` (priority, absorb, skeletons, crowd cap, every sound a full bot battle cues exists, per class and region). 219 tests, typecheck, build.
+
+## Made in 6f without asking (Marcel may veto)
+
+- Every sound pick above (which sample means what), the levels, the crowd cap, the gong for Rally, drum/bell countdown, UI click / page / seal / coins.
+- No footsteps, no sound for area warnings, no pitch-down in the final-blow slow motion.
+- The swishes are very short in the source (0.07–0.19 s).
+
+## 6f music shortlist (for Marcel, 2026-11-15; licences checked on the pages, not yet listened to)
+
+Files: OGA = `https://opengameart.org/sites/default/files/<file>`, Kevin MacLeod = incompetech.com.
+- **War table:** *The Old Tower Inn* (RandomMind, CC0, has loop version) · *The Bard's Tale* (RandomMind, CC0, loop version) · *Teller of the Tales* (Kevin MacLeod, CC-BY 4.0).
+- **Greenmarch:** *Ringing of Steel* (Alexandr Zhelanov, CC-BY 4.0, looped) · *Battle Theme A* (cynicmusic, CC0) · *Medieval: Battle* (RandomMind, CC0) · *Tiny Swords Duel* (Zhelanov, CC-BY 4.0, loopable).
+- **Darkwood:** *Celtic Impulse* (MacLeod, CC-BY 4.0) · *Leshy* (Zhelanov, CC-BY 4.0) · *Achaidh Cheide* (MacLeod, CC-BY 4.0) · *Drums in the Deepwood* (Elyvilon, CC-BY 4.0).
+- **Barrowlands:** *Unholy Knight* (MacLeod, CC-BY 4.0) · *Dark Lands* (Zhelanov, CC-BY 4.0, also without choir) · *Dark Descent* (Matthew Pablo, CC-BY 3.0).
+- **Victory sting:** *Fanfares VICTORY* (Spring Spring, CC-BY 4.0, 3.9 s) · *Victory Fanfare Short* (cynicmusic, CC0, 11.8 s) · *Win and lose melodies* win (Vircon32, CC-BY 4.0, 4.7 s) · *Medieval: Victory Theme* (RandomMind, CC0, 32 s, trim).
+- **Defeat sting:** *Game Over Sad Short Music Clips* (Robin Lamb, CC0, 11–13 s) · *Win and lose melodies* lose (Vircon32, CC-BY 4.0) · *Fanfares LOSE* (Spring Spring, CC-BY 4.0) · *Medieval: Defeat Theme* (RandomMind, CC0, 45 s, trim).
+- Rejected for licence (CC-BY-SA / GPL): Matthew Pablo's Undead Rising / Imminent Threat / The Last Encounter, Zefz Orchestral Battle, jobromedia Battle in the winter.
+
 ## 6e decisions (Marcel, 2026-11-15)
 
 - **Countdown orbit = sweep, then settle:** starts high and wide beyond the enemy side, swings about a half circle over the field, lands behind the hero exactly at "go".
@@ -262,7 +297,7 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - ~~**6c**~~ Done. Bosses, Schamane, wolves as decided. Screenshots.
 - ~~**6d** Region scenery~~ Done (see "6d as built").
 - ~~**6e**~~ Built (see "6e as built"); Marcel plays.
-- **6f** Sound and music from sim events. Ask style first; licences in `CREDITS.md`.
+- **6f** Sound and music from sim events. Effects built (see "6f as built"); music: Marcel picks from the shortlist, then a streaming player (crossfade per screen / region, stings on outcome).
 - **6g** Settings: volumes, key remapping, camera sensitivity, quality; saved locally. Ask about the screen's look.
 - **6h** Gate: full run-through, fps, remove the `?look` spike (`src/look/`, `public/look/`), Marcel's verdict ("presentable to a newcomer").
 - 5f balance stays parked (see "5f third session"); pick it up after 6h unless Marcel says otherwise.

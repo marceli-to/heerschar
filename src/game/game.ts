@@ -30,6 +30,7 @@ import { AreaLayer } from '../view/areaView';
 import { LockRing, MarkBanner } from '../view/targetMarkers';
 import { DamageNumbers } from '../view/damageNumbers';
 import { startLoop, type RunningLoop } from './loop';
+import { BattleSound } from '../audio/battleSound';
 import { FINALE, ORBIT_SKIP_MOUSE, finaleCloseIn, finaleTimeScale, orbitProgress } from './cinematics';
 
 export interface DebugStats {
@@ -211,6 +212,8 @@ export class Game {
   private finale: { t: number; victimId: number | null } | null = null;
   /** The last unit that died in the tick being handled (the final blow's victim). */
   private tickDeathId: number | null = null;
+  /** Battle events → sound effects. */
+  private sound: BattleSound;
   /** Debug: when set, the scripted bot plays the hero (`?bot`). */
   bot: BotState | null = null;
 
@@ -218,6 +221,7 @@ export class Game {
     this.seed = opts.seed;
     this.peaceful = opts.peaceful ?? false;
     this.spec = opts.spec;
+    this.sound = new BattleSound(this.spec.region);
     this.battle = this.newBattle();
     const hero = heroOf(this.battle);
     this.parts = createScene(canvas, this.spec.region);
@@ -415,6 +419,7 @@ export class Game {
     this.tickDeathId = null;
     for (const e of events) if (e.type === 'death') this.tickDeathId = e.unitId;
     for (const e of events) this.onEvent(e);
+    this.sound.play(this.battle, events);
   }
 
   /** The player side in formation order, hero first, with what each did. */

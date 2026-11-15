@@ -1,0 +1,12 @@
+The sound effects in public/audio/sfx/ are built by tools/audio.mjs from these packs, all
+released under Creative Commons Zero 1.0 (https://creativecommons.org/publicdomain/zero/1.0/):
+
+- Kenney: RPG Audio, Impact Sounds, Interface Sounds (kenney.nl)
+- rubberduck: 80 CC0 RPG SFX, 100 CC0 SFX, 80 CC0 creature SFX (opengameart.org)
+- Swishes Sound Pack (opengameart.org/content/swishes-sound-pack)
+- 150 Combat Sound Effects, a CC0 compilation (opengameart.org/content/150-combat-sound-effects):
+  spell impacts by lentikula, blasts by CoMiGo, explosions from Kenney Sci-fi Sounds
+- Cure Magic (opengameart.org/content/cure-magic)
+- Ice spells (opengameart.org/content/ice-spells)
+- Freeze Spell (opengameart.org/content/freeze-spell-0)
+- Magic Words + Healing Sound Effect (opengameart.org/content/magic-words-healing-sound-effect)

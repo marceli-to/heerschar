@@ -21,6 +21,12 @@ Scenery (CC0 1.0, licences in `public/models/scenery/LICENSE-*.txt`; the props u
 
 The bosses' and the Shaman's extra props (horns, crown, rags, mask, antlers, totem), the arena ground, stone ring, barrows, standing stones and effects are built in code.
 
+Sound effects (CC0 1.0, list in `public/audio/LICENSE-cc0.txt`; trimmed, normalised and encoded to `public/audio/sfx/` by `tools/audio.mjs`):
+
+- Kenney (www.kenney.nl): RPG Audio, Impact Sounds, Interface Sounds.
+- rubberduck on OpenGameArt: 80 CC0 RPG SFX, 100 CC0 SFX, 80 CC0 creature SFX.
+- OpenGameArt CC0 packs: Swishes Sound Pack; 150 Combat Sound Effects (compiles lentikula's spell impacts, CoMiGo's Bleeps and Bloops, Kenney Sci-fi Sounds); Cure Magic; Ice spells; Freeze Spell; Magic Words + Healing Sound Effect.
+
 Look spike only (`?look`, `public/look/`, not used by the game):
 
 - KayKit Adventurers Character Pack 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Knight.glb, Mage.glb; licence in `public/look/kaykit/LICENSE.txt`.
