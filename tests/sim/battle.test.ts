@@ -37,6 +37,14 @@ describe('dodge', () => {
     expect(heroOf(b)!.pos.x).toBeCloseTo(-HERO.dodge.distance, 0);
   });
 
+  it('goes farther for ranged heroes (6 m in 0.4 s)', () => {
+    for (const c of ['bogenschuetze', 'magier', 'heiler'] as const) {
+      const b = battleWith([hero(0, 0, c), enemy(15)]);
+      run(b, seconds(HERO.rangedDodge.duration) + 1, { moveX: -1, dodge: true });
+      expect(heroOf(b)!.pos.x).toBeCloseTo(-HERO.rangedDodge.distance, 0);
+    }
+  });
+
   it('has a cooldown', () => {
     const b = battleWith([hero(), enemy(15)]);
     run(b, seconds(0.5), { moveX: -1, dodge: true });

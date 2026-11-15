@@ -1,7 +1,7 @@
 import { ENERGY, HERO, HERO_ABILITIES, heroAttack } from './balance';
 import { bodyRadius } from './body';
 import { applyDamage, computeDamage, gainEnergy, isAlive, push, resolveMelee } from './combat';
-import { abilityAim, chainLength, fireBasic, heroActionTiming, heroKit, isHeroAbility, isRangedHero, meleeAim, rangedAim, releaseAbility } from './heroAbilities';
+import { abilityAim, chainLength, fireBasic, heroActionTiming, heroDodge, heroKit, isHeroAbility, isRangedHero, meleeAim, rangedAim, releaseAbility } from './heroAbilities';
 import { lockTarget } from './heroTargeting';
 import { angleDiff, angleTo, dist } from './math';
 import { moveDir, turnTowards } from './movement';
@@ -215,8 +215,8 @@ export function updateHero(battle: Battle, hero: Unit, input: HeroInput, dt: num
     }
     case 'dodging': {
       const leap = hero.action === 'rueckzug';
-      const distance = leap ? HERO_ABILITIES.rueckzug.distance : HERO.dodge.distance;
-      const duration = leap ? HERO_ABILITIES.rueckzug.recover : HERO.dodge.duration;
+      const distance = leap ? HERO_ABILITIES.rueckzug.distance : heroDodge(hero).distance;
+      const duration = leap ? HERO_ABILITIES.rueckzug.recover : heroDodge(hero).duration;
       const t = Math.min(1, hero.stateTime / duration);
       // Fast start easing into run speed: v = D/T × (1.5 − t), which integrates to D over T.
       const speed = (distance / duration) * (1.5 - t);

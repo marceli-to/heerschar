@@ -4,7 +4,7 @@ import { createBattle, heroOf, step, type BattleSetup } from '../sim/battle';
 import { BOSS_ACTIONS, COUNTDOWN, DT, ENERGY, HERO, HERO_ABILITIES, heroAttack } from '../sim/balance';
 import { actionTiming, meleeAttackOf } from '../sim/ai';
 import { isBoss } from '../sim/body';
-import { heroKit } from '../sim/heroAbilities';
+import { heroDodge, heroKit } from '../sim/heroAbilities';
 import { angleDiff, angleTo, lerp, lerpAngle } from '../sim/math';
 import type { AreaKind, Battle, BattleEvent, ClassId, HeroAbilityId, Unit } from '../sim/types';
 import type { RegionId } from '../data/campaign';
@@ -807,7 +807,7 @@ export class Game {
       if (animTime > 0 && u.action === 'schildstoss' && u.state === 'windup') this.fx.dust(x, z, 2);
       if (u.state === 'stunned' && u.stunDuration >= STARS_FROM) this.stunStars.show(u.id, x, slot.view.barY - 0.2, z, animTime);
       slot.view.animate(
-        { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded') && !this.bubbleHold.has(u.id), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2 },
+        { state: u.state, stateTime: u.stateTime, chain: u.chain, stunDuration: u.stunDuration, isHero: u.isHero, action: u.action, ...actionTiming(u), speed: slot.speed, frozen: hasStatus(u, 'frozen'), shielded: hasStatus(u, 'shielded') && !this.bubbleHold.has(u.id), dodgeBack: Math.abs(angleDiff(u.facing, u.dodgeAngle)) > Math.PI / 2, dodgeDuration: dodgeAnimDuration(u) },
         animTime,
       );
       // Fireball: flames gather into a growing ball at the staff tip during the windup.
@@ -967,4 +967,9 @@ export class Game {
     this.post.setSize(w, h);
     this.rig.setAspect(w / h);
   }
+}
+
+/** The dodge pose's length: the hero's own dodge (Fall Back's leap keeps the standard one, as before). */
+function dodgeAnimDuration(u: Unit): number {
+  return u.isHero && u.action !== 'rueckzug' ? heroDodge(u).duration : HERO.dodge.duration;
 }

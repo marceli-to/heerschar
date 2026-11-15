@@ -25,6 +25,11 @@ export function isRangedHero(hero: Unit): boolean {
   return isRangedClass(hero.classId);
 }
 
+/** How far and how long this hero's dodge goes. */
+export function heroDodge(hero: Unit): { distance: number; duration: number } {
+  return isRangedHero(hero) ? HERO.rangedDodge : HERO.dodge;
+}
+
 /** The ranged basic attack for a chain step (falls back to the first). */
 export function heroRangedAttack(hero: Unit, chain: number): RangedAttack {
   const list: readonly RangedAttack[] = isRangedClass(hero.classId) ? HERO_RANGED[hero.classId] : HERO_RANGED.bogenschuetze;

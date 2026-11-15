@@ -68,6 +68,7 @@ export async function startLineup(host: HTMLElement): Promise<void> {
     frozen: q.has('frozen'),
     shielded: q.has('shielded'),
     dodgeBack: false,
+    dodgeDuration: 0.3,
   });
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);

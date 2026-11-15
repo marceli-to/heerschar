@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { HERO } from '../sim/balance';
 import { clamp, lerp } from '../sim/math';
 import type { ActionId, UnitState } from '../sim/types';
 import type { ClassId, Team } from '../sim/types';
@@ -26,6 +25,8 @@ export interface AnimInput {
   shielded: boolean;
   /** A dodge away from where the unit faces (a hop backwards). */
   dodgeBack: boolean;
+  /** How long the current dodge lasts (ranged heroes dodge longer). */
+  dodgeDuration: number;
 }
 
 /**
@@ -161,7 +162,7 @@ export class PrimitiveFigureView implements UnitView {
         this.poseAction(pose, 'recover', a.stateTime, a.recover, chain);
         break;
       case 'dodging':
-        this.poseDodge(a.stateTime / HERO.dodge.duration);
+        this.poseDodge(a.stateTime / a.dodgeDuration);
         break;
       case 'stunned':
         this.poseStunned(a.stateTime / Math.max(0.05, a.stunDuration));

@@ -61,6 +61,12 @@ export const HERO = {
   abilityBuffer: 0.3,
   dodge: { distance: 4, duration: 0.35, invulnerable: 0.25, cooldown: 1.2 },
   /**
+   * Ranged heroes (Archer, Mage, Healer) dodge farther, to get out of reach (Marcel, 2026-11-15).
+   * The Warrior keeps the short dodge: he is meant to stay in the fight, and a long one makes the
+   * squad's composition and formation matter less (tests/meta/prepMatters).
+   */
+  rangedDodge: { distance: 6, duration: 0.4 },
+  /**
    * Dodging through enemies grazes them: each enemy the hero's body passes is hit once per dodge
    * for `multiplier` × power, pushed aside, and gives the hero `energy`. `contact` is added to both
    * body radii.

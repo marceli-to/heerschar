@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as THREE from 'three';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { HERO } from '../../sim/balance';
 import type { ClassId } from '../../sim/types';
 import { createUnitView } from '../../view/createView';
 import { loadModels } from '../../view/models/assets';
@@ -52,7 +53,7 @@ function loop(now: number): void {
   turn += dt * 0.5;
   if (view) {
     view.setPose(0, 0, turn);
-    view.animate({ state: 'idle', stateTime: 0, chain: 0, stunDuration: 0, isHero: props.hero, action: null, windup: 0, recover: 0, speed: 0, frozen: false, shielded: false, dodgeBack: false }, dt);
+    view.animate({ state: 'idle', stateTime: 0, chain: 0, stunDuration: 0, isHero: props.hero, action: null, windup: 0, recover: 0, speed: 0, frozen: false, shielded: false, dodgeBack: false, dodgeDuration: HERO.dodge.duration }, dt);
   }
   renderer?.render(scene, camera);
 }

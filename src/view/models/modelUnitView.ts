@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
-import { HERO } from '../../sim/balance';
 import { clamp, lerp } from '../../sim/math';
 import type { Team } from '../../sim/types';
 import { FX, hdr, MODEL_COLORS } from '../palette';
@@ -289,7 +288,7 @@ export class ModelUnitView implements UnitView {
       }
       case 'dodging': {
         const clip = a.dodgeBack ? this.base.dodgeBack : this.base.dodge;
-        return { pose: { clip, time: clamp(a.stateTime / HERO.dodge.duration, 0, 1) * this.clipLength(clip) }, key: `dodge|${clip}`, fade: FADE_ACTION };
+        return { pose: { clip, time: clamp(a.stateTime / a.dodgeDuration, 0, 1) * this.clipLength(clip) }, key: `dodge|${clip}`, fade: FADE_ACTION };
       }
       case 'stunned': {
         const clip = a.stunDuration <= 0.6 ? this.base.staggerLight : this.base.staggerHeavy;

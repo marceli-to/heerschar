@@ -32,6 +32,10 @@ Agreed numbers, built, **approved by Marcel's playtest ("feels fine", 2026-11-15
 - Tests: `prepMatters` Skirmish fixture strength 1.9 → 2.5 (at 1.9 every variant won); new dodge-strike test. Campaign strengths **not** retuned: bots will now find the campaign easier; retune with the difficulty setting.
 - **Next:** step 2: better ability animations (see "Ability animations").
 
+## Longer dodge for ranged heroes (2026-11-15, Marcel: "hard to escape" with the Archer)
+
+Built, **waiting for Marcel's playtest**: Archer, Mage and Healer dodge 6 m in 0.40 s (`HERO.rangedDodge`, `heroDodge(hero)` in `heroAbilities.ts`); the Warrior keeps 4 m in 0.35 s. Pose length follows the hero's dodge (`AnimInput.dodgeDuration`; Fall Back's leap keeps the old one). Why not every class (Marcel chose this): a 6 m Warrior dodge made the bot warrior strong enough alone that `prepMatters` (healer at home / hero in the back row ≥ 20 points fewer wins) failed at every Skirmish strength 2.0–3.1, also with a bot that dodges through attackers or only at low HP.
+
 ## Ability animations (decided by Marcel 2026-11-15, done and approved)
 
 Options were asked per class; Marcel chose all four recommended directions. No new clips packs (crossbow stays; KayKit Character Animations 1.1 and Adventurers 2.0 with a bow are on disk in `/tmp/anim-compare/dl/` but unused, rig untested).
