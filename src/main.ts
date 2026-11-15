@@ -4,6 +4,7 @@ import { loadModels } from './view/models/assets';
 import { loadScenery } from './view/scenery/props';
 import { audio } from './audio/engine';
 import { installUiSound } from './audio/uiSound';
+import { music } from './audio/music';
 import './style.css';
 
 if (new URLSearchParams(location.search).has('look')) {
@@ -20,5 +21,6 @@ if (new URLSearchParams(location.search).has('look')) {
   void loadScenery();
   audio.installUnlock();
   installUiSound();
+  if (new URLSearchParams(location.search).has('debug')) Object.assign(window, { __audio: { audio, music } });
   createApp(App).mount('#app');
 }

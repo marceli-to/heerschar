@@ -19,7 +19,7 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 4 Progression | done, committed. **Gate passed**: Marcel's playtest (2026-11-15). |
 | Look spike | **done**: KayKit family (Adventurers + Skeletons) and all four effects at their current strength (see "Look spike as built"). |
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
-| 6 Presentation | **in progress**: 6a–6d done and approved (2026-11-15); 6e built (camera moments, see "6e as built"); **6f first half built** (sound effects, see "6f as built"): Marcel to listen (`?sounds` board + a battle) and pick music from the shortlist ("6f music shortlist"). Marcel's playtest still finds battles hard; difficulty levels wanted later. Next: Marcel's SFX verdict + music picks, then 6f second half (music player, stings). |
+| 6 Presentation | **in progress**: 6a–6d done and approved (2026-11-15); 6e built (camera moments, see "6e as built"); **6f done** (sound effects approved by Marcel: "effects are perfect"; music = the recommended tracks, see "6f as built"). Marcel's playtest still finds battles hard; difficulty levels wanted later. Next: Marcel listens to the music in game, then **6g** settings (ask about the screen's look first). |
 | 7 | not started |
 
 ## Stage 5 decisions (Marcel, 2026-11-14)
@@ -151,7 +151,16 @@ Numbers (`chain.test`, 12 runs per class): the walk finishes Warrior 10, Archer 
 - **Loops:** one battle loop per region (Greenmarch, Darkwood, Barrowlands) + one calm loop for title / war table; short victory and defeat stings.
 - **Mix = hero-focused:** hero's hits, casts, dodges loud and always; others quieter and capped (few overlapping); every death and big area blast still audible.
 
-## 6f as built (first half, 2026-11-15)
+## 6f as built, music (2026-11-15)
+
+- Marcel: effects approved as built; music = the top pick per slot (below). Downloads in `~/Downloads/heerschar-assets/audio-6f/music/`.
+- `tools/music.mjs <dir>`: ffmpeg (`/opt/homebrew/bin/ffmpeg`), silence trimmed both ends, loudnorm -18 LUFS loops / -16 stings, AAC 112k stereo → `public/audio/music/{table,greenmarch,darkwood,barrowlands,victory,defeat}.m4a` (6.5 MB; 50 / 97 / 155 / 150 / 4 / 10 s). Attribution in `public/audio/music/CREDITS.txt` and `CREDITS.md`.
+- `src/audio/music.ts`: `music.play(loop | null)` streams via `<audio>` → MediaElementSource → music bus, 1.5 s crossfade; `music.sting()` fades the loop in 0.6 s and plays once, then silence; the wanted loop starts on unlock (`audio.onUnlock`).
+- Wiring: `uiSound.ts` plays `table` on every screen but `battle`; `Game.start()` / `restart()` play the region loop; the `outcome` event plays the victory / defeat sting (with the final-blow slow motion).
+- `?debug` exposes `window.__audio = { audio, music }`. `tools/shot.mjs` has `{"click":[x,y]}` (trusted click, unlocks audio). Checked headless: suspended until the click, then 43 effects loaded and `table` playing; a Darkwood bot battle played `darkwood`, then faded it and played `defeat` to the end.
+- **To do (6h):** CC BY needs the attribution visible to players: a small credits page (e.g. from the title screen). Ask Marcel about its look.
+
+## 6f as built, effects (2026-11-15)
 
 - **Sources** (all CC0, licences checked on the pages): Kenney RPG Audio / Impact Sounds / Interface Sounds; rubberduck 80 RPG, 100 SFX, 80 creature; Swishes; 150 Combat Sound Effects (CC0 compilation, `LICENSES.txt` lists sources); Cure Magic; Ice spells; Freeze Spell; Magic Words + Healing. Unzipped in `~/Downloads/heerschar-assets/audio-6f/x/`.
 - `tools/audio.mjs <sources dir>`: decodes in headless Chrome, mono 44.1 kHz, trims silence, caps length, normalises to -1 dBFS, encodes AAC `.m4a` with `afconvert` → `public/audio/sfx/<name>-<i>.m4a` + `index.json`. 43 sounds / 182 variants / 1.9 MB; all decode in Chrome, median start delay 2 ms. (ffmpeg not needed. On this Mac the working one is `/opt/homebrew/bin/ffmpeg`, linked from `~/.local/bin`; the Intel `/usr/local` one is broken.)
@@ -297,9 +306,9 @@ Files: OGA = `https://opengameart.org/sites/default/files/<file>`, Kevin MacLeod
 - ~~**6c**~~ Done. Bosses, Schamane, wolves as decided. Screenshots.
 - ~~**6d** Region scenery~~ Done (see "6d as built").
 - ~~**6e**~~ Built (see "6e as built"); Marcel plays.
-- **6f** Sound and music from sim events. Effects built (see "6f as built"); music: Marcel picks from the shortlist, then a streaming player (crossfade per screen / region, stings on outcome).
+- ~~**6f**~~ Done (see "6f as built").
 - **6g** Settings: volumes, key remapping, camera sensitivity, quality; saved locally. Ask about the screen's look.
-- **6h** Gate: full run-through, fps, remove the `?look` spike (`src/look/`, `public/look/`), Marcel's verdict ("presentable to a newcomer").
+- **6h** Gate: in-game credits page (CC BY music attribution), full run-through, fps, remove the `?look` spike (`src/look/`, `public/look/`), Marcel's verdict ("presentable to a newcomer").
 - 5f balance stays parked (see "5f third session"); pick it up after 6h unless Marcel says otherwise.
 
 ## 5f third session (2026-11-15): walk vs snapshots, parked for Stage 6

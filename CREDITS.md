@@ -27,6 +27,17 @@ Sound effects (CC0 1.0, list in `public/audio/LICENSE-cc0.txt`; trimmed, normali
 - rubberduck on OpenGameArt: 80 CC0 RPG SFX, 100 CC0 SFX, 80 CC0 creature SFX.
 - OpenGameArt CC0 packs: Swishes Sound Pack; 150 Combat Sound Effects (compiles lentikula's spell impacts, CoMiGo's Bleeps and Bloops, Kenney Sci-fi Sounds); Cure Magic; Ice spells; Freeze Spell; Magic Words + Healing Sound Effect.
 
+Music (trimmed, loudness-normalised and re-encoded to AAC by `tools/music.mjs`; per-file list in `public/audio/music/CREDITS.txt`):
+
+- War table: "Medieval: The Old Tower Inn" (loop version) by RandomMind, CC0 1.0 (opengameart.org/content/medieval-the-old-tower-inn).
+- Greenmarch: "Ringing of Steel" by Alexandr Zhelanov, CC BY 4.0 (opengameart.org/content/ringing-of-steel).
+- Darkwood: "Celtic Impulse" by Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 License (creativecommons.org/licenses/by/4.0/).
+- Barrowlands: "Unholy Knight" by Kevin MacLeod (incompetech.com), licensed under Creative Commons: By Attribution 4.0 License (creativecommons.org/licenses/by/4.0/).
+- Victory: "VICTORY" from "Fanfares" by Spring Spring, CC BY 4.0 (opengameart.org/content/fanfares).
+- Defeat: "sadending1" from "Game Over Sad Short Music Clips" by Robin Lamb, CC0 1.0 (opengameart.org/content/game-over-sad-short-music-clips).
+
+The CC BY tracks need this attribution shown to players too (an in-game credits page, still to do).
+
 Look spike only (`?look`, `public/look/`, not used by the game):
 
 - KayKit Adventurers Character Pack 1.0 by Kay Lousberg (www.kaylousberg.com), CC0 1.0. Knight.glb, Mage.glb; licence in `public/look/kaykit/LICENSE.txt`.

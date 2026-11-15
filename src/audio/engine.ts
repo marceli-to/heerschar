@@ -39,6 +39,7 @@ export class AudioEngine {
   private voices = new Map<string, Voice[]>();
   private total = 0;
   private loading: Promise<void> | null = null;
+  private unlockListeners: (() => void)[] = [];
   /** Bus volumes, 0..1 (the settings screen in 6g will set these). */
   readonly volume: Record<Bus | 'master', number> = { master: 0.8, sfx: 0.9, ui: 0.7, music: 0.5 };
 
@@ -77,11 +78,20 @@ export class AudioEngine {
   installUnlock(): void {
     const resume = (): void => {
       const ctx = this.context();
-      if (ctx && ctx.state !== 'running') void ctx.resume();
+      if (!ctx) return;
+      const ran = ctx.state === 'running';
+      void (ran ? Promise.resolve() : ctx.resume()).then(() => {
+        if (!ran) for (const f of this.unlockListeners) f();
+      });
       void this.load();
     };
     window.addEventListener('pointerdown', resume, true);
     window.addEventListener('keydown', resume, true);
+  }
+
+  /** Runs `f` whenever a gesture brings the context (back) to running. */
+  onUnlock(f: () => void): void {
+    this.unlockListeners.push(f);
   }
 
   /** Fetches and decodes every effect once. Safe to call repeatedly. */

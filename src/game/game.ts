@@ -31,6 +31,7 @@ import { LockRing, MarkBanner } from '../view/targetMarkers';
 import { DamageNumbers } from '../view/damageNumbers';
 import { startLoop, type RunningLoop } from './loop';
 import { BattleSound } from '../audio/battleSound';
+import { music } from '../audio/music';
 import { FINALE, ORBIT_SKIP_MOUSE, finaleCloseIn, finaleTimeScale, orbitProgress } from './cinematics';
 
 export interface DebugStats {
@@ -257,6 +258,7 @@ export class Game {
   }
 
   start(): void {
+    music.play(this.spec.region);
     this.loop = startLoop(DT, {
       frameStart: (frameTime) => this.frameStart(frameTime),
       tick: () => this.tick(),
@@ -280,6 +282,7 @@ export class Game {
     this.hud.ledger = [];
     this.hud.outcome = 'running';
     this.hud.phase = 'playing';
+    music.play(this.spec.region);
     this.kbm.requestLock();
   }
 
@@ -549,6 +552,7 @@ export class Game {
       case 'outcome':
         // The final blow: slow motion first, the end screen after (`frameStart`).
         this.finale = { t: 0, victimId: this.tickDeathId };
+        music.sting(e.outcome === 'won' ? 'victory' : 'defeat');
         break;
       case 'countdown':
       case 'attackStart':
