@@ -100,8 +100,8 @@ const OWN_ROWS = [0, 1] as const;
 <template>
   <WarTable>
     <div class="flex w-[min(1160px,96vw)] flex-col items-center">
-      <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ STRINGS.encounters[encounterId].name }} · {{ T.title }}</h2>
-      <p class="mt-1 mb-6 text-lg italic text-cream/70">{{ T.hint }}</p>
+      <h2 class="table-title font-display text-3xl">{{ STRINGS.encounters[encounterId].name }} · {{ T.title }}</h2>
+      <p class="mt-1 mb-6 text-lg table-sub italic">{{ T.hint }}</p>
       <div class="panel grid w-full grid-cols-[auto_minmax(0,1fr)] gap-10 px-8 pt-7 pb-6">
         <div class="flex flex-col">
           <div class="map rounded-[3px] px-3 py-3">
@@ -113,7 +113,7 @@ const OWN_ROWS = [0, 1] as const;
                   <template v-if="enemyAt(row, col)">
                     <FieldToken class="token" :class-id="enemyAt(row, col)!.classId" :label="STRINGS.classes[enemyAt(row, col)!.classId]" enemy />
                     <div v-if="hoverEnemy === `${row},${col}`" class="note panel pointer-events-none absolute bottom-[calc(100%-6px)] left-1/2 z-10 w-56 -translate-x-1/2 px-4 py-3">
-                      <div class="font-display text-base font-bold tracking-[0.06em] text-blood">{{ STRINGS.classes[enemyAt(row, col)!.classId] }}</div>
+                      <div class="font-display text-base text-blood">{{ STRINGS.classes[enemyAt(row, col)!.classId] }}</div>
                       <p class="text-sm leading-snug italic text-ink-soft">{{ T.threats[enemyAt(row, col)!.classId] }}</p>
                     </div>
                   </template>
@@ -158,7 +158,7 @@ const OWN_ROWS = [0, 1] as const;
             @dragleave="onDragLeave('bench')"
             @drop="onDrop($event, 'bench')"
           >
-            <div class="mb-1.5 font-display text-xs tracking-[0.2em] text-ink-soft uppercase">{{ T.bench }}</div>
+            <div class="mb-1.5 font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ T.bench }}</div>
             <div class="flex min-h-10 flex-wrap gap-x-4 gap-y-2">
               <div
                 v-for="c in bench"
@@ -171,7 +171,7 @@ const OWN_ROWS = [0, 1] as const;
                 @dragend="onDragEnd"
               >
                 <ClassMedallion :class-id="c.classId" :size="34" class="opacity-80" />
-                <span class="font-display text-base tracking-[0.04em] text-ink-soft">{{ c.name }}</span>
+                <span class="font-display text-base text-ink-soft">{{ c.name }}</span>
               </div>
               <p v-if="bench.length === 0" class="self-center italic text-ink-soft/70">{{ T.benchEmpty }}</p>
             </div>
@@ -183,27 +183,27 @@ const OWN_ROWS = [0, 1] as const;
         </div>
       </div>
       <div class="mt-6 flex w-full items-center justify-between px-2">
-        <button class="font-display text-xs tracking-[0.15em] text-cream/70 underline-offset-4 hover:underline" @click="emit('back')">{{ STRINGS.prep.back }}</button>
-        <button class="btn px-8 py-2.5 text-sm" @click="emit('next')">{{ T.fight }}</button>
+        <button class="link link-light text-lg" @click="emit('back')">{{ STRINGS.prep.back }}</button>
+        <button class="btn px-8 py-2.5 text-lg" @click="emit('next')">{{ T.fight }}</button>
       </div>
     </div>
   </WarTable>
 </template>
 
 <style scoped>
-/* The field map: a darker inked panel on the parchment. */
+/* The field map: a grassy board with an ink outline (6i). */
 .map {
-  background:
-    radial-gradient(ellipse at 50% 50%, rgb(120 80 30 / 0.04), rgb(120 80 30 / 0.14)),
-    rgb(120 80 30 / 0.06);
-  border: 3px double rgb(58 39 23 / 0.55);
+  border-radius: 16px;
+  background: linear-gradient(#cfe39a, #a9cc6c);
+  border: 3px solid var(--color-ink);
+  box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.35), inset 0 -4px 0 rgb(0 0 0 / 0.1);
 }
 .label {
-  font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-ink-soft);
+  color: rgb(59 36 20 / 0.65);
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   justify-self: center;
@@ -215,7 +215,7 @@ const OWN_ROWS = [0, 1] as const;
   align-items: flex-start;
   justify-content: center;
   padding-top: 4px;
-  border-radius: 4px;
+  border-radius: 12px;
   transition: background-color 100ms;
 }
 /* Ink circle on the ground under each slot; dashed when empty. */
@@ -227,13 +227,15 @@ const OWN_ROWS = [0, 1] as const;
   height: 62px;
   margin-left: -31px;
   border-radius: 9999px;
-  border: 1.5px solid rgb(58 39 23 / 0.45);
+  border: 3px solid rgb(59 36 20 / 0.45);
+  background: rgb(255 255 255 / 0.18);
 }
 .ring.is-empty {
   border-style: dashed;
 }
 .ring.is-enemy {
-  border-color: rgb(155 45 32 / 0.4);
+  border-color: rgb(210 50 36 / 0.55);
+  background: rgb(210 50 36 / 0.1);
 }
 .ring.is-enemy.is-empty {
   opacity: 0.5;
@@ -243,37 +245,38 @@ const OWN_ROWS = [0, 1] as const;
 }
 .token.is-on :deep(.medallion) {
   box-shadow:
-    0 0 0 2px var(--color-gold-light),
-    0 0 12px rgb(224 191 106 / 0.8);
+    0 0 0 3px #fff4c0,
+    0 0 16px 4px rgb(255 214 110 / 0.9);
 }
 .is-dragging {
   opacity: 0.4;
 }
 .midline {
   height: 0;
-  border-top: 1.5px dashed rgb(58 39 23 / 0.45);
+  border-top: 3px dashed rgb(59 36 20 / 0.35);
 }
-.note {
-  box-shadow:
-    inset 0 0 18px rgb(120 80 30 / 0.3),
-    0 8px 18px rgb(5 2 1 / 0.45);
-}
+
 .chip {
   transition: background-color 100ms;
 }
+.chip {
+  border-radius: 12px;
+}
 .chip:hover {
-  background: rgb(120 80 30 / 0.1);
+  background: rgb(138 90 50 / 0.12);
 }
 .chip.is-on {
-  background: rgb(185 138 46 / 0.2);
-  box-shadow: inset 2px 0 0 var(--color-gold);
+  background: rgb(246 196 83 / 0.45);
+  box-shadow: inset 0 0 0 2px var(--color-ink);
 }
 .bench {
-  box-shadow: inset 0 0 0 1px rgb(58 39 23 / 0.2);
+  border-radius: 14px;
+  background: rgb(138 90 50 / 0.1);
+  box-shadow: inset 0 0 0 2px rgb(59 36 20 / 0.2);
 }
 .cell.is-target,
 .bench.is-target {
-  background: rgb(155 45 32 / 0.12);
-  box-shadow: inset 0 0 0 1px rgb(155 45 32 / 0.55);
+  background: rgb(210 50 36 / 0.15);
+  box-shadow: inset 0 0 0 2px var(--color-blood);
 }
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-/** Slider (approved 6g): thin ink line, the filled part in gold, round gold knob with a dark rim, value in Cinzel. */
+/** Slider (approved 6g, restyled 6i): a fat outlined track filled in gold, a round gold knob with an ink rim, value in Lilita. */
 const props = defineProps<{ label: string; min: number; max: number; step: number; format?: (v: number) => string }>();
 const model = defineModel<number>({ required: true });
 
@@ -13,49 +13,55 @@ const shown = computed(() => (props.format ? props.format(model.value) : String(
   <label class="grid grid-cols-[9rem_1fr_3.5rem] items-center gap-4">
     <span class="text-lg">{{ label }}</span>
     <input v-model.number="model" type="range" class="ink-slider" :min="min" :max="max" :step="step" :style="{ '--fill': fill }" />
-    <span class="text-right font-display text-sm tabular-nums text-ink-soft">{{ shown }}</span>
+    <span class="text-right font-display text-xl tabular-nums">{{ shown }}</span>
   </label>
 </template>
 
 <style scoped>
 .ink-slider {
   appearance: none;
-  height: 18px;
+  height: 28px;
   background: transparent;
   cursor: pointer;
 }
 .ink-slider::-webkit-slider-runnable-track {
-  height: 2px;
-  background: linear-gradient(90deg, var(--color-gold) var(--fill), var(--color-ink) var(--fill));
+  height: 16px;
+  border: 3px solid var(--color-ink);
+  border-radius: 99px;
+  background: linear-gradient(90deg, #f6c453 var(--fill), #6d4a30 var(--fill));
+  box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.3);
 }
 .ink-slider::-moz-range-track {
-  height: 2px;
-  background: var(--color-ink);
+  height: 10px;
+  border: 3px solid var(--color-ink);
+  border-radius: 99px;
+  background: #6d4a30;
 }
 .ink-slider::-moz-range-progress {
-  height: 2px;
-  background: var(--color-gold);
+  height: 10px;
+  border-radius: 99px;
+  background: #f6c453;
 }
 .ink-slider::-webkit-slider-thumb {
   appearance: none;
-  width: 16px;
-  height: 16px;
-  margin-top: -7px;
+  width: 26px;
+  height: 26px;
+  margin-top: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--color-gold-light), var(--color-gold) 60%, #6b4a14);
-  border: 1.5px solid var(--color-ink);
-  box-shadow: 0 1px 2px rgb(5 2 1 / 0.5);
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, #e0a530 60%, #b07418);
+  border: 3px solid var(--color-ink);
+  box-shadow: 0 2px 0 var(--color-ink);
 }
 .ink-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--color-gold-light), var(--color-gold) 60%, #6b4a14);
-  border: 1.5px solid var(--color-ink);
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, #e0a530 60%, #b07418);
+  border: 3px solid var(--color-ink);
 }
 .ink-slider:hover::-webkit-slider-thumb,
 .ink-slider:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgb(224 191 106 / 0.45);
+  box-shadow: 0 2px 0 var(--color-ink), 0 0 0 4px rgb(255 214 110 / 0.55);
 }
 .ink-slider:focus {
   outline: none;

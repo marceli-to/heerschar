@@ -101,52 +101,52 @@ function keep(itemId: string): void {
     <Transition name="page" mode="out-in">
       <!-- Experience -->
       <div v-if="page === 'xp'" key="xp" class="flex w-[min(640px,94vw)] flex-col items-center">
-        <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-        <p class="mt-1 mb-8 text-lg italic text-cream/70">{{ encounterName }}</p>
+        <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
+        <p class="mt-1 mb-8 text-lg table-sub italic">{{ encounterName }}</p>
         <div class="panel w-full px-9 pt-7 pb-6">
-          <p class="mb-4 text-center text-lg italic text-ink-soft">{{ T.xpHint }}</p>
+          <p class="mb-3 text-center text-lg text-ink-soft">{{ T.xpHint }}</p>
           <ul class="flex flex-col">
             <li
               v-for="{ gain, character, bench } in gains"
               :key="gain.characterId"
-              class="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 border-t border-gold/25 py-2"
+              class="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 border-t-2 border-ink/10 py-1.5"
               :class="{ 'opacity-70': bench }"
             >
               <ClassMedallion :class-id="character.classId" :size="34" />
               <div class="min-w-0">
                 <div class="flex items-baseline gap-2">
-                  <span class="truncate font-display text-base tracking-[0.04em]" :class="{ 'font-bold': character.isHero }">{{ character.name }}</span>
-                  <span v-if="bench" class="text-sm text-ink-soft italic">{{ T.bench }}</span>
-                  <span v-if="xpAt(gain, t).level > gain.fromLevel" class="level-up ml-auto font-display text-[11px] tracking-[0.2em] text-gold uppercase">{{ T.levelUp }}</span>
+                  <span class="truncate font-display text-lg" :class="{ 'text-blood': character.isHero }">{{ character.name }}</span>
+                  <span v-if="bench" class="text-sm text-ink-soft">{{ T.bench }}</span>
+                  <span v-if="xpAt(gain, t).level > gain.fromLevel" class="level-up ml-auto font-display text-base text-[#c47a00]">{{ T.levelUp }}</span>
                 </div>
-                <div class="xp mt-1 h-1.5 rounded-full">
-                  <div class="h-full rounded-full bg-gold" :style="{ width: `${Math.min(100, (xpAt(gain, t).xp / xpAt(gain, t).needed) * 100)}%` }" />
+                <div class="bar bar-thin mt-0.5 h-3.5">
+                  <div class="fill fill-xp" :style="{ width: `${Math.min(100, (xpAt(gain, t).xp / xpAt(gain, t).needed) * 100)}%` }" />
                 </div>
               </div>
               <div class="w-24 text-right">
-                <div class="font-display text-sm tracking-[0.08em] tabular-nums">{{ T.level }} {{ xpAt(gain, t).level }}</div>
-                <div class="text-sm text-ink-soft tabular-nums">+{{ Math.round(gain.amount * t) }} XP</div>
+                <div class="font-display text-base tabular-nums">{{ T.level }} {{ xpAt(gain, t).level }}</div>
+                <div class="text-sm font-extrabold text-[#3f8f1f] tabular-nums">+{{ Math.round(gain.amount * t) }} XP</div>
               </div>
             </li>
           </ul>
           <div class="mt-6 flex justify-center">
-            <button class="btn px-7 py-2.5 text-sm" @click="advance">{{ T.next }}</button>
+            <button class="btn px-7 py-2.5 text-lg" @click="advance">{{ T.next }}</button>
           </div>
         </div>
       </div>
 
       <!-- Upgrade or path pick -->
       <div v-else-if="page === 'choice' && choice && picker" :key="`choice-${pickNumber}`" class="flex flex-col items-center">
-        <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-        <p class="mt-1 text-base italic text-cream/60">{{ T.pickCount(pickNumber, totalPicks) }}</p>
+        <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
+        <p class="mt-1 text-base table-sub italic">{{ T.pickCount(pickNumber, totalPicks) }}</p>
         <div class="mt-6 flex items-center gap-4">
           <ClassMedallion :class-id="picker.classId" :size="52" />
           <div>
-            <h3 class="font-display text-3xl font-bold tracking-[0.08em] text-cream">{{ picker.name }}</h3>
-            <p class="text-lg text-cream/70 italic">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
+            <h3 class="table-title font-display text-4xl">{{ picker.name }}</h3>
+            <p class="text-lg table-sub italic">{{ STRINGS.classes[picker.classId] }} · {{ T.level }} {{ choice.level }}</p>
           </div>
         </div>
-        <p class="mt-6 mb-8 font-display text-base tracking-[0.2em] text-gold-light uppercase">{{ choice.kind === 'path' ? T.choosePath : T.chooseUpgrade }}</p>
+        <p class="mt-6 mb-8 table-sub font-display text-2xl">{{ choice.kind === 'path' ? T.choosePath : T.chooseUpgrade }}</p>
         <div class="flex flex-wrap justify-center gap-8">
           <UpgradeCard v-for="id in choice.options" :key="id" :kind="choice.kind" :id="id" @click="pick(choice, id)" />
         </div>
@@ -154,8 +154,8 @@ function keep(itemId: string): void {
 
       <!-- Loot -->
       <div v-else-if="page === 'loot' && rewards?.loot" key="loot" class="flex flex-col items-center">
-        <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-        <p class="mt-1 mb-10 text-lg italic text-cream/70">{{ T.lootHint }}</p>
+        <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
+        <p class="mt-1 mb-10 text-lg table-sub italic">{{ T.lootHint }}</p>
         <div class="flex flex-wrap justify-center gap-8">
           <ItemCard v-for="id in rewards.loot" :key="id" :id="id" @click="keep(id)" />
         </div>
@@ -165,12 +165,8 @@ function keep(itemId: string): void {
 </template>
 
 <style scoped>
-.xp {
-  background: rgb(58 39 23 / 0.18);
-  box-shadow: inset 0 0 0 1px rgb(58 39 23 / 0.25);
-}
 .level-up {
-  text-shadow: 0 0 6px rgb(224 191 106 / 0.6);
+  text-shadow: 0 2px 0 rgb(255 255 255 / 0.6);
   animation: pop 0.35s ease-out both;
 }
 @keyframes pop {

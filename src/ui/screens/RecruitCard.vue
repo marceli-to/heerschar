@@ -42,13 +42,13 @@ const lines = computed(() => {
     @keydown.space.prevent="!disabled && emit('select')"
   >
     <FigurePreview :class-id="character.classId" :hero="false" class="h-[150px] w-full" />
-    <h3 class="font-display text-2xl leading-tight font-bold tracking-[0.08em]">{{ character.name }}</h3>
+    <h3 class="font-display text-2xl leading-tight">{{ character.name }}</h3>
     <p class="text-lg italic text-ink-soft">{{ STRINGS.classes[character.classId] }} · {{ T.level }} {{ character.level }}</p>
     <div class="rule my-3 w-full" />
     <PathUpgrades :character="character" class="justify-center" />
     <dl class="mt-auto grid w-full grid-cols-[auto_1fr] gap-x-6 pt-3 text-base">
       <template v-for="l in lines" :key="l.label">
-        <dt class="text-left font-display text-xs leading-6 tracking-[0.15em] text-ink-soft uppercase">{{ l.label }}</dt>
+        <dt class="text-left font-black text-xs leading-6 tracking-[0.12em] text-ink-soft uppercase">{{ l.label }}</dt>
         <dd class="text-right tabular-nums">{{ l.value }}</dd>
       </template>
     </dl>
@@ -58,25 +58,25 @@ const lines = computed(() => {
 <style scoped>
 .card {
   cursor: pointer;
-  transition: transform 140ms, box-shadow 140ms, border-color 140ms;
+  transition: transform 140ms, box-shadow 140ms;
 }
 .card:hover:not(.is-disabled),
 .card:focus-visible {
   transform: translateY(-6px);
   box-shadow:
-    inset 0 0 28px rgb(120 80 30 / 0.35),
-    0 18px 36px rgb(5 2 1 / 0.6);
+    inset 0 2px 0 #fffbe9,
+    inset 0 -4px 0 #d9b77a,
+    0 10px 0 var(--color-ink),
+    0 22px 30px rgb(20 10 4 / 0.45);
 }
 .card.is-selected {
   transform: translateY(-6px);
-  border-color: var(--color-gold-light);
-  outline: 2px solid var(--color-gold);
-  outline-offset: 4px;
+  background: linear-gradient(#fff3c4, #f6cf73);
   box-shadow:
-    inset 0 0 28px rgb(120 80 30 / 0.35),
-    0 0 0 6px rgb(224 191 106 / 0.18),
-    0 0 28px rgb(224 191 106 / 0.45),
-    0 18px 36px rgb(5 2 1 / 0.6);
+    inset 0 0 0 3px var(--color-gold-light),
+    0 10px 0 var(--color-ink),
+    0 0 0 6px rgb(255 214 110 / 0.5),
+    0 22px 30px rgb(20 10 4 / 0.45);
 }
 .card.is-disabled {
   cursor: default;

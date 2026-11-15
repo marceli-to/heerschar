@@ -22,9 +22,6 @@ defineProps<{ disabled?: boolean; below?: boolean }>();
   transform: translate(-50%, 4px);
   transition: opacity 120ms, transform 120ms;
   outline: none;
-  box-shadow:
-    inset 0 0 14px rgb(120 80 30 / 0.3),
-    0 6px 18px rgb(20 12 4 / 0.45);
 }
 .has-note:hover > .note {
   opacity: 1;

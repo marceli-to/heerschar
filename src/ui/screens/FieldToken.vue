@@ -25,7 +25,7 @@ withDefaults(defineProps<{ classId: ClassId; label: string; hero?: boolean; enem
     </div>
     <span
       class="mt-1.5 max-w-[104px] truncate px-1 text-center leading-tight"
-      :class="enemy ? 'text-sm italic text-blood' : 'font-display text-sm tracking-[0.04em]'"
+      :class="enemy ? 'text-sm font-extrabold text-blood' : 'font-display text-base'"
     >{{ label }}</span>
   </div>
 </template>
@@ -34,14 +34,15 @@ withDefaults(defineProps<{ classId: ClassId; label: string; hero?: boolean; enem
 .crest {
   border-radius: 9999px;
   padding: 3px;
+  background: var(--color-gold-light);
   box-shadow:
-    0 0 0 1.5px var(--color-gold),
-    0 0 10px rgb(224 191 106 / 0.45);
+    0 0 0 3px var(--color-ink),
+    0 0 12px 2px rgb(255 214 110 / 0.7);
 }
 .star {
   fill: var(--color-gold-light);
   stroke: var(--color-ink);
-  stroke-width: 1;
+  stroke-width: 2;
   stroke-linejoin: round;
   filter: drop-shadow(0 1px 1px rgb(20 12 4 / 0.5));
 }

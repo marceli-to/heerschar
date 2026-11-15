@@ -2,7 +2,7 @@
 import { computed, useId } from 'vue';
 
 /**
- * A wax seal (approved 3): an uneven blob with a pressed ring and a letter or a pictogram.
+ * A wax seal (approved 3, restyled 6i): an uneven blob with a thick ink outline, a pressed ring and a letter or a pictogram.
  * Map seals (approved 5c): red = battle (crossed swords), black = elite (sword and star),
  * green = camp (tent), larger red = boss (crown).
  */
@@ -13,9 +13,9 @@ const props = withDefaults(defineProps<{ size?: number; letter?: string; wax?: S
 
 /** Wax colours: highlight, body, shadow, and the pressed-in mark (dark + light rim). */
 const WAX: Record<SealWax, { hi: string; mid: string; lo: string; press: string; rim: string }> = {
-  red: { hi: '#c9483a', mid: '#9b2d20', lo: '#5e170f', press: '#6e1a11', rim: '#d65a49' },
-  black: { hi: '#5e5852', mid: '#2e2a26', lo: '#0e0c0a', press: '#0c0a09', rim: '#c4b8a8' },
-  green: { hi: '#6f8a45', mid: '#4a6128', lo: '#253314', press: '#2a3a16', rim: '#93ad62' },
+  red: { hi: '#ff7a62', mid: '#e0392a', lo: '#a8231a', press: '#8e1c13', rim: '#ffb3a3' },
+  black: { hi: '#7d7670', mid: '#4a443e', lo: '#2a2622', press: '#1f1b18', rim: '#d6ccc0' },
+  green: { hi: '#a6d36a', mid: '#5fa53a', lo: '#3c7322', press: '#2f5c1a', rim: '#d4f0a8' },
 };
 
 const gid = `wax-${useId()}`;
@@ -55,7 +55,7 @@ const blob = (() => {
 </script>
 
 <template>
-  <svg :width="size" :height="size" viewBox="0 0 100 100" class="drop-shadow-[0_3px_3px_rgb(10_5_2/0.6)]">
+  <svg :width="size" :height="size" viewBox="-3 -3 106 106" class="drop-shadow-[0_3px_0_#3b2414]">
     <defs>
       <radialGradient :id="gid" cx="40%" cy="35%" r="70%">
         <stop offset="0" :stop-color="c.hi" />
@@ -63,12 +63,13 @@ const blob = (() => {
         <stop offset="1" :stop-color="c.lo" />
       </radialGradient>
     </defs>
-    <path :d="blob" :fill="`url(#${gid})`" />
-    <circle cx="50" cy="50" r="33" fill="none" :stroke="c.lo" stroke-width="3" opacity="0.7" />
-    <circle cx="50" cy="50" r="33" fill="none" :stroke="c.rim" stroke-width="1" opacity="0.45" transform="translate(-0.8 -0.8)" />
+    <path :d="blob" :fill="`url(#${gid})`" stroke="#3b2414" stroke-width="5" stroke-linejoin="round" />
+    <path :d="blob" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="3" transform="translate(50 50) scale(0.88) translate(-50 -50)" stroke-dasharray="40 400" stroke-dashoffset="-150" stroke-linecap="round" />
+    <circle cx="50" cy="50" r="33" fill="none" :stroke="c.lo" stroke-width="4" opacity="0.8" />
+    <circle cx="50" cy="50" r="33" fill="none" :stroke="c.rim" stroke-width="1.5" opacity="0.5" transform="translate(-1 -1)" />
     <g v-if="icon" transform="translate(50 50) scale(0.8) translate(-50 -50)">
       <g v-for="(part, i) in ICONS[icon]" :key="i" :transform="part.turn ? `rotate(${part.turn} 50 50)` : undefined">
-        <path :d="part.d" :fill="c.rim" opacity="0.55" transform="translate(-1.4 -1.4)" />
+        <path :d="part.d" :fill="c.rim" opacity="0.6" transform="translate(-1.6 -1.6)" />
         <path :d="part.d" :fill="c.press" />
       </g>
     </g>
@@ -78,9 +79,8 @@ const blob = (() => {
       y="51"
       text-anchor="middle"
       dominant-baseline="central"
-      font-family="Cinzel, serif"
-      font-weight="700"
-      font-size="34"
+      font-family="Lilita One, sans-serif"
+      font-size="40"
       :fill="c.press"
       :stroke="c.rim"
       stroke-width="0.6"

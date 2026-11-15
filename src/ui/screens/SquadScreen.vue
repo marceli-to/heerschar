@@ -80,20 +80,20 @@ function onDrop(e: DragEvent, target: 'field' | 'bench' | number): void {
 <template>
   <WarTable>
     <div class="flex w-[min(1040px,96vw)] flex-col items-center">
-      <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ STRINGS.encounters[encounterId].name }} · {{ T.title }}</h2>
-      <p class="mt-1 mb-6 text-lg italic text-cream/70">{{ T.dragHint }}</p>
-      <div class="panel grid w-full grid-cols-[minmax(0,4fr)_minmax(0,7fr)] gap-8 px-8 pt-7 pb-6">
+      <h2 class="table-title font-display text-3xl">{{ STRINGS.encounters[encounterId].name }} · {{ T.title }}</h2>
+      <p class="mt-1 mb-4 text-lg table-sub">{{ T.dragHint }}</p>
+      <div class="panel grid w-full grid-cols-[minmax(0,4fr)_minmax(0,7fr)] gap-8 px-8 pt-5 pb-5">
         <div class="flex flex-col">
           <div class="zone" :class="{ 'is-target': dropTarget === 'field' }" @dragover="onDragOver($event, 'field')" @dragleave="dropTarget = null" @drop="onDrop($event, 'field')">
             <div class="mb-1 flex items-baseline justify-between px-2">
-              <span class="font-display text-xs tracking-[0.2em] text-ink-soft uppercase">{{ T.inField }}</span>
-              <span class="font-display text-xs tabular-nums text-ink-soft">{{ field.length }} / {{ MAX_FIELDED }}</span>
+              <span class="font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ T.inField }}</span>
+              <span class="font-display text-base tabular-nums text-ink-soft">{{ field.length }} / {{ MAX_FIELDED }}</span>
             </div>
             <ul>
               <li
                 v-for="c in field"
                 :key="c.id"
-                class="row flex items-center gap-3 px-2 py-1.5"
+                class="row flex items-center gap-3 px-2 py-1"
                 :class="{ 'is-on': c.id === selectedId, 'is-target': dropTarget === String(c.id), 'cursor-grab': !c.isHero, 'is-dragging': c.id === dragId }"
                 :draggable="!c.isHero"
                 @click="selectedId = c.id"
@@ -103,20 +103,20 @@ function onDrop(e: DragEvent, target: 'field' | 'bench' | number): void {
                 @drop="onDrop($event, c.id)"
               >
                 <ClassMedallion :class-id="c.classId" :size="34" />
-                <span class="flex-1 truncate font-display text-lg tracking-[0.04em]">{{ c.name }}</span>
+                <span class="flex-1 truncate font-display text-lg">{{ c.name }}</span>
                 <span class="text-sm italic text-ink-soft">{{ c.isHero ? T.hero : STRINGS.classes[c.classId] }}</span>
-                <span class="w-8 text-right font-display text-xs tabular-nums text-ink-soft">{{ c.level }}</span>
+                <span class="w-8 text-right font-display text-base tabular-nums text-ink-soft">{{ c.level }}</span>
               </li>
             </ul>
           </div>
           <div class="rule my-3 w-full" />
           <div class="zone min-h-24" :class="{ 'is-target': dropTarget === 'bench' }" @dragover="onDragOver($event, 'bench')" @dragleave="dropTarget = null" @drop="onDrop($event, 'bench')">
-            <div class="mb-1 px-2 font-display text-xs tracking-[0.2em] text-ink-soft uppercase">{{ T.bench }}</div>
+            <div class="mb-1 px-2 font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ T.bench }}</div>
             <ul>
               <li
                 v-for="c in bench"
                 :key="c.id"
-                class="row flex cursor-grab items-center gap-3 px-2 py-1.5"
+                class="row flex cursor-grab items-center gap-3 px-2 py-1"
                 :class="{ 'is-on': c.id === selectedId, 'is-dragging': c.id === dragId }"
                 draggable="true"
                 @click="selectedId = c.id"
@@ -124,9 +124,9 @@ function onDrop(e: DragEvent, target: 'field' | 'bench' | number): void {
                 @dragend="onDragEnd"
               >
                 <ClassMedallion :class-id="c.classId" :size="34" class="opacity-80" />
-                <span class="flex-1 truncate font-display text-lg tracking-[0.04em] text-ink-soft">{{ c.name }}</span>
+                <span class="flex-1 truncate font-display text-lg text-ink-soft">{{ c.name }}</span>
                 <span class="text-sm italic text-ink-soft">{{ STRINGS.classes[c.classId] }}</span>
-                <span class="w-8 text-right font-display text-xs tabular-nums text-ink-soft">{{ c.level }}</span>
+                <span class="w-8 text-right font-display text-base tabular-nums text-ink-soft">{{ c.level }}</span>
               </li>
             </ul>
             <p v-if="bench.length === 0" class="px-2 py-2 italic text-ink-soft/70">{{ T.benchEmpty }}</p>
@@ -138,16 +138,16 @@ function onDrop(e: DragEvent, target: 'field' | 'bench' | number): void {
             <span v-if="selected.isHero" class="italic text-ink-soft">{{ T.heroAlwaysFights }}</span>
             <template v-else>
               <span v-if="!selectedFielded && full" class="text-right text-sm italic text-ink-soft">{{ T.fieldFull }}</span>
-              <button class="btn shrink-0 px-5 py-2 text-xs disabled:opacity-50" :disabled="!selectedFielded && full" @click="toggle">
+              <button class="btn shrink-0 px-5 py-2 text-base disabled:opacity-50" :disabled="!selectedFielded && full" @click="toggle">
                 {{ selectedFielded ? T.toBench : T.toField }}
               </button>
             </template>
           </div>
         </div>
       </div>
-      <div class="mt-6 flex w-full items-center justify-between px-2">
-        <button class="font-display text-xs tracking-[0.15em] text-cream/70 underline-offset-4 hover:underline" @click="emit('back')">{{ STRINGS.prep.back }}</button>
-        <button class="btn px-8 py-2.5 text-sm" @click="emit('next')">{{ STRINGS.prep.next }}</button>
+      <div class="mt-5 flex w-full items-center justify-between px-2">
+        <button class="link link-light text-lg" @click="emit('back')">{{ STRINGS.prep.back }}</button>
+        <button class="btn px-8 py-2.5 text-lg" @click="emit('next')">{{ STRINGS.prep.next }}</button>
       </div>
     </div>
   </WarTable>
@@ -157,19 +157,23 @@ function onDrop(e: DragEvent, target: 'field' | 'bench' | number): void {
 .row {
   transition: background-color 100ms;
 }
+.row {
+  border-radius: 12px;
+}
 .row:hover {
-  background: rgb(120 80 30 / 0.1);
+  background: rgb(138 90 50 / 0.12);
 }
 .row.is-on {
-  background: rgb(185 138 46 / 0.2);
-  box-shadow: inset 2px 0 0 var(--color-gold);
+  background: rgb(246 196 83 / 0.45);
+  box-shadow: inset 0 0 0 2px var(--color-ink);
 }
 .row.is-dragging {
   opacity: 0.4;
 }
 .row.is-target,
 .zone.is-target {
-  background: rgb(155 45 32 / 0.12);
-  box-shadow: inset 0 0 0 1px rgb(155 45 32 / 0.55);
+  border-radius: 12px;
+  background: rgb(210 50 36 / 0.12);
+  box-shadow: inset 0 0 0 2px var(--color-blood);
 }
 </style>

@@ -73,7 +73,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
 <template>
   <WarTable>
     <div class="flex w-[min(1120px,94vw,calc((100vh-190px)*5/3))] flex-col items-center">
-      <p class="mb-10 text-lg italic text-cream/70">
+      <p class="mb-10 text-lg table-sub italic">
         {{ STRINGS.map.hint }}
       </p>
 
@@ -82,7 +82,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
         <div class="absolute -top-7 left-12 z-10 flex gap-4">
           <HoverNote v-for="r in REGIONS" :key="r" :disabled="isRegionOpen(game, r)" below>
             <button
-              class="ribbon relative flex w-44 items-start justify-center pt-3 font-display text-[11px] font-bold tracking-[0.14em] uppercase"
+              class="ribbon relative flex w-44 items-start justify-center pt-3 font-black text-[11px] tracking-[0.12em] uppercase"
               :class="[r === region ? 'active' : '', isRegionOpen(game, r) ? 'cursor-pointer' : 'locked cursor-default']"
               :aria-pressed="r === region"
               :disabled="!isRegionOpen(game, r)"
@@ -170,7 +170,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
               </button>
               <template #note>
                 <template v-if="n.kind === 'camp'">
-                  <h3 class="font-display text-base leading-tight font-bold tracking-[0.05em]">
+                  <h3 class="font-display text-base leading-tight">
                     {{ STRINGS.map.camp }}
                   </h3>
                   <div class="rule mx-auto my-1.5 w-3/4" />
@@ -182,10 +182,10 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
                   </p>
                 </template>
                 <template v-else>
-                  <h3 class="font-display text-base leading-tight font-bold tracking-[0.05em]">
+                  <h3 class="font-display text-base leading-tight">
                     {{ STRINGS.encounters[n.id as EncounterId].name }}
                   </h3>
-                  <p class="level mt-0.5 font-display text-[10px] tracking-[0.2em] uppercase">
+                  <p class="level mt-0.5 font-black text-[11px] tracking-[0.12em] uppercase">
                     {{ STRINGS.prep.level }} {{ encounter(n).level }}<template v-if="n.kind === 'elite'"> · {{ STRINGS.map.elite }}</template
                     ><template v-if="n.kind === 'boss'"> · {{ STRINGS.map.boss }}</template>
                   </p>
@@ -202,7 +202,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
                     {{ STRINGS.prep.replay }}
                   </p>
                 </template>
-                <p v-if="!open(n)" class="mt-1 font-display text-[10px] tracking-[0.18em] text-ink-soft uppercase">
+                <p v-if="!open(n)" class="mt-1 font-black text-[11px] tracking-[0.12em] text-ink-soft uppercase">
                   {{ STRINGS.map.notReached }}
                 </p>
               </template>
@@ -211,7 +211,7 @@ const regionIndex = (r: RegionId) => REGIONS.indexOf(r);
         </div>
       </div>
 
-      <button class="mt-8 font-display text-xs tracking-[0.15em] text-cream/70 underline-offset-4 hover:underline" @click="emit('back')">
+      <button class="mt-8 link link-light text-lg" @click="emit('back')">
         {{ STRINGS.prep.back }}
       </button>
     </div>

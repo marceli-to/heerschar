@@ -121,30 +121,30 @@ const xpNeeded = computed(() => xpToNext(props.character.level));
   <div class="grid grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6">
     <FigurePreview :class-id="character.classId" :hero="character.isHero" class="h-[340px]" />
     <div class="flex flex-col">
-      <h3 class="font-display text-3xl font-bold tracking-[0.08em]">{{ character.name }}</h3>
+      <h3 class="font-display text-3xl">{{ character.name }}</h3>
       <p class="text-lg italic text-ink-soft">
         {{ STRINGS.classes[character.classId] }}<template v-if="character.isHero"> · {{ T.hero }}</template> · {{ T.level }} {{ character.level }}
       </p>
       <div class="rule my-3 w-full" />
-      <dl class="grid min-h-[196px] grid-cols-[auto_1fr] content-start gap-x-6 gap-y-0 text-base">
+      <dl class="grid min-h-[150px] grid-cols-[auto_1fr] content-start gap-x-6 gap-y-0 text-base">
         <template v-for="l in lines" :key="l.label">
-          <dt class="font-display text-xs leading-7 tracking-[0.15em] text-ink-soft uppercase">{{ l.label }}</dt>
-          <dd class="text-right tabular-nums">
+          <dt class="font-black text-xs leading-6 tracking-[0.12em] text-ink-soft uppercase">{{ l.label }}</dt>
+          <dd class="text-right font-display text-lg leading-6 tabular-nums">
             <span v-if="l.delta" class="delta mr-2 font-display text-xs" :class="l.better ? 'is-better' : 'is-worse'">{{ l.delta }}</span>{{ l.value }}
           </dd>
         </template>
       </dl>
       <div class="mt-3">
-        <div class="flex justify-between font-display text-xs tracking-[0.15em] text-ink-soft uppercase">
+        <div class="flex justify-between font-black text-xs tracking-[0.12em] text-ink-soft uppercase">
           <span>{{ T.xp }}</span>
           <span class="tabular-nums">{{ character.xp }} / {{ xpNeeded }}</span>
         </div>
-        <div class="xp mt-1 h-1.5 rounded-full">
-          <div class="h-full rounded-full bg-gold" :style="{ width: `${Math.min(100, (character.xp / xpNeeded) * 100)}%` }" />
+        <div class="bar bar-thin mt-1 h-3.5">
+          <div class="fill fill-xp" :style="{ width: `${Math.min(100, (character.xp / xpNeeded) * 100)}%` }" />
         </div>
       </div>
       <div class="mt-3">
-        <div class="font-display text-xs tracking-[0.15em] text-ink-soft uppercase">{{ T.pathAndUpgrades }}</div>
+        <div class="font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ T.pathAndUpgrades }}</div>
         <PathUpgrades :character="character" class="mt-1.5" />
       </div>
       <div ref="slotsEl" class="mt-3 flex justify-center gap-1">
@@ -165,12 +165,8 @@ const xpNeeded = computed(() => xpToNext(props.character.level));
 </template>
 
 <style scoped>
-.xp {
-  background: rgb(58 39 23 / 0.18);
-  box-shadow: inset 0 0 0 1px rgb(58 39 23 / 0.25);
-}
 .delta.is-better {
-  color: var(--color-gold);
+  color: #3f8f1f;
 }
 .delta.is-worse {
   color: var(--color-blood);

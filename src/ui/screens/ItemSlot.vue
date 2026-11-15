@@ -26,22 +26,22 @@ const worn = computed(() => (props.item ? itemById(props.item) : null));
 <template>
   <div class="flex w-[150px] flex-col items-center gap-1">
     <HoverNote :disabled="!worn || open">
-      <button class="slot-btn block rounded-[3px]" :class="{ 'is-open': open }">
+      <button class="slot-btn block rounded-xl" :class="{ 'is-open': open }">
         <PictogramTile v-if="worn" :name="worn.icon" :rarity="worn.rarity" :size="56" />
-        <div v-else class="slot flex size-14 items-center justify-center rounded-[3px]">
-          <svg viewBox="0 0 32 32" class="size-9 opacity-35" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round">
+        <div v-else class="slot flex size-14 items-center justify-center rounded-xl">
+          <svg viewBox="0 0 32 32" class="size-9 opacity-45" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">
             <path :d="ICONS[kind]" />
           </svg>
         </div>
       </button>
       <template v-if="worn" #note>
-        <p class="font-display text-sm tracking-[0.06em]">{{ STRINGS.items[worn.id] ?? worn.id }}</p>
-        <p class="font-display text-[10px] tracking-[0.2em] text-ink-soft uppercase">{{ STRINGS.rarities[worn.rarity] }}</p>
+        <p class="font-display text-sm">{{ STRINGS.items[worn.id] ?? worn.id }}</p>
+        <p class="font-black text-[11px] tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.rarities[worn.rarity] }}</p>
         <p v-for="l in effectLines(worn.effect)" :key="l" class="text-sm leading-snug">{{ l }}</p>
       </template>
     </HoverNote>
-    <span class="font-display text-[10px] tracking-[0.2em] text-ink-soft uppercase">{{ STRINGS.squadStep[kind] }}</span>
-    <span class="-mt-1 max-w-full truncate text-center text-sm leading-tight" :class="worn ? 'font-display tracking-[0.04em]' : 'italic text-ink-soft/80'">
+    <span class="font-black text-[11px] tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.squadStep[kind] }}</span>
+    <span class="-mt-1 max-w-full truncate text-center text-sm leading-tight" :class="worn ? 'font-display' : 'italic text-ink-soft/80'">
       {{ worn ? (STRINGS.items[worn.id] ?? worn.id) : STRINGS.squadStep.empty }}
     </span>
   </div>
@@ -50,8 +50,8 @@ const worn = computed(() => (props.item ? itemById(props.item) : null));
 <style scoped>
 .slot {
   color: var(--color-ink-soft);
-  border: 1.5px dashed rgb(185 138 46 / 0.75);
-  background: rgb(120 80 30 / 0.08);
+  border: 3px dashed rgb(59 36 20 / 0.4);
+  background: rgb(138 90 50 / 0.1);
   transition: background-color 120ms;
 }
 .slot-btn {
@@ -63,10 +63,10 @@ const worn = computed(() => (props.item ? itemById(props.item) : null));
 }
 .slot-btn:hover .slot,
 .slot-btn.is-open .slot {
-  background: rgb(185 138 46 / 0.2);
+  background: rgb(246 196 83 / 0.35);
 }
 .slot-btn:focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 3px solid var(--color-gold-light);
   outline-offset: 3px;
 }
 </style>

@@ -17,30 +17,27 @@ withDefaults(defineProps<{ name: UpgradeIcon | ItemIcon; size?: number; rarity?:
 </template>
 
 <style scoped>
+/* Wood tile (6i); the ring colour shows the rarity: wood / silver / gold with a glow. */
 .tile {
-  background: radial-gradient(circle at 50% 40%, #4a321c, #22170c 75%);
-  border: 2px solid var(--color-gold);
+  border-radius: 12px;
+  background: linear-gradient(var(--color-wood-light), var(--color-wood));
+  border: 3px solid var(--color-ink);
   box-shadow:
-    0 0 0 1px rgb(58 39 23 / 0.85),
-    inset 0 0 8px rgb(0 0 0 / 0.6),
-    0 3px 8px rgb(20 12 4 / 0.45);
-}
-.tile.common {
-  border-color: var(--color-ink);
+    inset 0 0 0 2px #c9a27a,
+    inset 0 3px 0 3px rgb(255 255 255 / 0.1),
+    0 3px 0 var(--color-ink);
 }
 .tile.rare {
-  border-color: #a7aeb6;
   box-shadow:
-    0 0 0 1px #5d6670,
-    inset 0 0 8px rgb(0 0 0 / 0.6),
-    0 3px 8px rgb(20 12 4 / 0.45);
+    inset 0 0 0 3px #dce4ee,
+    inset 0 3px 0 3px rgb(255 255 255 / 0.1),
+    0 3px 0 var(--color-ink);
 }
 .tile.epic {
-  border-color: var(--color-gold-light);
   box-shadow:
-    0 0 0 1px var(--color-gold),
-    inset 0 0 8px rgb(0 0 0 / 0.6),
-    0 0 14px rgb(224 191 106 / 0.55),
-    0 3px 8px rgb(20 12 4 / 0.45);
+    inset 0 0 0 3px var(--color-gold-light),
+    inset 0 0 12px rgb(255 214 110 / 0.45),
+    0 3px 0 var(--color-ink),
+    0 0 16px 2px rgb(255 214 110 / 0.6);
 }
 </style>

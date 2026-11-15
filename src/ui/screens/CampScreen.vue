@@ -39,8 +39,8 @@ function moveOn(): void {
 <template>
   <WarTable>
     <div class="flex flex-col items-center">
-      <h2 class="font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ T.title }}</h2>
-      <p class="mt-1 mb-5 max-w-xl text-center text-lg italic text-cream/70">{{ full ? T.full : T.hint }}</p>
+      <h2 class="table-title font-display text-3xl">{{ T.title }}</h2>
+      <p class="mt-1 mb-5 max-w-xl text-center text-lg table-sub italic">{{ full ? T.full : T.hint }}</p>
 
       <div class="flex flex-wrap justify-center gap-10">
         <RecruitCard
@@ -54,14 +54,14 @@ function moveOn(): void {
       </div>
 
       <div class="mt-6 flex h-12 items-center">
-        <button v-if="full" class="btn px-7 py-2.5 text-sm" @click="moveOn">{{ T.moveOn }}</button>
-        <button v-else class="btn px-7 py-2.5 text-sm disabled:cursor-default disabled:opacity-50 disabled:filter-none" :disabled="selected === null" @click="take">
+        <button v-if="full" class="btn px-7 py-2.5 text-lg" @click="moveOn">{{ T.moveOn }}</button>
+        <button v-else class="btn px-7 py-2.5 text-lg disabled:cursor-default disabled:opacity-50 disabled:filter-none" :disabled="selected === null" @click="take">
           {{ selected === null ? T.chooseFirst : T.take }}
         </button>
       </div>
 
       <div class="mt-3 flex flex-col items-center">
-        <p class="font-display text-xs tracking-[0.2em] text-cream/60 uppercase">
+        <p class="font-black text-xs tracking-[0.12em] text-cream/60 uppercase">
           {{ T.company }} <span class="tabular-nums">({{ roster.length }} / {{ ROSTER_LIMIT }})</span>
         </p>
         <ul class="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-3">
@@ -72,7 +72,7 @@ function moveOn(): void {
         </ul>
       </div>
 
-      <button class="mt-4 font-display text-xs tracking-[0.15em] text-cream/70 underline-offset-4 hover:underline" @click="emit('back')">
+      <button class="mt-4 link link-light text-lg" @click="emit('back')">
         {{ STRINGS.prep.back }}
       </button>
     </div>

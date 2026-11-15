@@ -31,10 +31,10 @@ const upgrades = computed(() =>
     <HoverNote v-if="path" class="mr-2">
       <div class="flex items-center gap-2">
         <PictogramTile :name="path.icon" :size="tile + 6" />
-        <span class="font-display text-sm tracking-[0.06em]">{{ path.name }}</span>
+        <span class="font-display text-sm">{{ path.name }}</span>
       </div>
       <template #note>
-        <p class="font-display text-sm tracking-[0.06em]">{{ path.name }}</p>
+        <p class="font-display text-sm">{{ path.name }}</p>
         <p class="text-[11px] italic text-ink-soft">{{ T.pathNote }}</p>
         <p class="text-sm leading-snug">{{ path.text }}</p>
       </template>
@@ -45,7 +45,7 @@ const upgrades = computed(() =>
         <span v-if="u.count > 1" class="badge absolute -right-1.5 -bottom-1.5 rounded-full px-1 font-display text-[10px] leading-4 tabular-nums">×{{ u.count }}</span>
       </div>
       <template #note>
-        <p class="font-display text-sm tracking-[0.06em]">{{ u.name }}<template v-if="u.count > 1"> ×{{ u.count }}</template></p>
+        <p class="font-display text-sm">{{ u.name }}<template v-if="u.count > 1"> ×{{ u.count }}</template></p>
         <p class="text-[11px] italic text-ink-soft">{{ u.kind }}</p>
         <p v-for="l in u.lines" :key="l" class="text-sm leading-snug">{{ l }}<template v-if="u.count > 1"> ({{ T.each }})</template></p>
       </template>
@@ -56,8 +56,8 @@ const upgrades = computed(() =>
 
 <style scoped>
 .badge {
-  color: var(--color-cream);
-  background: var(--color-ink);
-  border: 1px solid var(--color-gold);
+  color: var(--color-ink);
+  background: var(--color-gold-light);
+  border: 2px solid var(--color-ink);
 }
 </style>

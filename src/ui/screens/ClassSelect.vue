@@ -32,7 +32,7 @@ function choose(): void {
 <template>
   <WarTable>
     <div class="flex w-[min(880px,94vw)] flex-col items-center">
-      <h2 class="mb-5 font-display text-sm tracking-[0.35em] text-gold-light uppercase">{{ STRINGS.prep.chooseHero }}</h2>
+      <h2 class="mb-5 table-title font-display text-3xl">{{ STRINGS.prep.chooseHero }}</h2>
       <div class="mb-[-22px] flex gap-6">
         <button v-for="c in CLASSES" :key="c" class="tab relative z-10 rounded-full" :class="{ 'is-on': c === selected }" :title="STRINGS.classes[c]" @click="selected = c">
           <ClassMedallion :class-id="c" :size="60" />
@@ -41,31 +41,31 @@ function choose(): void {
       <div class="panel grid w-full grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-8 px-10 pt-12 pb-9">
         <FigurePreview :class-id="selected" class="h-[400px]" />
         <div class="flex flex-col justify-center">
-          <h1 class="font-display text-4xl font-bold tracking-[0.12em]">{{ STRINGS.classes[selected] }}</h1>
-          <p class="mt-2 text-xl italic text-ink-soft">{{ STRINGS.roles[selected] }}</p>
+          <h1 class="font-display text-4xl">{{ STRINGS.classes[selected] }}</h1>
+          <p class="mt-1 text-xl text-ink-soft">{{ STRINGS.roles[selected] }}</p>
           <div class="rule my-5 w-full" />
           <ul class="space-y-3">
             <li v-for="(id, i) in abilities" :key="id" class="flex items-center gap-3">
-              <div class="icon-tile relative size-11 shrink-0 rounded-[3px]">
-                <AbilityIcon :id="id" class="absolute inset-1 text-gold-light" />
+              <div class="wood-tile relative size-12 shrink-0">
+                <AbilityIcon :id="id" class="absolute inset-1.5" />
               </div>
-              <span class="min-w-4 font-display text-xs text-ink-soft">{{ keyLabel(i === 0 ? settings.keys.ability1 : settings.keys.ability2) }}</span>
-              <span class="text-lg">{{ STRINGS.abilities[id] }}</span>
+              <span class="min-w-5 font-display text-base text-ink-soft">{{ keyLabel(i === 0 ? settings.keys.ability1 : settings.keys.ability2) }}</span>
+              <span class="font-display text-xl">{{ STRINGS.abilities[id] }}</span>
             </li>
           </ul>
           <div class="rule my-5 w-full" />
-          <label class="flex items-baseline gap-4">
-            <span class="font-display text-xs tracking-[0.2em] text-ink-soft uppercase">{{ STRINGS.prep.name }}</span>
+          <label class="flex items-center gap-4">
+            <span class="font-black text-xs tracking-[0.12em] text-ink-soft uppercase">{{ STRINGS.prep.name }}</span>
             <input
               v-model="name"
               maxlength="16"
-              class="min-w-0 flex-1 border-b border-ink-soft/60 bg-transparent pb-0.5 font-display text-2xl tracking-[0.06em] outline-none focus:border-gold"
+              class="field min-w-0 flex-1 px-3 py-1 font-display text-2xl"
               @keydown.enter="choose"
             />
           </label>
           <div class="mt-7 flex items-center justify-between">
-            <button class="font-display text-xs tracking-[0.15em] text-ink-soft underline-offset-4 hover:underline" @click="emit('back')">{{ STRINGS.prep.back }}</button>
-            <button class="btn px-8 py-2.5 text-sm disabled:opacity-50" :disabled="!name.trim()" @click="choose">{{ STRINGS.prep.choose }}</button>
+            <button class="link text-lg" @click="emit('back')">{{ STRINGS.prep.back }}</button>
+            <button class="btn px-8 py-2.5 text-lg disabled:opacity-50" :disabled="!name.trim()" @click="choose">{{ STRINGS.prep.choose }}</button>
           </div>
         </div>
       </div>
@@ -84,11 +84,8 @@ function choose(): void {
 .tab.is-on {
   transform: translateY(-4px) scale(1.08);
   filter: none;
-  box-shadow: 0 0 18px rgb(224 191 106 / 0.6);
+  border-radius: 99px;
+  box-shadow: 0 0 20px 4px rgb(255 214 110 / 0.7);
 }
-.icon-tile {
-  background: radial-gradient(circle at 40% 35%, #4a321c, #24170c 75%);
-  border: 1px solid var(--color-gold);
-  box-shadow: 0 0 0 1px rgb(58 39 23 / 0.85);
-}
+
 </style>
