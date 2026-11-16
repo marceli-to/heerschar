@@ -57,10 +57,13 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
   if (skeletons) return skeletonBody(classId);
   switch (classId) {
     case 'krieger':
-      // Player warriors carry the badge shield, enemy warriors the round one.
+      // Visual test (branch test/gpg-knight): the player's warriors wear the game-pack-generator knight.
+      // No swaps (its palette is not KayKit's swatch atlas), no blade node (no swing trail).
+      if (team === 'player') return { model: 'GPG_Knight', hide: [], attach: [], swaps: [], style: 'sword', skeleton: false };
+      // Enemy warriors carry the round shield (player warriors: the badge one, off for this test).
       return {
         model: 'Knight',
-        hide: except(KNIGHT_PROPS, ['1H_Sword', team === 'player' ? 'Badge_Shield' : 'Round_Shield']),
+        hide: except(KNIGHT_PROPS, ['1H_Sword', 'Round_Shield']),
         attach: [],
         blade: '1H_Sword',
         swaps: [{ cell: [0, 1], color: c.main }, { cell: [6, 0], color: trim }],

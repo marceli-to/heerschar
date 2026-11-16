@@ -31,6 +31,9 @@ const RIGS: Record<Pack, RigInfo> = {
   adventurers: KAYKIT_RIG,
   skeletons: KAYKIT_RIG,
   quaternius: { scale: 0.48, barY: 1.35, walkSpeed: 1.1, runSpeed: 5, runFrom: 2 },
+  // game-pack-generator chibi: 1.43 units tall in idle (plume included), scaled to the KayKit knight's
+  // 2.01 m. Speeds: KayKit's / 0.82 x 0.689 (shorter legs) x 1.4.
+  gpg: { scale: 1.4, barY: 2.15, walkSpeed: 0.84, runSpeed: 4.3, runFrom: 1.3 },
 };
 const IDLE_BELOW = 0.35;
 /** Cross-fade between animations, seconds (shorter into an attack so the tell starts at once). */
