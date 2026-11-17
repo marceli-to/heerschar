@@ -156,12 +156,46 @@ export class ModelUnitView implements UnitView {
       m.geometry.computeBoundingBox();
       box.union(m.geometry.boundingBox!.clone().applyMatrix4(inv.clone().multiply(m.matrixWorld)));
     });
-    if (box.isEmpty()) return;
+    if (box.isEmpty()) {
+      this.measureSkinned(blade, baseOut, tipOut);
+      return;
+    }
     const size = box.getSize(new THREE.Vector3());
     const axis = size.x > size.y ? (size.x > size.z ? 'x' : 'z') : size.y > size.z ? 'y' : 'z';
     const far = Math.abs(box.max[axis]) > Math.abs(box.min[axis]) ? box.max[axis] : box.min[axis];
     tipOut.set(0, 0, 0)[axis] = far;
     baseOut.set(0, 0, 0)[axis] = far * 0.65;
+  }
+
+  /**
+   * A weapon that is part of the skinned body (game-pack-generator characters) has no node of its
+   * own, only vertices weighted to a hand slot bone: the tip is the one farthest from the bone, in
+   * the bone's bind-pose space; the trail's inner edge sits at 0.65 of the way, as above.
+   */
+  private measureSkinned(bone: THREE.Object3D, baseOut: THREE.Vector3, tipOut: THREE.Vector3): void {
+    const v = new THREE.Vector3();
+    let best = 0;
+    this.model.traverse((o) => {
+      const m = o as THREE.SkinnedMesh;
+      if (!m.isSkinnedMesh) return;
+      const bi = m.skeleton.bones.indexOf(bone as THREE.Bone);
+      if (bi < 0) return;
+      const toBone = m.skeleton.boneInverses[bi]!.clone().multiply(m.bindMatrix);
+      const pos = m.geometry.getAttribute('position');
+      const idx = m.geometry.getAttribute('skinIndex');
+      const wt = m.geometry.getAttribute('skinWeight');
+      for (let i = 0; i < pos.count; i++) {
+        let w = 0;
+        for (let k = 0; k < 4; k++) if (idx.getComponent(i, k) === bi) w += wt.getComponent(i, k);
+        if (w < 0.5) continue;
+        v.fromBufferAttribute(pos, i).applyMatrix4(toBone);
+        if (v.lengthSq() > best) {
+          best = v.lengthSq();
+          tipOut.copy(v);
+        }
+      }
+    });
+    baseOut.copy(tipOut).multiplyScalar(0.65);
   }
 
   staffTip(out: THREE.Vector3): boolean {

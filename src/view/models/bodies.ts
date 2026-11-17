@@ -57,13 +57,10 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
   if (skeletons) return skeletonBody(classId);
   switch (classId) {
     case 'krieger':
-      // Visual test (branch test/gpg-knight): the player's warriors wear the game-pack-generator knight.
-      // No swaps (its palette is not KayKit's swatch atlas), no blade node (no swing trail).
-      if (team === 'player') return { model: 'GPG_Knight', hide: [], attach: [], swaps: [], style: 'sword', skeleton: false };
-      // Enemy warriors carry the round shield (player warriors: the badge one, off for this test).
+      // Player warriors carry the badge shield, enemy warriors the round one.
       return {
         model: 'Knight',
-        hide: except(KNIGHT_PROPS, ['1H_Sword', 'Round_Shield']),
+        hide: except(KNIGHT_PROPS, ['1H_Sword', team === 'player' ? 'Badge_Shield' : 'Round_Shield']),
         attach: [],
         blade: '1H_Sword',
         swaps: [{ cell: [0, 1], color: c.main }, { cell: [6, 0], color: trim }],
@@ -100,6 +97,10 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         skeleton: false,
       };
     case 'magier':
+      // Visual test (branch test/gpg-wizard): the player's mages wear the game-pack-generator wizard.
+      // No swaps (its palette is not KayKit's swatch atlas). The staff is part of the skinned mesh,
+      // weighted to the right hand slot: its tip is measured from those vertices.
+      if (team === 'player') return { model: 'GPG_Wizard', hide: [], attach: [], swaps: [], style: 'staff', skeleton: false, staff: 'handslot.r' };
       return {
         model: 'Mage',
         hide: except(MAGE_PROPS, ['2H_Staff']),

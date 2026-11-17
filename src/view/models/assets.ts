@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
  * `tools/wolf.mjs`). Loaded once, then cloned per unit. Each pack shares one rig and one clip
  * set, kept only in its first file (`ANIM_SOURCE`); every body of that pack plays those clips.
  */
-export type ModelId = 'GPG_Knight' | 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage' | 'Wolf';
+export type ModelId = 'GPG_Knight' | 'GPG_Wizard' | 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage' | 'Wolf';
 export type WeaponId =
   | 'Skeleton_Blade'
   | 'Skeleton_Axe'
@@ -20,9 +20,10 @@ export type Pack = 'adventurers' | 'skeletons' | 'quaternius' | 'gpg';
 
 const DIR: Record<Pack, string> = { adventurers: 'kaykit', skeletons: 'kaykit-skeletons', quaternius: 'quaternius', gpg: 'gpg' };
 /** Files not named after their id (game-pack-generator exports). */
-const FILE: Partial<Record<ModelId, string>> = { GPG_Knight: 'character-knight-lowpoly.glb' };
+const FILE: Partial<Record<ModelId, string>> = { GPG_Knight: 'character-knight-lowpoly.glb', GPG_Wizard: 'character-wizard.glb' };
 export const MODEL_PACK: Record<ModelId, Pack> = {
   GPG_Knight: 'gpg',
+  GPG_Wizard: 'gpg',
   Knight: 'adventurers',
   Mage: 'adventurers',
   Rogue_Hooded: 'adventurers',
@@ -75,6 +76,7 @@ export function loadModels(): Promise<void> {
       if (pack !== 'gpg' && ANIM_SOURCE[pack] === id) lib.clips.set(pack, new Map(gltf.animations.map((c) => [c.name, c])));
     });
     const adventurers = lib.clips.get('adventurers');
+    // The gpg characters share one rig: any of them names its bones.
     if (adventurers) lib.clips.set('gpg', gpgClips(adventurers, lib.models.get('GPG_Knight')!));
     WEAPONS.forEach((id, i) => {
       const part = weapons[i]!.scene.children[0];
@@ -111,6 +113,13 @@ export function packClips(pack: Pack): Map<string, THREE.AnimationClip> {
 
 /** Rest height of the hips: game-pack-generator chibi vs. KayKit Rig_Medium. */
 const GPG_HIPS = 0.2795 / 0.4057;
+/**
+ * KayKit props run along their hand slot's Y axis (staff head at +Y), gpg props (the wizard's staff) along +Z (head at +Z). Turning
+ * the right hand slot -90° about X in every key maps +Z onto +Y; only prop vertices hang
+ * off that bone. Test-only: the generator should model props the KayKit way instead.
+ */
+const GPG_PROP_AXIS = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+const HANDSLOT_R = `${THREE.PropertyBinding.sanitizeNodeName('handslot.r')}.quaternion`;
 
 /**
  * The gpg rig is KayKit's Rig_Medium without the IK / control bones, with shorter legs. The
@@ -131,8 +140,11 @@ function gpgClips(src: Map<string, THREE.AnimationClip>, model: THREE.Object3D):
       return bones.has(nodeName) && (propertyName !== 'position' || nodeName === 'hips');
     });
     for (const t of c.tracks) {
-      if (t.name !== 'hips.position') continue;
-      t.values = Float32Array.from(t.values, (v) => v * GPG_HIPS);
+      if (t.name === 'hips.position') t.values = Float32Array.from(t.values, (v) => v * GPG_HIPS);
+      if (t.name === HANDSLOT_R) {
+        const q = new THREE.Quaternion();
+        for (let i = 0; i < t.values.length; i += 4) q.fromArray(t.values, i).multiply(GPG_PROP_AXIS).toArray(t.values, i);
+      }
     }
     out.set(name, c);
   }
