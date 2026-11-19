@@ -99,5 +99,5 @@ export async function startLineup(host: HTMLElement): Promise<void> {
     post.render(0);
   };
   requestAnimationFrame(loop);
-  (window as unknown as { __lineupReady: boolean }).__lineupReady = true;
+  Object.assign(window, { __lineupReady: true, __lineupViews: views });
 }

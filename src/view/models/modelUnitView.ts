@@ -5,7 +5,7 @@ import type { Team } from '../../sim/types';
 import { FX, hdr, MODEL_COLORS } from '../palette';
 import { ShieldBubble } from '../shieldBubble';
 import type { AnimInput, UnitView } from '../unitView';
-import { MODEL_PACK, modelTemplate, nodeName, packClips, WEAPON_PACK, weaponTemplate, type Pack } from './assets';
+import { MODEL_PACK, modelClips, modelTemplate, nodeName, WEAPON_PACK, weaponTemplate, type Pack } from './assets';
 import type { BodySpec } from './bodies';
 import { actionAnim, BASE_CLIPS, type BaseClips, type Segment } from './clips';
 import { addExtra } from './props';
@@ -78,6 +78,8 @@ export class ModelUnitView implements UnitView {
   /** The staff and its far end in the staff's own space (spells gather there). */
   private readonly staff: THREE.Object3D | null = null;
   private readonly staffEnd = new THREE.Vector3();
+  /** The `muzzle` marker of an attached crossbow (gpg props carry one); the volley's smoke starts there. */
+  private readonly muzzle: THREE.Object3D | null = null;
 
   private cur: Pose = { clip: 'Idle', time: 0 };
   private prev: Pose | null = null;
@@ -109,6 +111,7 @@ export class ModelUnitView implements UnitView {
       bone?.add(weapon);
       if (a.weapon === body.blade && a.bone === 'handslot.r') this.blade = weapon;
       if (a.weapon === body.staff) staff = weapon;
+      this.muzzle ??= weapon.getObjectByName('muzzle') ?? null;
     }
     // Code props are placed at the bind pose, before the model is scaled and turned.
     staff ??= body.staff ? (this.model.getObjectByName(nodeName(body.staff)) ?? null) : null;
@@ -134,7 +137,7 @@ export class ModelUnitView implements UnitView {
     this.prepareMeshes(body, foreign);
     this.root.add(this.model);
 
-    this.clips = packClips(MODEL_PACK[body.model]);
+    this.clips = modelClips(body.model);
     this.mixer = new THREE.AnimationMixer(this.model);
 
     this.bubble = new ShieldBubble(team, { x: 0.8 * size, y: 1.05 * size, z: 0.8 * size }, 0.95 * size);
@@ -205,6 +208,13 @@ export class ModelUnitView implements UnitView {
     return true;
   }
 
+  muzzlePoint(out: THREE.Vector3): boolean {
+    if (!this.muzzle) return false;
+    this.root.updateMatrixWorld(true);
+    this.muzzle.getWorldPosition(out);
+    return true;
+  }
+
   weaponEdge(base: THREE.Vector3, tip: THREE.Vector3): boolean {
     if (!this.blade) return false;
     this.root.updateMatrixWorld(true);
@@ -217,7 +227,7 @@ export class ModelUnitView implements UnitView {
   private prepareMeshes(body: BodySpec, foreign: ReadonlySet<THREE.Object3D>): void {
     const hidden = new Set(body.hide.map(nodeName));
     const own = new Map<THREE.Material, THREE.MeshStandardMaterial>();
-    const swapKey = body.swaps.map((s) => `${s.cell.join('.')}=${s.color}`).join(',');
+    const swapKey = body.swaps.map((s) => `${s.cell.join('.')}/${s.rows ?? 4}=${s.color}`).join(',');
     this.model.traverse((o) => {
       if (hidden.has(o.name)) {
         o.visible = false;

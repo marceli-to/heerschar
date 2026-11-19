@@ -40,7 +40,6 @@ export interface ViewLook {
 // Prop meshes bundled on each Adventurers rig.
 const KNIGHT_PROPS = ['1H_Sword_Offhand', 'Badge_Shield', 'Rectangle_Shield', 'Round_Shield', 'Spike_Shield', '1H_Sword', '2H_Sword'];
 const MAGE_PROPS = ['Spellbook', 'Spellbook_open', '1H_Wand', '2H_Staff'];
-const ROGUE_PROPS = ['Knife_Offhand', '1H_Crossbow', '2H_Crossbow', 'Knife', 'Throwable'];
 const BARBARIAN_PROPS = ['1H_Axe_Offhand', 'Barbarian_Round_Shield', '1H_Axe', '2H_Axe', 'Mug'];
 
 const except = (all: string[], keep: string[]): string[] => all.filter((n) => !keep.includes(n));
@@ -88,11 +87,14 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         skeleton: false,
       };
     case 'bogenschuetze':
+      // Visual test (branch test/gpg-squad): the game-pack-generator archer, both teams. Hood and
+      // capelet sit on palette cell 17 (column 1, row 2), repainted in the team colour; the crossbow
+      // is its own prop with a `muzzle` marker.
       return {
-        model: 'Rogue_Hooded',
-        hide: except(ROGUE_PROPS, ['2H_Crossbow']),
-        attach: [],
-        swaps: [{ cell: [1, 1], color: c.main }, { cell: [0, 1], color: c.deep }, { cell: [6, 0], color: trim }],
+        model: 'GPG_Archer',
+        hide: [],
+        attach: [{ weapon: 'GPG_Crossbow', bone: 'handslot.r' }],
+        swaps: [{ cell: [1, 2], rows: 8, color: c.main }],
         style: 'crossbow',
         skeleton: false,
       };
@@ -111,15 +113,9 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         staff: '2H_Staff',
       };
     case 'heiler':
-      // The recoloured Mage in light robes with a glowing orb (Stage 6 decisions).
-      return {
-        model: 'Mage',
-        hide: MAGE_PROPS,
-        attach: [],
-        swaps: [{ cell: [0, 1], color: c.robe }, { cell: [1, 1], color: c.robe }, { cell: [2, 1], color: c.main }, { cell: [5, 0], color: trim }],
-        style: 'orb',
-        skeleton: false,
-      };
+      // Visual test (branch test/gpg-squad): the game-pack-generator healer, both teams; the stole
+      // sits on palette cell 17 (team colour). The orb is added in code as before.
+      return { model: 'GPG_Healer', hide: [], attach: [], swaps: [{ cell: [1, 2], rows: 8, color: c.main }], style: 'orb', skeleton: false };
     case 'schamane':
       // A Mage without the hat: bone mask with antlers, a totem on the staff (6c decisions).
       return {

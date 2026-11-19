@@ -3,12 +3,15 @@ import * as THREE from 'three';
 /**
  * KayKit textures are swatch atlases: 8 columns x 4 rows of vertical gradients, one per colour
  * of the character (cape, hat, trim ...). A swap repaints one swatch in a new colour and keeps
- * its gradient, so the model's shading stays as drawn.
+ * its gradient, so the model's shading stays as drawn. game-pack-generator palettes are 8 x 8
+ * flat cells (`rows: 8`); on a flat cell the swap lands exactly on the new colour.
  */
 export interface Swap {
-  /** Swatch column 0..7 and row 0..3 (row 0 at the top, as in the image and the glTF UVs). */
+  /** Swatch column 0..7 and row 0..rows-1 (row 0 at the top, as in the image and the glTF UVs). */
   cell: readonly [number, number];
   color: string;
+  /** Rows of the atlas: 4 (KayKit, the default) or 8 (gpg palette). */
+  rows?: number;
 }
 
 const cache = new Map<string, THREE.Texture>();
@@ -25,13 +28,13 @@ export function recolored(src: THREE.Texture, swaps: readonly Swap[], key: strin
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
   ctx.drawImage(img, 0, 0);
   const cw = img.width / 8;
-  const ch = img.height / 4;
   const hsl = { h: 0, s: 0, l: 0 };
   const target = { h: 0, s: 0, l: 0 };
   const c = new THREE.Color();
   const rgb = { r: 0, g: 0, b: 0 };
   for (const swap of swaps) {
     const [col, row] = swap.cell;
+    const ch = img.height / (swap.rows ?? 4);
     const data = ctx.getImageData(col * cw, row * ch, cw, ch);
     const px = data.data;
     // Mean lightness of the swatch, so the new colour sits at its own lightness.
