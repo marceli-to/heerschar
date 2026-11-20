@@ -12,7 +12,7 @@ import { WolfView } from './wolfView';
  */
 export function createUnitView(classId: ClassId, team: Team, hero: boolean, look: ViewLook): UnitView {
   const body = modelsReady() ? bodyFor(classId, team, hero, look) : null;
-  if (body) return new ModelUnitView(body, team);
+  if (body) return new ModelUnitView(body, team, hero && team === 'player');
   if (classId === 'wolf') return new WolfView();
   return new PrimitiveFigureView(classId, team === 'player' ? PLAYER_COLORS : ENEMY_COLORS, team, hero);
 }

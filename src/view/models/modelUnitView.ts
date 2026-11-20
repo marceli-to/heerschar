@@ -10,6 +10,7 @@ import type { BodySpec } from './bodies';
 import { actionAnim, BASE_CLIPS, type BaseClips, type Segment } from './clips';
 import { addExtra } from './props';
 import { recolored } from './recolor';
+import { heroRingMesh } from '../targetMarkers';
 
 interface RigInfo {
   /** Model scale for a normal-sized unit (bosses multiply it by `BodySpec.scale`). */
@@ -94,7 +95,7 @@ export class ModelUnitView implements UnitView {
   private nudge = 0;
   private frost = 0;
 
-  constructor(private readonly body: BodySpec, team: Team) {
+  constructor(private readonly body: BodySpec, team: Team, hero = false) {
     const pack = MODEL_PACK[body.model];
     const size = body.scale ?? 1;
     this.rig = RIGS[pack];
@@ -136,6 +137,7 @@ export class ModelUnitView implements UnitView {
     }
     this.prepareMeshes(body, foreign);
     this.root.add(this.model);
+    if (hero) this.root.add(heroRingMesh());
 
     this.clips = modelClips(body.model);
     this.mixer = new THREE.AnimationMixer(this.model);

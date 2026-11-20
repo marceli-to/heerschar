@@ -20,7 +20,9 @@ export type WeaponId =
   | 'GPG_Sword'
   | 'GPG_TowerShield'
   | 'GPG_Axe_R'
-  | 'GPG_Axe_L';
+  | 'GPG_Axe_L'
+  | 'GPG_KnightSword'
+  | 'GPG_RoundShield';
 export type Pack = 'adventurers' | 'skeletons' | 'quaternius' | 'gpg';
 
 const DIR: Record<Pack, string> = { adventurers: 'kaykit', skeletons: 'kaykit-skeletons', quaternius: 'quaternius', gpg: 'gpg' };
@@ -37,6 +39,8 @@ const FILE: Partial<Record<ModelId | WeaponId, string>> = {
   GPG_Berserker: 'character-berserker.glb',
   GPG_Axe_R: 'prop-axe-berserker-r.glb',
   GPG_Axe_L: 'prop-axe-berserker-l.glb',
+  GPG_KnightSword: 'prop-sword-knight.glb',
+  GPG_RoundShield: 'prop-shield-round-knight.glb',
 };
 export const MODEL_PACK: Record<ModelId, Pack> = {
   GPG_Knight: 'gpg',
@@ -71,6 +75,8 @@ export const WEAPON_PACK: Record<WeaponId, Pack> = {
   GPG_TowerShield: 'gpg',
   GPG_Axe_R: 'gpg',
   GPG_Axe_L: 'gpg',
+  GPG_KnightSword: 'gpg',
+  GPG_RoundShield: 'gpg',
 };
 const WEAPONS = Object.keys(WEAPON_PACK) as WeaponId[];
 

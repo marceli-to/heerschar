@@ -57,10 +57,17 @@ export function bodyFor(classId: ClassId, team: Team, _hero: boolean, look: View
   if (skeletons) return skeletonBody(classId);
   switch (classId) {
     case 'krieger':
-      // Visual test (branch test/gpg-squad): the game-pack-generator knight, both teams. Tabard and
-      // shield sit on palette cell 17 (team colour). Sword and shield are part of the skinned mesh
-      // and not on a hand slot, so there is no swing trail yet.
-      return { model: 'GPG_Knight', hide: [], attach: [], swaps: [team17(c.main)], style: 'sword', skeleton: false };
+      // Visual test (branch test/gpg-squad): the game-pack-generator knight, both teams, with his sword
+      // and round shield as separate props. Tabard, crest and the shield's board sit on palette cell 17.
+      return {
+        model: 'GPG_Knight',
+        hide: [],
+        attach: [{ weapon: 'GPG_KnightSword', bone: 'handslot.r' }, { weapon: 'GPG_RoundShield', bone: 'handslot.l' }],
+        blade: 'GPG_KnightSword',
+        swaps: [team17(c.main)],
+        style: 'sword',
+        skeleton: false,
+      };
     case 'schildtraeger':
       // Visual test: the gpg shieldbearer with his sword and tower shield as separate props (KayKit
       // frame, no turn). Tabard and the shield's board are on cell 17; the swap reaches the shield
