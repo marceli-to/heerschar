@@ -40,7 +40,6 @@ export interface ViewLook {
 // Prop meshes bundled on each Adventurers rig.
 const KNIGHT_PROPS = ['1H_Sword_Offhand', 'Badge_Shield', 'Rectangle_Shield', 'Round_Shield', 'Spike_Shield', '1H_Sword', '2H_Sword'];
 const MAGE_PROPS = ['Spellbook', 'Spellbook_open', '1H_Wand', '2H_Staff'];
-const BARBARIAN_PROPS = ['1H_Axe_Offhand', 'Barbarian_Round_Shield', '1H_Axe', '2H_Axe', 'Mug'];
 
 /** game-pack-generator figures carry their team colour on palette cell 17 (column 1, row 2 of 8). */
 const team17 = (color: string): Swap => ({ cell: [1, 2], rows: 8, color });
@@ -76,12 +75,14 @@ export function bodyFor(classId: ClassId, team: Team, _hero: boolean, look: View
         skeleton: false,
       };
     case 'berserker':
+      // Visual test: the gpg berserker with one axe per hand (the left file's blade faces the other
+      // way, as KayKit's offhand axe). Kilt and war paint are on cell 17.
       return {
-        model: 'Barbarian',
-        hide: except(BARBARIAN_PROPS, ['1H_Axe', '1H_Axe_Offhand']),
-        attach: [],
-        blade: '1H_Axe',
-        swaps: [{ cell: [0, 1], color: c.main }, { cell: [1, 1], color: c.main }, { cell: [6, 0], color: c.trim }],
+        model: 'GPG_Berserker',
+        hide: [],
+        attach: [{ weapon: 'GPG_Axe_R', bone: 'handslot.r' }, { weapon: 'GPG_Axe_L', bone: 'handslot.l' }],
+        blade: 'GPG_Axe_R',
+        swaps: [team17(c.main)],
         style: 'dual',
         skeleton: false,
       };

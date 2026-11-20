@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
  * `tools/wolf.mjs`). Loaded once, then cloned per unit. Each pack shares one rig and one clip
  * set, kept only in its first file (`ANIM_SOURCE`); every body of that pack plays those clips.
  */
-export type ModelId = 'GPG_Knight' | 'GPG_Wizard' | 'GPG_Healer' | 'GPG_Archer' | 'GPG_Shieldbearer' | 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage' | 'Wolf';
+export type ModelId = 'GPG_Knight' | 'GPG_Wizard' | 'GPG_Healer' | 'GPG_Archer' | 'GPG_Shieldbearer' | 'GPG_Berserker' | 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage' | 'Wolf';
 export type WeaponId =
   | 'Skeleton_Blade'
   | 'Skeleton_Axe'
@@ -18,7 +18,9 @@ export type WeaponId =
   | 'sword_2handed'
   | 'GPG_Crossbow'
   | 'GPG_Sword'
-  | 'GPG_TowerShield';
+  | 'GPG_TowerShield'
+  | 'GPG_Axe_R'
+  | 'GPG_Axe_L';
 export type Pack = 'adventurers' | 'skeletons' | 'quaternius' | 'gpg';
 
 const DIR: Record<Pack, string> = { adventurers: 'kaykit', skeletons: 'kaykit-skeletons', quaternius: 'quaternius', gpg: 'gpg' };
@@ -32,6 +34,9 @@ const FILE: Partial<Record<ModelId | WeaponId, string>> = {
   GPG_Crossbow: 'prop-crossbow.glb',
   GPG_Sword: 'prop-sword-shieldbearer.glb',
   GPG_TowerShield: 'prop-shield-tower.glb',
+  GPG_Berserker: 'character-berserker.glb',
+  GPG_Axe_R: 'prop-axe-berserker-r.glb',
+  GPG_Axe_L: 'prop-axe-berserker-l.glb',
 };
 export const MODEL_PACK: Record<ModelId, Pack> = {
   GPG_Knight: 'gpg',
@@ -39,6 +44,7 @@ export const MODEL_PACK: Record<ModelId, Pack> = {
   GPG_Healer: 'gpg',
   GPG_Archer: 'gpg',
   GPG_Shieldbearer: 'gpg',
+  GPG_Berserker: 'gpg',
   Knight: 'adventurers',
   Mage: 'adventurers',
   Rogue_Hooded: 'adventurers',
@@ -63,6 +69,8 @@ export const WEAPON_PACK: Record<WeaponId, Pack> = {
   GPG_Crossbow: 'gpg',
   GPG_Sword: 'gpg',
   GPG_TowerShield: 'gpg',
+  GPG_Axe_R: 'gpg',
+  GPG_Axe_L: 'gpg',
 };
 const WEAPONS = Object.keys(WEAPON_PACK) as WeaponId[];
 
