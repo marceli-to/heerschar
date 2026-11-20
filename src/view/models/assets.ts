@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
  * `tools/wolf.mjs`). Loaded once, then cloned per unit. Each pack shares one rig and one clip
  * set, kept only in its first file (`ANIM_SOURCE`); every body of that pack plays those clips.
  */
-export type ModelId = 'GPG_Knight' | 'GPG_Wizard' | 'GPG_Healer' | 'GPG_Archer' | 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage' | 'Wolf';
+export type ModelId = 'GPG_Knight' | 'GPG_Wizard' | 'GPG_Healer' | 'GPG_Archer' | 'GPG_Shieldbearer' | 'Knight' | 'Mage' | 'Rogue_Hooded' | 'Barbarian' | 'Skeleton_Warrior' | 'Skeleton_Minion' | 'Skeleton_Rogue' | 'Skeleton_Mage' | 'Wolf';
 export type WeaponId =
   | 'Skeleton_Blade'
   | 'Skeleton_Axe'
@@ -16,7 +16,9 @@ export type WeaponId =
   | 'Skeleton_Staff'
   | 'axe_2handed'
   | 'sword_2handed'
-  | 'GPG_Crossbow';
+  | 'GPG_Crossbow'
+  | 'GPG_Sword'
+  | 'GPG_TowerShield';
 export type Pack = 'adventurers' | 'skeletons' | 'quaternius' | 'gpg';
 
 const DIR: Record<Pack, string> = { adventurers: 'kaykit', skeletons: 'kaykit-skeletons', quaternius: 'quaternius', gpg: 'gpg' };
@@ -26,13 +28,17 @@ const FILE: Partial<Record<ModelId | WeaponId, string>> = {
   GPG_Wizard: 'character-wizard.glb',
   GPG_Healer: 'character-healer.glb',
   GPG_Archer: 'character-archer.glb',
+  GPG_Shieldbearer: 'character-shieldbearer.glb',
   GPG_Crossbow: 'prop-crossbow.glb',
+  GPG_Sword: 'prop-sword-shieldbearer.glb',
+  GPG_TowerShield: 'prop-shield-tower.glb',
 };
 export const MODEL_PACK: Record<ModelId, Pack> = {
   GPG_Knight: 'gpg',
   GPG_Wizard: 'gpg',
   GPG_Healer: 'gpg',
   GPG_Archer: 'gpg',
+  GPG_Shieldbearer: 'gpg',
   Knight: 'adventurers',
   Mage: 'adventurers',
   Rogue_Hooded: 'adventurers',
@@ -55,6 +61,8 @@ export const WEAPON_PACK: Record<WeaponId, Pack> = {
   axe_2handed: 'adventurers',
   sword_2handed: 'adventurers',
   GPG_Crossbow: 'gpg',
+  GPG_Sword: 'gpg',
+  GPG_TowerShield: 'gpg',
 };
 const WEAPONS = Object.keys(WEAPON_PACK) as WeaponId[];
 

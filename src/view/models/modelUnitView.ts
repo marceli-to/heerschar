@@ -150,6 +150,13 @@ export class ModelUnitView implements UnitView {
    * a third of the way back towards the grip (the grip sits near the hand slot's origin).
    */
   private measureBlade(blade: THREE.Object3D, baseOut: THREE.Vector3, tipOut: THREE.Vector3): void {
+    // gpg props mark their point with a `tip` empty beside the mesh, in the prop's own space.
+    const tip = blade.children.find((c) => c.name === 'tip');
+    if (tip) {
+      tipOut.copy(tip.position);
+      baseOut.copy(tip.position).multiplyScalar(0.65);
+      return;
+    }
     blade.updateMatrixWorld(true);
     const inv = blade.matrixWorld.clone().invert();
     const box = new THREE.Box3();

@@ -42,37 +42,36 @@ const KNIGHT_PROPS = ['1H_Sword_Offhand', 'Badge_Shield', 'Rectangle_Shield', 'R
 const MAGE_PROPS = ['Spellbook', 'Spellbook_open', '1H_Wand', '2H_Staff'];
 const BARBARIAN_PROPS = ['1H_Axe_Offhand', 'Barbarian_Round_Shield', '1H_Axe', '2H_Axe', 'Mug'];
 
+/** game-pack-generator figures carry their team colour on palette cell 17 (column 1, row 2 of 8). */
+const team17 = (color: string): Swap => ({ cell: [1, 2], rows: 8, color });
+
 const except = (all: string[], keep: string[]): string[] => all.filter((n) => !keep.includes(n));
 
 /**
  * The model, kit and colours of a unit (6a and 6c decisions); `null` keeps the code figure.
  */
-export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewLook): BodySpec | null {
+export function bodyFor(classId: ClassId, team: Team, _hero: boolean, look: ViewLook): BodySpec | null {
   const c = MODEL_COLORS[team];
-  const trim = hero ? MODEL_COLORS.heroTrim : c.trim;
   const boss = bossBody(classId);
   if (boss) return boss;
   const skeletons = team === 'enemy' && look.region === 'barrowlands';
   if (skeletons) return skeletonBody(classId);
   switch (classId) {
     case 'krieger':
-      // Player warriors carry the badge shield, enemy warriors the round one.
-      return {
-        model: 'Knight',
-        hide: except(KNIGHT_PROPS, ['1H_Sword', team === 'player' ? 'Badge_Shield' : 'Round_Shield']),
-        attach: [],
-        blade: '1H_Sword',
-        swaps: [{ cell: [0, 1], color: c.main }, { cell: [6, 0], color: trim }],
-        style: 'sword',
-        skeleton: false,
-      };
+      // Visual test (branch test/gpg-squad): the game-pack-generator knight, both teams. Tabard and
+      // shield sit on palette cell 17 (team colour). Sword and shield are part of the skinned mesh
+      // and not on a hand slot, so there is no swing trail yet.
+      return { model: 'GPG_Knight', hide: [], attach: [], swaps: [team17(c.main)], style: 'sword', skeleton: false };
     case 'schildtraeger':
+      // Visual test: the gpg shieldbearer with his sword and tower shield as separate props (KayKit
+      // frame, no turn). Tabard and the shield's board are on cell 17; the swap reaches the shield
+      // too, since it samples the same palette layout.
       return {
-        model: 'Knight',
-        hide: except(KNIGHT_PROPS, ['1H_Sword', 'Rectangle_Shield']),
-        attach: [],
-        blade: '1H_Sword',
-        swaps: [{ cell: [0, 1], color: c.deep }, { cell: [6, 0], color: c.trim }],
+        model: 'GPG_Shieldbearer',
+        hide: [],
+        attach: [{ weapon: 'GPG_Sword', bone: 'handslot.r' }, { weapon: 'GPG_TowerShield', bone: 'handslot.l' }],
+        blade: 'GPG_Sword',
+        swaps: [team17(c.main)],
         style: 'sword',
         skeleton: false,
       };
@@ -94,28 +93,18 @@ export function bodyFor(classId: ClassId, team: Team, hero: boolean, look: ViewL
         model: 'GPG_Archer',
         hide: [],
         attach: [{ weapon: 'GPG_Crossbow', bone: 'handslot.r' }],
-        swaps: [{ cell: [1, 2], rows: 8, color: c.main }],
+        swaps: [team17(c.main)],
         style: 'crossbow',
         skeleton: false,
       };
     case 'magier':
-      // Visual test (branch test/gpg-wizard): the player's mages wear the game-pack-generator wizard.
-      // No swaps (its palette is not KayKit's swatch atlas). The staff is part of the skinned mesh,
-      // weighted to the right hand slot: its tip is measured from those vertices.
-      if (team === 'player') return { model: 'GPG_Wizard', hide: [], attach: [], swaps: [], style: 'staff', skeleton: false, staff: 'handslot.r' };
-      return {
-        model: 'Mage',
-        hide: except(MAGE_PROPS, ['2H_Staff']),
-        attach: [],
-        swaps: [{ cell: [0, 1], color: c.deep }, { cell: [1, 1], color: c.deep }, { cell: [2, 1], color: c.main }, { cell: [5, 0], color: trim }],
-        style: 'staff',
-        skeleton: false,
-        staff: '2H_Staff',
-      };
+      // Visual test (branch test/gpg-squad): the gpg wizard, both teams; robe, sleeves and hat on cell 17.
+      // The staff is part of the skinned mesh, weighted to the right hand slot: its tip is measured from those vertices.
+      return { model: 'GPG_Wizard', hide: [], attach: [], swaps: [team17(c.main)], style: 'staff', skeleton: false, staff: 'handslot.r' };
     case 'heiler':
       // Visual test (branch test/gpg-squad): the game-pack-generator healer, both teams; the stole
       // sits on palette cell 17 (team colour). The orb is added in code as before.
-      return { model: 'GPG_Healer', hide: [], attach: [], swaps: [{ cell: [1, 2], rows: 8, color: c.main }], style: 'orb', skeleton: false };
+      return { model: 'GPG_Healer', hide: [], attach: [], swaps: [team17(c.main)], style: 'orb', skeleton: false };
     case 'schamane':
       // A Mage without the hat: bone mask with antlers, a totem on the staff (6c decisions).
       return {
