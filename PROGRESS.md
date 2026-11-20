@@ -21,10 +21,23 @@ Handoff notes for a fresh session. Read this first, then only the `PLAN.md` sect
 | 5 Campaign | **in progress**: 5a–5e done (screenshots of 5c, 5d, 5e approved by Marcel 2026-11-15); 5f balance: playable (walk finishes 10–11 / 12 per class), **parked** with open questions (see "5f third session"); the 5f gate is still to do. Marcel wants Stage 6 (visual pack integration) next. PLAN sections 10, 13, 14. |
 | 6 Presentation | **gate pending**: 6a–6g done and approved (6g approved 2026-11-15); **6h built** (credits sheet, look spike removed, fps and run-through checked, see "6h as built"). Waiting for **Marcel's full playtest and verdict** ("presentable to a newcomer"). Battles still feel hard to him; difficulty levels wanted later. |
 | 6i UI restyle | **built, waiting for Marcel's look** (asked 2026-11-15: "the UI does not match the arenas / characters"). 6i-1 … 6i-5 done, then a consistency pass via /ui (labels, two button sizes, no italics, `ScreenFrame`); all committed and pushed. Screenshots in `~/Downloads/heerschar-assets/ui-restyle/consistent/`. See "6i consistency pass" and "6i as built". **Next:** Marcel reviews the look (lock ring and mark banner now Storybook too, see "6i-6"; credits sheet now tabs and map seal notes above the ribbons, see "6i-7", approved). Then the Stage 6 gate (his full playtest). |
-| Own characters (gpg) | **exploring** (2026-11-16/17): Marcel builds his own cast with game-pack-generator (`../game-pack-generator`). Knight and Wizard tested on branches, not merged; sheets for the 13 missing characters done. See "Own character pack (game-pack-generator)". |
+| Own characters (gpg) | **testing** (2026-11-16 to 20): Marcel builds his own cast with game-pack-generator. Branch `test/gpg-squad` (not merged) has knight, wizard, healer, archer (both teams), shieldbearer and berserker (enemy), with team colours and a hero ring. Shaman, bosses, skeletons and wolf still to come. See "Own character pack (game-pack-generator)". |
 | 7 | not started |
 
-## Own character pack (game-pack-generator), 2026-11-16/17
+## Own character pack (game-pack-generator), 2026-11-16 to 20
+
+**Current state, branch `test/gpg-squad`** (built on `test/gpg-wizard`; not merged, `master` unchanged). Hand-off notes from the generator side and my replies live as `NAME.md` / `NAME-REPLY.md` in `~/Desktop/kimiyu-lab/heerschar-characters/` (the folder moved there on 2026-11-20); screenshots in `~/Downloads/heerschar-assets/gpg-*/`.
+- **Bodies** (`bodies.ts`): `krieger` = `GPG_Knight` + `GPG_KnightSword` / `GPG_RoundShield`; `magier` = `GPG_Wizard` (skinned staff); `heiler` = `GPG_Healer` (code orb); `bogenschuetze` = `GPG_Archer` + `GPG_Crossbow`. All four on both teams (Greenmarch). Enemy only: `schildtraeger` = `GPG_Shieldbearer` + `GPG_Sword` / `GPG_TowerShield`; `berserker` = `GPG_Berserker` + `GPG_Axe_R` / `GPG_Axe_L`. Barrowlands skeletons, shaman, bosses and wolf are still KayKit / Quaternius.
+- **Team colour:** every gpg figure carries it on palette cell 17 (column 1, row 2 of the 8×8 palette, shipped red `#A8322A`). `recolor.ts` swaps take `rows` (4 KayKit, 8 gpg); `team17(color)` in `bodies.ts`. Props of the gpg pack sample the same layout, so the body's swap reaches them (shield boards).
+- **Props** are separate GLBs on `handslot.r` / `handslot.l` with no transform, in KayKit's frame: swords and staffs along the slot's +Y, crossbow along +X, shield faces along +Z, offhand axe mirrored. The loader keeps a gpg prop's whole scene, so its empties come along: `tip` (swing trail, `measureBlade`) and `muzzle` (volley smoke, `muzzlePoint()` → `game.ts`).
+- **Staff turn** (`GPG_PROP_AXIS`) now applies only to models in `PROP_TURNED` (the wizard, whose staff is skinned along +Z); `modelClips(id)` gives those models their own clip set.
+- **Hero ring:** the gpg figures have no hero trim, and Marcel decided against a hero palette cell. The player's hero gets a thin cream ground ring (`heroRingMesh()` in `targetMarkers.ts`, added in `ModelUnitView` when `hero && team === 'player'`). It's deliberately unlike the gold lock ring.
+- Line-up dev scene exposes `window.__lineupViews` for measuring (prop low points, muzzle, trail).
+- Known and accepted: the tower shield's board reads dark navy in idle (it faces away from the sun); robes and kilts show boot cuffs through the back in walk (not visible from the game camera); the berserker's orange mane outshouts his blue kilt (raised with Marcel).
+
+**Next:** shaman, then bosses (Warlord, Fen Witch, Bone King), then skeletons. The wolf needs a four-legged rig. Before merging: decide whether gpg replaces KayKit everywhere, drop the KayKit bodies that are loaded but no longer used on the branch (`Barbarian`, `Rogue_Hooded`), and play a few battles on the branch.
+
+### Earlier: first tests, 2026-11-16/17
 
 Marcel builds a low-poly chibi cast with his game-pack-generator (exports in `../game-pack-generator/workspace/<name>/export/character-<name>.glb`). Same skeleton as KayKit `Rig_Medium` (no IK/control bones, plus `headslot`/`backslot`), one skinned mesh `Character`, one material `M_Palette` (8×8 palette texture, not KayKit's swatch atlas). **Test branches, not merged, `master` unchanged:**
 - `test/gpg-knight`: player warriors wear `character-knight-lowpoly.glb`.
@@ -38,9 +51,9 @@ Marcel builds a low-poly chibi cast with his game-pack-generator (exports in `..
 - Props skinned into the body have no node: staff tip / blade edge are measured from the vertices weighted to the hand slot (`measureSkinned` in `modelUnitView.ts`).
 - No team colours yet (`swaps: []`; `recolor.ts` assumes KayKit's 8×4 atlas). One draw call per unit vs 10–15 for KayKit; gpg tris budget 8000 is fine (KayKit bodies are 5.7–7k).
 
-**Missing characters:** prompts and the wizard style sheet in `~/Desktop/heerschar-characters/` (README lists which game body each replaces, the generator conventions: props on `handslot.*` along +Y top up, team-colour areas on fixed palette cells, bones as separate blocks for skeletons). Marcel generated all 13 sheets (archer, healer, shieldbearer, berserker, shaman, Iron Warlord, Fen Witch, Bone King, 4 skeletons, wolf). The Bone King sheet draws the greatsword point down (flip in the build). The wolf needs a four-legged rig the generator doesn't have.
+**Missing characters:** prompts and the wizard style sheet in `~/Desktop/kimiyu-lab/heerschar-characters/` (was `~/Desktop/heerschar-characters/`) (README lists which game body each replaces, the generator conventions: props on `handslot.*` along +Y top up, team-colour areas on fixed palette cells, bones as separate blocks for skeletons). Marcel generated all 13 sheets (archer, healer, shieldbearer, berserker, shaman, Iron Warlord, Fen Witch, Bone King, 4 skeletons, wolf). The Bone King sheet draws the greatsword point down (flip in the build). The wolf needs a four-legged rig the generator doesn't have.
 
-**Next:** Marcel builds models from the sheets (archer and healer first, they complete the squad). Then wire each in like the wizard, and decide on team colours (palette-cell recolour vs. red/blue exports). Generator side should adopt the +Y prop convention so `GPG_PROP_AXIS` can go.
+(The open points of this first round are settled above: team colours via cell 17, props as separate files.)
 
 ## Fixed (waiting for Marcel's confirmation): black rectangle in battle (2026-11-15)
 
