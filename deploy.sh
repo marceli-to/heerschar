@@ -3,12 +3,12 @@
 # Run from your Mac: ./deploy.sh  (add --dry-run to only show what would change)
 #
 # The game is a static site: tested and built locally from a clean copy of HEAD, then dist/
-# is synced to the web root. .well-known/ on the server is never deleted.
+# is synced to the web root (Hostpoint serves heerschar.kimiyu.ch from .../public). .well-known/ on the server is never deleted.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 HOST=pumutuxu@pumutuxu.myhostpoint.ch
-DEST=/home/pumutuxu/www/heerschar.kimiyu.ch
+DEST=/home/pumutuxu/www/heerschar.kimiyu.ch/public
 
 DRY_RUN=()
 [[ ${1:-} == --dry-run ]] && DRY_RUN=(--dry-run --itemize-changes)
