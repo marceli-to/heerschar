@@ -12,6 +12,10 @@ npm run typecheck  # vue-tsc
 npm run build
 ```
 
+## Deploy
+
+`./deploy.sh` tests and builds the committed state (HEAD) in a clean copy and rsyncs `dist/` to https://heerschar.kimiyu.ch (Hostpoint, over SSH with your key). `./deploy.sh --dry-run` shows what would change. Uncommitted changes stop it.
+
 URL parameters: `?seed=<n>` fixes the battle RNG, `?zoom=0..1` sets the starting camera zoom, `?debug` shows the debug overlay (F3 toggles it) and exposes `window.__game`, `?bot` lets the scripted bot play the hero.
 
 Controls: click to take the field (pointer lock), W A S D move (camera-relative), mouse turns the camera, left click strikes (click again in time for the heavier second blow), Space dodges, wheel zooms, Esc pauses.
