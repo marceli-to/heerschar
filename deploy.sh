@@ -18,8 +18,11 @@ if [[ -n $(git status --porcelain) ]]; then
   exit 1
 fi
 
+# Use the Node version from .nvmrc when there is one; otherwise the current node.
 export NVM_DIR="$HOME/.nvm"
-[[ -s $NVM_DIR/nvm.sh ]] && source "$NVM_DIR/nvm.sh" && nvm use --silent
+if [[ -f .nvmrc && -s $NVM_DIR/nvm.sh ]]; then
+  source "$NVM_DIR/nvm.sh" && nvm use --silent
+fi
 
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
