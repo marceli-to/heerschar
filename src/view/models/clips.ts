@@ -81,6 +81,8 @@ const KAYKIT_BASE: BaseClips = {
 export const BASE_CLIPS: Record<Pack, BaseClips> = {
   adventurers: KAYKIT_BASE,
   skeletons: KAYKIT_BASE,
+  // game-pack-generator characters play the Adventurers clips (see `gpgClips`).
+  gpg: KAYKIT_BASE,
   // Wolves never dodge; the gallop stands in.
   quaternius: {
     idle: 'Idle',

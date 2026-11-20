@@ -5,11 +5,12 @@ import type { Team } from '../../sim/types';
 import { FX, hdr, MODEL_COLORS } from '../palette';
 import { ShieldBubble } from '../shieldBubble';
 import type { AnimInput, UnitView } from '../unitView';
-import { MODEL_PACK, modelTemplate, nodeName, packClips, WEAPON_PACK, weaponTemplate, type Pack } from './assets';
+import { MODEL_PACK, modelClips, modelTemplate, nodeName, WEAPON_PACK, weaponTemplate, type Pack } from './assets';
 import type { BodySpec } from './bodies';
 import { actionAnim, BASE_CLIPS, type BaseClips, type Segment } from './clips';
 import { addExtra } from './props';
 import { recolored } from './recolor';
+import { heroRingMesh } from '../targetMarkers';
 
 interface RigInfo {
   /** Model scale for a normal-sized unit (bosses multiply it by `BodySpec.scale`). */
@@ -31,6 +32,9 @@ const RIGS: Record<Pack, RigInfo> = {
   adventurers: KAYKIT_RIG,
   skeletons: KAYKIT_RIG,
   quaternius: { scale: 0.48, barY: 1.35, walkSpeed: 1.1, runSpeed: 5, runFrom: 2 },
+  // game-pack-generator chibi: 1.43 units tall in idle (plume included), scaled to the KayKit knight's
+  // 2.01 m. Speeds: KayKit's / 0.82 x 0.689 (shorter legs) x 1.4.
+  gpg: { scale: 1.4, barY: 2.15, walkSpeed: 0.84, runSpeed: 4.3, runFrom: 1.3 },
 };
 const IDLE_BELOW = 0.35;
 /** Cross-fade between animations, seconds (shorter into an attack so the tell starts at once). */
@@ -75,6 +79,8 @@ export class ModelUnitView implements UnitView {
   /** The staff and its far end in the staff's own space (spells gather there). */
   private readonly staff: THREE.Object3D | null = null;
   private readonly staffEnd = new THREE.Vector3();
+  /** The `muzzle` marker of an attached crossbow (gpg props carry one); the volley's smoke starts there. */
+  private readonly muzzle: THREE.Object3D | null = null;
 
   private cur: Pose = { clip: 'Idle', time: 0 };
   private prev: Pose | null = null;
@@ -89,7 +95,7 @@ export class ModelUnitView implements UnitView {
   private nudge = 0;
   private frost = 0;
 
-  constructor(private readonly body: BodySpec, team: Team) {
+  constructor(private readonly body: BodySpec, team: Team, hero = false) {
     const pack = MODEL_PACK[body.model];
     const size = body.scale ?? 1;
     this.rig = RIGS[pack];
@@ -106,6 +112,7 @@ export class ModelUnitView implements UnitView {
       bone?.add(weapon);
       if (a.weapon === body.blade && a.bone === 'handslot.r') this.blade = weapon;
       if (a.weapon === body.staff) staff = weapon;
+      this.muzzle ??= weapon.getObjectByName('muzzle') ?? null;
     }
     // Code props are placed at the bind pose, before the model is scaled and turned.
     staff ??= body.staff ? (this.model.getObjectByName(nodeName(body.staff)) ?? null) : null;
@@ -130,8 +137,9 @@ export class ModelUnitView implements UnitView {
     }
     this.prepareMeshes(body, foreign);
     this.root.add(this.model);
+    if (hero) this.root.add(heroRingMesh());
 
-    this.clips = packClips(MODEL_PACK[body.model]);
+    this.clips = modelClips(body.model);
     this.mixer = new THREE.AnimationMixer(this.model);
 
     this.bubble = new ShieldBubble(team, { x: 0.8 * size, y: 1.05 * size, z: 0.8 * size }, 0.95 * size);
@@ -144,6 +152,13 @@ export class ModelUnitView implements UnitView {
    * a third of the way back towards the grip (the grip sits near the hand slot's origin).
    */
   private measureBlade(blade: THREE.Object3D, baseOut: THREE.Vector3, tipOut: THREE.Vector3): void {
+    // gpg props mark their point with a `tip` empty beside the mesh, in the prop's own space.
+    const tip = blade.children.find((c) => c.name === 'tip');
+    if (tip) {
+      tipOut.copy(tip.position);
+      baseOut.copy(tip.position).multiplyScalar(0.65);
+      return;
+    }
     blade.updateMatrixWorld(true);
     const inv = blade.matrixWorld.clone().invert();
     const box = new THREE.Box3();
@@ -153,7 +168,10 @@ export class ModelUnitView implements UnitView {
       m.geometry.computeBoundingBox();
       box.union(m.geometry.boundingBox!.clone().applyMatrix4(inv.clone().multiply(m.matrixWorld)));
     });
-    if (box.isEmpty()) return;
+    if (box.isEmpty()) {
+      this.measureSkinned(blade, baseOut, tipOut);
+      return;
+    }
     const size = box.getSize(new THREE.Vector3());
     const axis = size.x > size.y ? (size.x > size.z ? 'x' : 'z') : size.y > size.z ? 'y' : 'z';
     const far = Math.abs(box.max[axis]) > Math.abs(box.min[axis]) ? box.max[axis] : box.min[axis];
@@ -161,10 +179,48 @@ export class ModelUnitView implements UnitView {
     baseOut.set(0, 0, 0)[axis] = far * 0.65;
   }
 
+  /**
+   * A weapon that is part of the skinned body (game-pack-generator characters) has no node of its
+   * own, only vertices weighted to a hand slot bone: the tip is the one farthest from the bone, in
+   * the bone's bind-pose space; the trail's inner edge sits at 0.65 of the way, as above.
+   */
+  private measureSkinned(bone: THREE.Object3D, baseOut: THREE.Vector3, tipOut: THREE.Vector3): void {
+    const v = new THREE.Vector3();
+    let best = 0;
+    this.model.traverse((o) => {
+      const m = o as THREE.SkinnedMesh;
+      if (!m.isSkinnedMesh) return;
+      const bi = m.skeleton.bones.indexOf(bone as THREE.Bone);
+      if (bi < 0) return;
+      const toBone = m.skeleton.boneInverses[bi]!.clone().multiply(m.bindMatrix);
+      const pos = m.geometry.getAttribute('position');
+      const idx = m.geometry.getAttribute('skinIndex');
+      const wt = m.geometry.getAttribute('skinWeight');
+      for (let i = 0; i < pos.count; i++) {
+        let w = 0;
+        for (let k = 0; k < 4; k++) if (idx.getComponent(i, k) === bi) w += wt.getComponent(i, k);
+        if (w < 0.5) continue;
+        v.fromBufferAttribute(pos, i).applyMatrix4(toBone);
+        if (v.lengthSq() > best) {
+          best = v.lengthSq();
+          tipOut.copy(v);
+        }
+      }
+    });
+    baseOut.copy(tipOut).multiplyScalar(0.65);
+  }
+
   staffTip(out: THREE.Vector3): boolean {
     if (!this.staff) return false;
     this.root.updateMatrixWorld(true);
     this.staff.localToWorld(out.copy(this.staffEnd));
+    return true;
+  }
+
+  muzzlePoint(out: THREE.Vector3): boolean {
+    if (!this.muzzle) return false;
+    this.root.updateMatrixWorld(true);
+    this.muzzle.getWorldPosition(out);
     return true;
   }
 
@@ -180,7 +236,7 @@ export class ModelUnitView implements UnitView {
   private prepareMeshes(body: BodySpec, foreign: ReadonlySet<THREE.Object3D>): void {
     const hidden = new Set(body.hide.map(nodeName));
     const own = new Map<THREE.Material, THREE.MeshStandardMaterial>();
-    const swapKey = body.swaps.map((s) => `${s.cell.join('.')}=${s.color}`).join(',');
+    const swapKey = body.swaps.map((s) => `${s.cell.join('.')}/${s.rows ?? 4}=${s.color}`).join(',');
     this.model.traverse((o) => {
       if (hidden.has(o.name)) {
         o.visible = false;

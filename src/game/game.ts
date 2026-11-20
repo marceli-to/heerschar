@@ -622,7 +622,8 @@ export class Game {
           // Volley: smoke and sparks out of the crossbow, a small kick.
           const fx = Math.sin(u.facing);
           const fz = -Math.cos(u.facing);
-          this.fx.muzzle(_base.set(u.pos.x + fx * 0.75, 1.3, u.pos.z + fz * 0.75), fx, fz);
+          if (!this.units.get(u.id)?.view.muzzlePoint?.(_base)) _base.set(u.pos.x + fx * 0.75, 1.3, u.pos.z + fz * 0.75);
+          this.fx.muzzle(_base, fx, fz);
           this.rig.shake(SHAKE.light);
         } else if (e.action === 'rueckzug') {
           // Fall Back: a blast of air over the front cone as the archer leaps away.

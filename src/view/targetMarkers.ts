@@ -210,3 +210,35 @@ export class MarkBanner {
     for (const t of this.texs) t.dispose();
   }
 }
+
+/** Hero ring canvas: px for the full square, and its size in metres. */
+const HERO_PX = 256;
+const HERO_M = 1.3;
+
+function drawHeroRing(c: CanvasRenderingContext2D): void {
+  const s = HERO_PX / HERO_M;
+  const mid = HERO_PX / 2;
+  // A thin cream band with an ink outline, softer than the lock ring: no ticks, no gold.
+  c.beginPath();
+  c.arc(mid, mid, 0.6 * s, 0, Math.PI * 2);
+  c.arc(mid, mid, 0.53 * s, 0, Math.PI * 2, true);
+  c.globalAlpha = 0.85;
+  inked(c, '#fff2c4', 0.012 * s);
+}
+
+let heroRingParts: { geo: THREE.PlaneGeometry; mat: THREE.MeshBasicMaterial } | null = null;
+
+/**
+ * The hero's own ground ring, under the feet of the unit the player controls (the gpg figures carry no
+ * hero trim). Thin, cream and still, so it never reads as the gold lock ring. Shared by every view; never disposed.
+ */
+export function heroRingMesh(): THREE.Mesh {
+  heroRingParts ??= {
+    geo: new THREE.PlaneGeometry(HERO_M, HERO_M).rotateX(-Math.PI / 2),
+    mat: new THREE.MeshBasicMaterial({ map: canvasTexture(HERO_PX, HERO_PX, drawHeroRing), transparent: true, depthWrite: false, fog: false, toneMapped: false }),
+  };
+  const mesh = new THREE.Mesh(heroRingParts.geo, heroRingParts.mat);
+  mesh.position.y = 0.05;
+  mesh.renderOrder = 3;
+  return mesh;
+}

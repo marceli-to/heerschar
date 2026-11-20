@@ -46,6 +46,8 @@ export interface UnitView {
   weaponEdge?(base: THREE.Vector3, tip: THREE.Vector3): boolean;
   /** World point at the far end of the staff (the Fireball gathers there); false if it has none. */
   staffTip?(out: THREE.Vector3): boolean;
+  /** World point at the crossbow's muzzle (the volley's smoke); false if it has no marker. */
+  muzzlePoint?(out: THREE.Vector3): boolean;
   dispose(): void;
 }
 
